@@ -427,7 +427,8 @@ export default function AdminDashboard() {
   };
 
   const handleCreateOrder = async () => {
-    if (!newOrderCustomerId || !newOrderItemName || newOrderTotalAmount <= 0) {
+    const targetCustomerId = newOrderCustomerId || (customers.length > 0 ? customers[0].id : "");
+    if (!targetCustomerId || !newOrderItemName || Number(newOrderTotalAmount) <= 0) {
       alert("Veuillez choisir un client, le nom de la tenue et un montant valide.");
       return;
     }
@@ -436,14 +437,14 @@ export default function AdminDashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customerId: newOrderCustomerId,
+          customerId: targetCustomerId,
           itemName: newOrderItemName,
           orderDate: newOrderOrderDate,
           promisedDate: newOrderPromisedDate,
           fabricDetails: newOrderFabricDetails,
           customNotes: newOrderCustomNotes,
-          totalAmount: newOrderTotalAmount,
-          depositRequired: newOrderDepositRequired,
+          totalAmount: Number(newOrderTotalAmount),
+          depositRequired: Number(newOrderDepositRequired),
           priority: newOrderPriority,
         }),
       });
