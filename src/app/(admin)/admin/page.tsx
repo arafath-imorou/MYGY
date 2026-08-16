@@ -88,6 +88,14 @@ export default function AdminDashboard() {
   const [mCheville, setMCheville] = useState<string>("");
   const [mMorphologie, setMMorphologie] = useState<string>("Sablier (8 / X)");
 
+  // Admin Account Creation Modal State
+  const [newAdminModal, setNewAdminModal] = useState(false);
+  const [adminFullName, setAdminFullName] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminRole, setAdminRole] = useState("SUPER_ADMIN");
+  const [usersList, setUsersList] = useState<any[]>([]);
+
   // Create Client Form Modal
   const [newCustomerModal, setNewCustomerModal] = useState(false);
   const [newCustFirstName, setNewCustFirstName] = useState("");
@@ -502,6 +510,39 @@ export default function AdminDashboard() {
       } else {
         const err = await res.json();
         alert(err.error || "Erreur lors de la création de la commande");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleCreateAdminUser = async () => {
+    if (!adminEmail || !adminPassword || !adminFullName) {
+      alert("Veuillez remplir le nom complet, l'email et le mot de passe.");
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: adminFullName,
+          email: adminEmail,
+          password: adminPassword,
+          role: adminRole,
+        }),
+      });
+
+      if (res.ok) {
+        alert(`Le compte administrateur pour ${adminFullName} (${adminEmail}) a été créé avec succès !`);
+        setNewAdminModal(false);
+        setAdminFullName("");
+        setAdminEmail("");
+        setAdminPassword("");
+        fetchData();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Erreur lors de la création du compte.");
       }
     } catch (e) {
       console.error(e);
@@ -1602,8 +1643,37 @@ export default function AdminDashboard() {
           )}
 
           {activeMenu === "administrations" && (
-            <div className="framed-card p-8">
-              <h2 className="font-serif text-3xl font-bold text-white mb-4">ADMINISTRATIONS & JOURNAL D&apos;AUDIT</h2>
+            <div className="space-y-8">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h2 className="font-serif text-4xl font-bold text-white">ADMINISTRATION & ACCÈS SÉCURISÉS</h2>
+                  <p className="text-sm text-gy-textMuted mt-1">Gestion centrale des comptes administrateurs, rôles et privilèges d&apos;accès</p>
+                </div>
+                <button
+                  onClick={() => setNewAdminModal(true)}
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95 transition-opacity"
+                >
+                  + CRÉER UN COMPTE ADMIN
+                </button>
+              </div>
+
+              <div className="framed-card p-8 space-y-6">
+                <h3 className="font-serif text-2xl font-bold text-white border-b border-gy-border pb-4">
+                  COMPTES ADMINISTRATEURS AUTORISÉS
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-6 rounded-2xl bg-gy-dark border border-gy-gold/40 flex justify-between items-center">
+                    <div>
+                      <span className="px-3 py-1 rounded-full text-[10px] font-black bg-gy-gold/20 text-gy-gold border border-gy-gold/40 uppercase">
+                        SUPER ADMIN (DIRECTION)
+                      </span>
+                      <h4 className="font-bold text-white text-lg mt-2">Direction Maison GY</h4>
+                      <p className="text-xs text-gy-textMuted mt-0.5">admin@mygy.com</p>
+                    </div>
+                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black uppercase">ACTIF</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </main>
@@ -2288,6 +2358,88 @@ export default function AdminDashboard() {
                   className="w-1/2 py-3.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase shadow-gold hover:opacity-95"
                 >
                   ENREGISTRER
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CRÉER UN COMPTE ADMIN */}
+      {newAdminModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-panel max-w-md w-full p-8 rounded-3xl border border-[#D4AF37]/50 shadow-2xl font-aptos my-8">
+            <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
+              <h3 className="font-serif text-2xl font-bold text-white">CRÉER UN COMPTE ADMIN</h3>
+              <button onClick={() => setNewAdminModal(false)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
+                [ FERMER ]
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Nom & Prénom *</label>
+                <input
+                  type="text"
+                  value={adminFullName}
+                  onChange={(e) => setAdminFullName(e.target.value)}
+                  placeholder="ex: Direction GY / Arafath Imorou"
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Adresse Email de Connexion *</label>
+                <input
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="admin@mygy.com"
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Mot de Passe *</label>
+                <input
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Rôle / Privilèges</label>
+                <select
+                  value={adminRole}
+                  onChange={(e) => setAdminRole(e.target.value)}
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-[#D4AF37] focus:outline-none"
+                >
+                  <option value="SUPER_ADMIN">SUPER ADMIN (Accès Total)</option>
+                  <option value="DIRECTION">DIRECTION GÉNÉRALE</option>
+                  <option value="ADMINISTRATION">ADMINISTRATION & CAISSE</option>
+                  <option value="RESPONSABLE_COMMERCIAL">RESPONSABLE COMMERCIAL</option>
+                  <option value="COMPTABILITE">COMPTABILITÉ & FINANCES</option>
+                </select>
+              </div>
+
+              <div className="flex space-x-3 pt-4 border-t border-gy-border">
+                <button
+                  type="button"
+                  onClick={() => setNewAdminModal(false)}
+                  className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-bold text-xs uppercase hover:bg-gy-border"
+                >
+                  ANNULER
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCreateAdminUser}
+                  className="w-1/2 py-3.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase shadow-gold hover:opacity-95"
+                >
+                  CRÉER COMPTE ADMIN
                 </button>
               </div>
             </div>
