@@ -59,7 +59,7 @@ export default function AdminDashboard() {
   const [editPhone, setEditPhone] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editCity, setEditCity] = useState("Cotonou");
-  const [editCategory, setEditCategory] = useState("VIP");
+  const [editCategory, setEditCategory] = useState("Standard");
   const [editProfession, setEditProfession] = useState("");
   const [editNotes, setEditNotes] = useState("");
 
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
   const [newCustPhone, setNewCustPhone] = useState("");
   const [newCustEmail, setNewCustEmail] = useState("");
   const [newCustCity, setNewCustCity] = useState("Cotonou");
-  const [newCustCategory, setNewCustCategory] = useState("VIP");
+  const [newCustCategory, setNewCustCategory] = useState("Standard");
   const [newCustProfession, setNewCustProfession] = useState("");
   const [newCustNotes, setNewCustNotes] = useState("");
 
@@ -247,7 +247,7 @@ export default function AdminDashboard() {
     setEditPhone(cust.phone || "");
     setEditEmail(cust.email || "");
     setEditCity(cust.city || "Cotonou");
-    setEditCategory(cust.category || "VIP");
+    setEditCategory(cust.category || "Standard");
     setEditProfession(cust.profession || "");
     setEditNotes(cust.notes || "");
 
@@ -1550,10 +1550,10 @@ export default function AdminDashboard() {
                   onChange={(e) => setNewCustCategory(e.target.value)}
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-[#D4AF37] focus:outline-none"
                 >
-                  <option value="VIP">VIP Impérial</option>
-                  <option value="REGULIER">Régulier</option>
-                  <option value="MARIEE">Robe de Mariée</option>
-                  <option value="CORPORATE">Corporate & Événementiel</option>
+                  <option value="Standard">Standard</option>
+                  <option value="Premium">Premium</option>
+                  <option value="VIP">VIP</option>
+                  <option value="VVIP">VVIP</option>
                 </select>
               </div>
 
@@ -2112,6 +2112,41 @@ export default function AdminDashboard() {
                       className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-gy-gold focus:outline-none font-bold"
                     />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Téléphone</label>
+                    <input
+                      type="text"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-gy-gold focus:outline-none font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Ville</label>
+                    <input
+                      type="text"
+                      value={editCity}
+                      onChange={(e) => setEditCity(e.target.value)}
+                      className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-gy-gold focus:outline-none font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Catégorie Client *</label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-gy-gold focus:outline-none"
+                  >
+                    <option value="Standard">Standard</option>
+                    <option value="Premium">Premium</option>
+                    <option value="VIP">VIP</option>
+                    <option value="VVIP">VVIP</option>
+                  </select>
                 </div>
               </div>
 

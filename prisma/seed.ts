@@ -127,7 +127,7 @@ async function main() {
       city: "Cotonou",
       country: "Bénin",
       profession: "Diplomate",
-      category: "VIP",
+      category: "VVIP",
       acquisitionSource: "Recommandation",
       notes: "Cliente exigeante, privilégier la soie Mikado et finitions d'or.",
       loyaltyAccount: {
@@ -161,7 +161,7 @@ async function main() {
       city: "Porto-Novo",
       country: "Bénin",
       profession: "Avocate d'Affaires",
-      category: "Actif",
+      category: "Premium",
       acquisitionSource: "Instagram",
       loyaltyAccount: {
         create: {
