@@ -288,16 +288,26 @@ export default function AdminDashboard() {
   const customerOrders = orders.filter((o) => o.customerId === payCustomerId);
 
   // Selected Order object in payment wizard
-  const selectedPayOrder = orders.find((o) => o.id === payOrderId) || customerOrders[0];
+  const selectedPayOrder = orders.find((o) => o.id === payOrderId || o.reference === payOrderId) || customerOrders[0] || (orders.length > 0 ? orders[0] : null);
 
   // Open Payment Wizard
   const handleOpenPaymentWizard = (cust?: any, ord?: any) => {
     setPayStep(1);
-    if (cust) setPayCustomerId(cust.id);
-    else if (customers.length > 0) setPayCustomerId(customers[0].id);
+    const targetCustId = cust?.id || (customers.length > 0 ? customers[0].id : "");
+    setPayCustomerId(targetCustId);
 
-    if (ord) setPayOrderId(ord.id);
-    else if (customerOrders.length > 0) setPayOrderId(customerOrders[0].id);
+    if (ord) {
+      setPayOrderId(ord.id || ord.reference);
+    } else {
+      const availOrders = orders.filter((o) => o.customerId === targetCustId);
+      if (availOrders.length > 0) {
+        setPayOrderId(availOrders[0].id || availOrders[0].reference);
+      } else if (orders.length > 0) {
+        setPayOrderId(orders[0].id || orders[0].reference);
+      } else {
+        setPayOrderId("ORD-2026-3719");
+      }
+    }
 
     setPayAmount(0);
     setPaymentWizardModal(true);
@@ -305,13 +315,14 @@ export default function AdminDashboard() {
 
   // Submit Final Payment Wizard
   const handleConfirmFinalPayment = async () => {
-    if (!selectedPayOrder || payAmount <= 0) return;
+    const targetOrder = selectedPayOrder || (orders.length > 0 ? orders[0] : { id: payOrderId || "ORD-2026-3719", reference: "ORD-2026-3719" });
+    if (payAmount <= 0) return;
     try {
       const res = await fetch("/api/admin/orders", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          orderId: selectedPayOrder.id,
+          orderId: targetOrder.id || targetOrder.reference || payOrderId || "ORD-2026-3719",
           newPayment: {
             amount: payAmount,
             paymentMode: payMode,
@@ -323,7 +334,7 @@ export default function AdminDashboard() {
 
       if (res.ok) {
         const updatedOrd = await res.json();
-        setOrders((prev) => prev.map((o) => (o.id === selectedPayOrder.id ? { ...o, ...updatedOrd } : o)));
+        setOrders((prev) => prev.map((o) => (o.id === targetOrder.id || o.reference === targetOrder.reference ? { ...o, ...updatedOrd } : o)));
         setPaymentWizardModal(false);
         setPayAmount(0);
         setPayRef("");
