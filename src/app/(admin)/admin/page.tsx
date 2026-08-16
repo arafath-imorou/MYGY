@@ -731,9 +731,12 @@ export default function AdminDashboard() {
             </button>
           </form>
 
-          <div className="text-center pt-2 border-t border-[#2A2A38]">
+          <div className="text-center pt-3 border-t border-[#2A2A38] space-y-1.5">
             <span className="text-[11px] text-gy-textMuted block">
               Compte administrateur : <strong className="text-[#D4AF37]">gymaisoncouture@gmail.com</strong>
+            </span>
+            <span className="text-xs font-black text-emerald-400 animate-pulse tracking-wider block drop-shadow-[0_0_12px_rgba(16,185,129,0.9)]">
+              . By SaniNova Global Consulting
             </span>
           </div>
         </div>
@@ -1051,6 +1054,11 @@ export default function AdminDashboard() {
               SORTIR
             </button>
           </div>
+          <div className="mt-2 text-center">
+            <span className="text-[10px] sm:text-[11px] font-black text-emerald-400 animate-pulse tracking-wider block drop-shadow-[0_0_10px_rgba(16,185,129,0.9)]">
+              . By SaniNova Global Consulting
+            </span>
+          </div>
         </div>
       </aside>
 
@@ -1075,7 +1083,10 @@ export default function AdminDashboard() {
               />
             </div>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
+            <span className="text-xs font-black text-emerald-400 animate-pulse tracking-wider hidden md:inline-block drop-shadow-[0_0_10px_rgba(16,185,129,0.9)]">
+              . By SaniNova Global Consulting
+            </span>
             <button
               onClick={handleLogout}
               className="px-4 py-2.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white border border-rose-500/40 rounded-xl font-black text-xs transition-all uppercase tracking-wider shadow-md shrink-0 cursor-pointer"
