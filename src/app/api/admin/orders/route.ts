@@ -68,6 +68,44 @@ export async function POST(req: Request) {
     const promisedDate = body.promisedDate ? new Date(body.promisedDate) : new Date(Date.now() + 14 * 86400 * 1000);
     let orderResult: any = null;
 
+    const itemsListToCreate = (body.items && Array.isArray(body.items) && body.items.length > 0)
+      ? body.items.map((it: any) => ({
+          itemName: it.itemName || body.itemName || "Tenue Sur-Mesure",
+          fabricDetails: it.fabricDetails || body.fabricDetails || "Tissu fourni par la cliente",
+          customNotes: it.customNotes || body.customNotes || null,
+          price: Number(it.price || 0),
+          estimatedCost: Number(it.price || 0) * 0.35,
+          currentStage: "COUPE",
+          productionJobs: {
+            create: [
+              { stage: "COUPE", status: "A_FAIRE", assignedRole: "COUPEUR", qrCode: `QR-${reference}-COUPE` },
+              { stage: "COUTURE", status: "A_FAIRE", assignedRole: "COUTURIER", qrCode: `QR-${reference}-COUTURE` },
+              { stage: "BRODERIE", status: "A_FAIRE", assignedRole: "BRODEUR", qrCode: `QR-${reference}-BRODERIE` },
+              { stage: "FINITION", status: "A_FAIRE", assignedRole: "RESPONSABLE_FINITIONS", qrCode: `QR-${reference}-FINITION` },
+              { stage: "CONTROLE_QUALITE", status: "A_FAIRE", assignedRole: "CONTROLEUR_QUALITE", qrCode: `QR-${reference}-QC` },
+            ],
+          },
+        }))
+      : [
+          {
+            itemName: body.itemName,
+            fabricDetails: body.fabricDetails || "Tissu fourni par la cliente",
+            customNotes: body.customNotes || null,
+            price: totalAmount,
+            estimatedCost: totalAmount * 0.35,
+            currentStage: "COUPE",
+            productionJobs: {
+              create: [
+                { stage: "COUPE", status: "A_FAIRE", assignedRole: "COUPEUR", qrCode: `QR-${reference}-COUPE` },
+                { stage: "COUTURE", status: "A_FAIRE", assignedRole: "COUTURIER", qrCode: `QR-${reference}-COUTURE` },
+                { stage: "BRODERIE", status: "A_FAIRE", assignedRole: "BRODEUR", qrCode: `QR-${reference}-BRODERIE` },
+                { stage: "FINITION", status: "A_FAIRE", assignedRole: "RESPONSABLE_FINITIONS", qrCode: `QR-${reference}-FINITION` },
+                { stage: "CONTROLE_QUALITE", status: "A_FAIRE", assignedRole: "CONTROLEUR_QUALITE", qrCode: `QR-${reference}-QC` },
+              ],
+            },
+          },
+        ];
+
     try {
       orderResult = await prisma.order.create({
         data: {
@@ -83,25 +121,7 @@ export async function POST(req: Request) {
           totalPaid: 0,
           balanceDue,
           items: {
-            create: [
-              {
-                itemName: body.itemName,
-                fabricDetails: body.fabricDetails || "Tissu fourni par la cliente",
-                customNotes: body.customNotes || null,
-                price: totalAmount,
-                estimatedCost: totalAmount * 0.35,
-                currentStage: "COUPE",
-                productionJobs: {
-                  create: [
-                    { stage: "COUPE", status: "A_FAIRE", assignedRole: "COUPEUR", qrCode: `QR-${reference}-COUPE` },
-                    { stage: "COUTURE", status: "A_FAIRE", assignedRole: "COUTURIER", qrCode: `QR-${reference}-COUTURE` },
-                    { stage: "BRODERIE", status: "A_FAIRE", assignedRole: "BRODEUR", qrCode: `QR-${reference}-BRODERIE` },
-                    { stage: "FINITION", status: "A_FAIRE", assignedRole: "RESPONSABLE_FINITIONS", qrCode: `QR-${reference}-FINITION` },
-                    { stage: "CONTROLE_QUALITE", status: "A_FAIRE", assignedRole: "CONTROLEUR_QUALITE", qrCode: `QR-${reference}-QC` },
-                  ],
-                },
-              },
-            ],
+            create: itemsListToCreate,
           },
         },
         include: {
@@ -137,16 +157,14 @@ export async function POST(req: Request) {
         depositRequired,
         totalPaid: 0,
         balanceDue,
-        items: [
-          {
-            id: `item_${Date.now()}`,
-            itemName: body.itemName,
-            fabricDetails: body.fabricDetails || "Tissu fourni par la cliente",
-            customNotes: body.customNotes || null,
-            price: totalAmount,
-            currentStage: "COUPE",
-          },
-        ],
+        items: itemsListToCreate.map((it: any, idx: number) => ({
+          id: `item_${Date.now()}_${idx}`,
+          itemName: it.itemName,
+          fabricDetails: it.fabricDetails || "Tissu fourni par la cliente",
+          customNotes: it.customNotes || null,
+          price: it.price,
+          currentStage: "COUPE",
+        })),
       };
     }
 

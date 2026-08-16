@@ -161,6 +161,9 @@ export default function AdminDashboard() {
   const [newOrderModal, setNewOrderModal] = useState(false);
   const [newOrderCustomerId, setNewOrderCustomerId] = useState("");
   const [newOrderItemName, setNewOrderItemName] = useState("");
+  const [newOrderItemsList, setNewOrderItemsList] = useState<any[]>([
+    { id: "1", itemName: "", price: 0, fabricDetails: "" },
+  ]);
   const [newOrderOrderDate, setNewOrderOrderDate] = useState(
     new Date().toISOString().split("T")[0]
   );
@@ -172,6 +175,32 @@ export default function AdminDashboard() {
   const [newOrderTotalAmount, setNewOrderTotalAmount] = useState<number>(0);
   const [newOrderDepositRequired, setNewOrderDepositRequired] = useState<number>(0);
   const [newOrderPriority, setNewOrderPriority] = useState("VIP");
+
+  const handleAddItemToOrder = () => {
+    setNewOrderItemsList((prev) => [
+      ...prev,
+      { id: String(Date.now()), itemName: "", price: 0, fabricDetails: "" },
+    ]);
+  };
+
+  const handleRemoveItemFromOrder = (id: string) => {
+    if (newOrderItemsList.length <= 1) return;
+    setNewOrderItemsList((prev) => {
+      const updated = prev.filter((it) => it.id !== id);
+      const total = updated.reduce((acc, it) => acc + Number(it.price || 0), 0);
+      setNewOrderTotalAmount(total);
+      return updated;
+    });
+  };
+
+  const handleItemChange = (id: string, field: string, val: any) => {
+    setNewOrderItemsList((prev) => {
+      const updated = prev.map((it) => (it.id === id ? { ...it, [field]: val } : it));
+      const total = updated.reduce((acc, it) => acc + Number(it.price || 0), 0);
+      setNewOrderTotalAmount(total);
+      return updated;
+    });
+  };
 
   const getStoredLocal = (key: string) => {
     if (typeof window === "undefined") return [];
@@ -679,22 +708,32 @@ export default function AdminDashboard() {
 
   const handleCreateOrder = async () => {
     const targetCustomerId = newOrderCustomerId || (customers.length > 0 ? customers[0].id : "");
-    if (!targetCustomerId || !newOrderItemName || Number(newOrderTotalAmount) <= 0) {
-      alert("Veuillez choisir un client, le nom de la tenue et un montant valide.");
+    const validItems = newOrderItemsList.filter((it) => it.itemName && it.itemName.trim().length > 0);
+    const mainItemName = validItems.length > 0
+      ? validItems.map((it) => it.itemName.trim()).join(" + ")
+      : newOrderItemName;
+    const computedTotal = validItems.length > 0
+      ? validItems.reduce((acc, it) => acc + Number(it.price || 0), 0)
+      : Number(newOrderTotalAmount);
+
+    if (!targetCustomerId || (!newOrderItemName && validItems.length === 0) || computedTotal <= 0) {
+      alert("Veuillez choisir un client, saisir au moins une tenue et un montant total valide.");
       return;
     }
+
     try {
       const res = await fetch("/api/admin/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerId: targetCustomerId,
-          itemName: newOrderItemName,
+          itemName: mainItemName,
+          items: validItems.length > 0 ? validItems : [{ itemName: newOrderItemName, price: computedTotal, fabricDetails: newOrderFabricDetails }],
           orderDate: newOrderOrderDate,
           promisedDate: newOrderPromisedDate,
-          fabricDetails: newOrderFabricDetails,
+          fabricDetails: newOrderFabricDetails || (validItems.length > 0 ? validItems.map(it => `${it.itemName}: ${it.fabricDetails || 'Tissu fourni'}`).join(" | ") : ""),
           customNotes: newOrderCustomNotes,
-          totalAmount: Number(newOrderTotalAmount),
+          totalAmount: computedTotal,
           depositRequired: Number(newOrderDepositRequired),
           priority: newOrderPriority,
         }),
@@ -711,11 +750,13 @@ export default function AdminDashboard() {
         }
         setNewOrderModal(false);
         setNewOrderItemName("");
+        setNewOrderItemsList([{ id: "1", itemName: "", price: 0, fabricDetails: "" }]);
         setNewOrderFabricDetails("");
         setNewOrderCustomNotes("");
         setNewOrderTotalAmount(0);
         setNewOrderDepositRequired(0);
         setActiveMenu("commandes");
+        await fetchData();
       } else {
         const err = await res.json();
         alert(err.error || "Erreur lors de la création de la commande");
@@ -2197,15 +2238,63 @@ export default function AdminDashboard() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Nom de la Tenue *</label>
-                <input
-                  type="text"
-                  value={newOrderItemName}
-                  onChange={(e) => setNewOrderItemName(e.target.value)}
-                  placeholder="ex: Robe de Soirée Mikado Impérial"
-                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
-                />
+              {/* Dynamic Tenues / Outfits List */}
+              <div className="space-y-3 p-4 bg-[#14141a] rounded-2xl border border-gy-border">
+                <div className="flex justify-between items-center">
+                  <label className="block text-[#D4AF37] font-bold text-xs uppercase tracking-wider">
+                    TENUES & ARTICLES DE LA COMMANDE ({newOrderItemsList.length})
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddItemToOrder}
+                    className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-lg text-xs font-black uppercase hover:bg-emerald-500 hover:text-white transition-all cursor-pointer"
+                  >
+                    + AJOUTER UNE TENUE
+                  </button>
+                </div>
+
+                {newOrderItemsList.map((item, idx) => (
+                  <div key={item.id} className="p-3 bg-[#181820] border border-[#2A2A38] rounded-xl space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-gy-textMuted">Tenue N° {idx + 1}</span>
+                      {newOrderItemsList.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItemFromOrder(item.id)}
+                          className="text-rose-400 text-xs font-bold hover:underline"
+                        >
+                          [ SUPPRIMER ]
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={item.itemName}
+                        onChange={(e) => {
+                          handleItemChange(item.id, "itemName", e.target.value);
+                          if (idx === 0) setNewOrderItemName(e.target.value);
+                        }}
+                        placeholder={`ex: ${idx === 0 ? "Robe de Mariée Mikado" : idx === 1 ? "Robe Dame d'Honneur N°1" : "Tenue Sur-Mesure"}`}
+                        className="bg-gy-dark border border-gy-border rounded-lg p-2 text-white font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
+                      />
+                      <input
+                        type="number"
+                        value={item.price || ""}
+                        onChange={(e) => handleItemChange(item.id, "price", Number(e.target.value))}
+                        placeholder="Prix de cette tenue (FCFA)"
+                        className="bg-gy-dark border border-gy-border rounded-lg p-2 text-emerald-400 font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      value={item.fabricDetails}
+                      onChange={(e) => handleItemChange(item.id, "fabricDetails", e.target.value)}
+                      placeholder="Tissu & détails spécifiques à cette tenue..."
+                      className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-gy-textMuted text-xs focus:outline-none"
+                    />
+                  </div>
+                ))}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
