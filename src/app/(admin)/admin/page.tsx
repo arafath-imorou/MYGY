@@ -912,8 +912,18 @@ export default function AdminDashboard() {
                 <div className="text-xs text-[#D4AF37] font-bold">Directrice Générale</div>
               </div>
             </div>
-            <Link href="/" title="Déconnexion" className="text-[#A3A3B3] hover:text-rose-400 font-extrabold text-xs px-3 py-1.5 border border-[#2A2A38] rounded-xl transition-colors">
-              QUITTER
+            <Link
+              href="/"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  localStorage.removeItem("gy_auth_user");
+                  sessionStorage.clear();
+                }
+              }}
+              title="Déconnexion"
+              className="text-rose-400 hover:bg-rose-500 hover:text-white font-black text-xs px-3.5 py-2 border border-rose-500/40 rounded-xl transition-colors uppercase"
+            >
+              DÉCONNEXION
             </Link>
           </div>
         </div>
@@ -936,9 +946,23 @@ export default function AdminDashboard() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="RECHERCHER CLIENT, COMMANDE, REÇU..."
-                className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl px-4 py-2.5 text-xs font-bold text-white placeholder-gy-textMuted focus:outline-none focus:border-[#D4AF37] transition-colors tracking-wider"
+                className="w-full bg-[#181820] border border-[#2A2A38] rounded-2xl px-5 py-3 text-xs font-bold text-white placeholder-gy-textMuted focus:border-[#D4AF37] focus:outline-none transition-all shadow-inner"
               />
             </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Link
+              href="/"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  localStorage.removeItem("gy_auth_user");
+                  sessionStorage.clear();
+                }
+              }}
+              className="px-4 py-2.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white border border-rose-500/40 rounded-xl font-black text-xs transition-all uppercase tracking-wider shadow-md shrink-0"
+            >
+              DÉCONNEXION
+            </Link>
           </div>
         </header>
 
