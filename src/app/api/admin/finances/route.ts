@@ -21,14 +21,60 @@ export async function GET() {
     }
 
     const cloudData = await getCloudData();
+    const cloudOrders = cloudData.orders || [];
     const cloudRecettes = cloudData.recettes || [];
     const cloudDepenses = cloudData.depenses || [];
 
-    // Merge Receipts (CloudStore + SQLite DB)
-    const mergedRecettes = [
-      ...cloudRecettes,
-      ...dbPayments.filter((p) => !cloudRecettes.some((c: any) => c.id === p.id)),
-    ];
+    // Extract payments embedded inside cloud orders
+    const orderPayments: any[] = [];
+    cloudOrders.forEach((o: any) => {
+      if (o.payments && Array.isArray(o.payments) && o.payments.length > 0) {
+        o.payments.forEach((p: any) => {
+          orderPayments.push({
+            id: p.id || `pay_${o.id}_${Date.now()}`,
+            receiptNumber: p.receiptNumber || `REC-2026-${String(orderPayments.length + 1).padStart(4, "0")}`,
+            orderId: o.id,
+            customerId: o.customerId,
+            amount: Number(p.amount || 0),
+            paymentMode: p.paymentMode || "ESPECES",
+            transactionRef: p.transactionRef || "",
+            receivedBy: p.receivedBy || "Ghislaine LOKO DJIDJOHO",
+            createdAt: p.createdAt || o.createdAt || new Date().toISOString(),
+            order: { reference: o.reference || "ORD-2026-0001" },
+            customer: o.customer || null,
+          });
+        });
+      } else if (Number(o.totalPaid || 0) > 0) {
+        orderPayments.push({
+          id: `pay_${o.id}`,
+          receiptNumber: `REC-2026-${String(orderPayments.length + 1).padStart(4, "0")}`,
+          orderId: o.id,
+          customerId: o.customerId,
+          amount: Number(o.totalPaid),
+          paymentMode: "ESPECES",
+          transactionRef: "",
+          receivedBy: "Ghislaine LOKO DJIDJOHO",
+          createdAt: o.createdAt || new Date().toISOString(),
+          order: { reference: o.reference || "ORD-2026-0001" },
+          customer: o.customer || null,
+        });
+      }
+    });
+
+    // Merge Receipts (CloudRecettes + OrderPayments + SQLite DB)
+    const mergedRecettes = [...cloudRecettes];
+
+    orderPayments.forEach((op) => {
+      if (!mergedRecettes.some((r) => r.id === op.id || r.receiptNumber === op.receiptNumber || (r.orderId === op.orderId && r.amount === op.amount))) {
+        mergedRecettes.push(op);
+      }
+    });
+
+    dbPayments.forEach((dp) => {
+      if (!mergedRecettes.some((r) => r.id === dp.id)) {
+        mergedRecettes.push(dp);
+      }
+    });
 
     // Fetch expenses logged in audit log
     let auditExpenses: any[] = [];

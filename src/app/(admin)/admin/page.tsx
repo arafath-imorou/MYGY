@@ -212,7 +212,6 @@ export default function AdminDashboard() {
       const localOrders = getStoredLocal("gy_orders");
       const localRecettes = getStoredLocal("gy_recettes");
       const localDepenses = getStoredLocal("gy_depenses");
-
       const serverCusts = Array.isArray(custData) ? custData : [];
       const serverOrders = Array.isArray(ordersData) ? ordersData : [];
       const serverRecettes = Array.isArray(finData.recettes) ? finData.recettes : [];
@@ -220,21 +219,74 @@ export default function AdminDashboard() {
 
       const mergedCusts = [...serverCusts, ...localCusts.filter((l: any) => !serverCusts.some((s: any) => s.id === l.id))];
       const mergedOrders = [...serverOrders, ...localOrders.filter((l: any) => !serverOrders.some((s: any) => s.id === l.id))];
-      const mergedRecettes = [...serverRecettes, ...localRecettes.filter((l: any) => !serverRecettes.some((s: any) => s.id === l.id))];
+
+      // Extract payments embedded inside mergedOrders
+      const embeddedPayments: any[] = [];
+      mergedOrders.forEach((o: any) => {
+        if (o.payments && Array.isArray(o.payments) && o.payments.length > 0) {
+          o.payments.forEach((p: any) => {
+            embeddedPayments.push({
+              id: p.id || `pay_${o.id}`,
+              receiptNumber: p.receiptNumber || `REC-2026-${String(embeddedPayments.length + 1).padStart(4, "0")}`,
+              orderId: o.id,
+              customerId: o.customerId,
+              amount: Number(p.amount || 0),
+              paymentMode: p.paymentMode || "ESPECES",
+              createdAt: p.createdAt || o.createdAt || new Date().toISOString(),
+              receivedBy: p.receivedBy || "Ghislaine LOKO DJIDJOHO",
+              order: o,
+              customer: mergedCusts.find((c: any) => c.id === o.customerId) || o.customer,
+            });
+          });
+        } else if (Number(o.totalPaid || 0) > 0) {
+          embeddedPayments.push({
+            id: `pay_${o.id}`,
+            receiptNumber: `REC-2026-0001`,
+            orderId: o.id,
+            customerId: o.customerId,
+            amount: Number(o.totalPaid),
+            paymentMode: "ESPECES",
+            createdAt: o.createdAt || new Date().toISOString(),
+            receivedBy: "Ghislaine LOKO DJIDJOHO",
+            order: o,
+            customer: mergedCusts.find((c: any) => c.id === o.customerId) || o.customer,
+          });
+        }
+      });
+
+      const finalRecettes = [...serverRecettes];
+      embeddedPayments.forEach((ep) => {
+        if (!finalRecettes.some((r: any) => r.id === ep.id || r.receiptNumber === ep.receiptNumber || (r.orderId === ep.orderId && r.amount === ep.amount))) {
+          finalRecettes.push(ep);
+        }
+      });
+      localRecettes.forEach((lr: any) => {
+        if (!finalRecettes.some((r: any) => r.id === lr.id)) {
+          finalRecettes.push(lr);
+        }
+      });
+
       const mergedDepenses = [...serverDepenses, ...localDepenses.filter((l: any) => !serverDepenses.some((s: any) => s.id === l.id))];
 
       setStoredLocal("gy_customers", mergedCusts);
       setStoredLocal("gy_orders", mergedOrders);
-      setStoredLocal("gy_recettes", mergedRecettes);
+      setStoredLocal("gy_recettes", finalRecettes);
       setStoredLocal("gy_depenses", mergedDepenses);
 
       setMetrics(dashData.metrics || {});
       setOrders(mergedOrders);
       setCustomers(mergedCusts);
 
-      setRecettesList(mergedRecettes);
+      setRecettesList(finalRecettes);
       setDepensesList(mergedDepenses);
-      setFinanceMetrics(finData.metrics || {});
+
+      // Compute total recettes metric dynamically
+      const dynamicTotalRecettes = finalRecettes.reduce((acc, r) => acc + Number(r.amount || 0), 0);
+      setFinanceMetrics({
+        ...(finData.metrics || {}),
+        totalRecettes: dynamicTotalRecettes,
+        netBalance: dynamicTotalRecettes - (finData.metrics?.totalDepenses || 0),
+      });
 
       if (mergedCusts.length > 0 && !newOrderCustomerId) {
         setNewOrderCustomerId(mergedCusts[0].id);
