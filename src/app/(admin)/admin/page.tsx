@@ -21,8 +21,9 @@ export default function AdminDashboard() {
   const [depensesList, setDepensesList] = useState<any[]>([]);
   const [financeMetrics, setFinanceMetrics] = useState<any>(null);
 
-  // Search & Filter
+  // Search & Filter & Mobile Navigation
   const [searchTerm, setSearchTerm] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // =========================================================
   // STEP-BY-STEP CLIENT PAYMENT WIZARD MODAL STATE
@@ -461,8 +462,165 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#0B0B0E] text-[#E5E5EB] flex overflow-hidden font-aptos">
-      {/* SIDEBAR NAVIGATION (NO ICONS, NO NUMBERS, ALL UPPERCASE) */}
-      <aside className="w-80 bg-[#121217] border-r border-[#2A2A38] flex flex-col justify-between select-none z-30 shrink-0 font-aptos">
+      {/* MOBILE DRAWER OVERLAY */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className="relative w-80 max-w-[85vw] bg-[#121217] border-r border-[#2A2A38] flex flex-col justify-between select-none z-50 h-full font-aptos">
+            <div className="overflow-y-auto max-h-screen">
+              <div className="p-5 border-b border-[#2A2A38] flex items-center justify-between sticky top-0 bg-[#121217] z-20">
+                <Link href="/" className="flex items-center space-x-3 group">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#F3E5AB] via-[#D4AF37] to-[#AA7C11] flex items-center justify-center font-aptos font-extrabold text-black text-xl shadow-[0_0_22px_rgba(212,175,55,0.45)]">
+                    GY
+                  </div>
+                  <div>
+                    <h1 className="font-aptos text-xl font-black text-white tracking-wide leading-tight">
+                      GY MAISON
+                    </h1>
+                    <span className="text-[10px] font-extrabold text-[#D4AF37] uppercase tracking-wider block">
+                      HAUTE COUTURE • ERP
+                    </span>
+                  </div>
+                </Link>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-1.5 bg-[#181820] border border-[#2A2A38] text-white rounded-xl text-xs font-black"
+                >
+                  [ FERMER ]
+                </button>
+              </div>
+
+              <div className="px-4 py-6 space-y-2.5 text-sm">
+                <div className="px-3 mb-3 text-[11px] font-black text-[#D4AF37] uppercase tracking-widest">
+                  MENUS PRINCIPAUX
+                </div>
+
+                <button
+                  onClick={() => { setActiveMenu("dashboard"); setMobileMenuOpen(false); }}
+                  className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+                    activeMenu === "dashboard"
+                      ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
+                      : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
+                  }`}
+                >
+                  <span>DASHBOARD</span>
+                </button>
+
+                <button
+                  onClick={() => { setActiveMenu("clients"); setMobileMenuOpen(false); }}
+                  className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+                    activeMenu === "clients"
+                      ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
+                      : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
+                  }`}
+                >
+                  <span>CLIENTS</span>
+                </button>
+
+                <button
+                  onClick={() => { setActiveMenu("espace-client"); setMobileMenuOpen(false); }}
+                  className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+                    activeMenu === "espace-client"
+                      ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
+                      : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
+                  }`}
+                >
+                  <span>ESPACE CLIENT VIP</span>
+                </button>
+
+                <button
+                  onClick={() => { setActiveMenu("commandes"); setMobileMenuOpen(false); }}
+                  className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+                    activeMenu === "commandes"
+                      ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
+                      : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
+                  }`}
+                >
+                  <span>COMMANDES</span>
+                </button>
+
+                <button
+                  onClick={() => { setActiveMenu("atelier"); setMobileMenuOpen(false); }}
+                  className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+                    activeMenu === "atelier"
+                      ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
+                      : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
+                  }`}
+                >
+                  <span>ATELIER</span>
+                </button>
+
+                <div>
+                  <button
+                    onClick={() => setActiveMenu("finances")}
+                    className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+                      activeMenu === "finances"
+                        ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
+                        : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
+                    }`}
+                  >
+                    <span>FINANCES</span>
+                  </button>
+
+                  {activeMenu === "finances" && (
+                    <div className="pl-4 pr-2 py-2 space-y-1.5 border-l-2 border-[#D4AF37]/50 ml-5 mt-2 bg-[#0E0E12] rounded-xl">
+                      <button
+                        onClick={() => { setFinanceSubTab("recettes"); setMobileMenuOpen(false); }}
+                        className={`w-full text-left py-2.5 px-3 rounded-xl text-xs font-black transition-all tracking-wider ${
+                          financeSubTab === "recettes"
+                            ? "bg-[#D4AF37]/20 text-[#F3E5AB] border border-[#D4AF37]/50 shadow-sm"
+                            : "text-[#A3A3B3] hover:text-white hover:bg-[#181820]"
+                        }`}
+                      >
+                        <span>RECETTES</span>
+                      </button>
+
+                      <button
+                        onClick={() => { setFinanceSubTab("depenses"); setMobileMenuOpen(false); }}
+                        className={`w-full text-left py-2.5 px-3 rounded-xl text-xs font-black transition-all tracking-wider ${
+                          financeSubTab === "depenses"
+                            ? "bg-[#D4AF37]/20 text-[#F3E5AB] border border-[#D4AF37]/50 shadow-sm"
+                            : "text-[#A3A3B3] hover:text-white hover:bg-[#181820]"
+                        }`}
+                      >
+                        <span>DÉPENSES</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => { setActiveMenu("rh"); setMobileMenuOpen(false); }}
+                  className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+                    activeMenu === "rh"
+                      ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
+                      : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
+                  }`}
+                >
+                  <span>RH</span>
+                </button>
+
+                <button
+                  onClick={() => { setActiveMenu("administrations"); setMobileMenuOpen(false); }}
+                  className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+                    activeMenu === "administrations"
+                      ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
+                      : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
+                  }`}
+                >
+                  <span>ADMINISTRATIONS</span>
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* DESKTOP SIDEBAR NAVIGATION */}
+      <aside className="hidden lg:flex w-80 bg-[#121217] border-r border-[#2A2A38] flex-col justify-between select-none z-30 shrink-0 font-aptos">
         <div className="overflow-y-auto max-h-screen">
           <div className="p-6 border-b border-[#2A2A38] flex items-center justify-between sticky top-0 bg-[#121217] z-20">
             <Link href="/" className="flex items-center space-x-3.5 group">
@@ -623,9 +781,16 @@ export default function AdminDashboard() {
 
       {/* MAIN WORKSPACE */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto font-aptos">
-        <header className="h-20 border-b border-[#2A2A38] bg-[#121217]/90 backdrop-blur-md sticky top-0 z-20 px-8 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="relative w-96">
+        <header className="h-20 border-b border-[#2A2A38] bg-[#121217]/90 backdrop-blur-md sticky top-0 z-20 px-4 sm:px-8 flex items-center justify-between gap-3">
+          <div className="flex items-center space-x-3 flex-1 max-w-lg">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden px-3.5 py-2.5 bg-[#181820] border-2 border-[#D4AF37]/60 text-[#F3E5AB] hover:bg-[#222230] rounded-xl font-black text-xs transition-all shadow-md uppercase tracking-wider shrink-0"
+            >
+              [ MENU ]
+            </button>
+
+            <div className="relative w-full">
               <input
                 type="text"
                 value={searchTerm}
@@ -637,18 +802,18 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        <main className="p-8 space-y-8 flex-1 max-w-7xl w-full mx-auto font-aptos">
+        <main className="p-4 sm:p-8 space-y-6 sm:space-y-8 flex-1 max-w-7xl w-full mx-auto font-aptos">
           {/* DASHBOARD */}
           {activeMenu === "dashboard" && (
             <div className="space-y-8">
-              <div className="flex justify-between items-end">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider">Aujourd&apos;hui • Cotonou, Bénin</span>
-                  <h2 className="font-serif text-4xl font-bold text-white mt-1">DASHBOARD EXÉCUTIF</h2>
+                  <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white mt-1">DASHBOARD EXÉCUTIF</h2>
                 </div>
                 <button
                   onClick={() => setNewOrderModal(true)}
-                  className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#FFE885] via-[#D4AF37] to-[#C5A059] text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.4)] border-2 border-[#FFF3B0] hover:scale-[1.02] transition-all"
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#FFE885] via-[#D4AF37] to-[#C5A059] text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.4)] border-2 border-[#FFF3B0] hover:scale-[1.02] transition-all"
                 >
                   + NOUVELLE COMMANDE VIP
                 </button>
@@ -698,14 +863,14 @@ export default function AdminDashboard() {
           {/* ========================================================= */}
           {activeMenu === "clients" && (
             <div className="space-y-8">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h2 className="font-serif text-4xl font-bold text-white">RÉPERTOIRE DES CLIENTS VIP</h2>
-                  <p className="text-sm text-gy-textMuted mt-1">Gestion complète des clients, mensurations et commandes associées</p>
+                  <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white">RÉPERTOIRE DES CLIENTS VIP</h2>
+                  <p className="text-xs sm:text-sm text-gy-textMuted mt-1">Gestion complète des clients, mensurations et commandes associées</p>
                 </div>
                 <button
                   onClick={() => setNewCustomerModal(true)}
-                  className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#FFE885] via-[#D4AF37] to-[#C5A059] text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.4)] border-2 border-[#FFF3B0] hover:scale-[1.02] transition-all"
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#FFE885] via-[#D4AF37] to-[#C5A059] text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.4)] border-2 border-[#FFF3B0] hover:scale-[1.02] transition-all"
                 >
                   + CRÉER NOUVEAU CLIENT
                 </button>
@@ -773,14 +938,14 @@ export default function AdminDashboard() {
           {/* ========================================================= */}
           {activeMenu === "commandes" && (
             <div className="space-y-8">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h2 className="font-serif text-4xl font-bold text-white">GESTION DES COMMANDES & TISSUS VOULUS</h2>
-                  <p className="text-sm text-gy-textMuted mt-1">Détails des matières, dates de commande et dates de retrait souhaité par les clients</p>
+                  <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white">GESTION DES COMMANDES & TISSUS VOULUS</h2>
+                  <p className="text-xs sm:text-sm text-gy-textMuted mt-1">Détails des matières, dates de commande et dates de retrait souhaité par les clients</p>
                 </div>
                 <button
                   onClick={() => setNewOrderModal(true)}
-                  className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#FFE885] via-[#D4AF37] to-[#C5A059] text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.4)] border-2 border-[#FFF3B0] hover:scale-[1.02] transition-all"
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#FFE885] via-[#D4AF37] to-[#C5A059] text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.4)] border-2 border-[#FFF3B0] hover:scale-[1.02] transition-all"
                 >
                   + ENREGISTRER UNE COMMANDE
                 </button>
@@ -879,24 +1044,24 @@ export default function AdminDashboard() {
           {/* FINANCES MODULE */}
           {activeMenu === "finances" && (
             <div className="space-y-8">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h2 className="font-serif text-4xl font-bold text-white">GESTION FINANCIÈRE GY MAISON</h2>
-                  <p className="text-sm text-gy-textMuted mt-1">Suivi en FCFA des recettes d&apos;encaissements et dépenses de fonctionnement</p>
+                  <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white">GESTION FINANCIÈRE GY MAISON</h2>
+                  <p className="text-xs sm:text-sm text-gy-textMuted mt-1">Suivi en FCFA des recettes d&apos;encaissements et dépenses de fonctionnement</p>
                 </div>
 
-                <div className="flex space-x-3">
+                <div className="w-full sm:w-auto">
                   {financeSubTab === "recettes" ? (
                     <button
                       onClick={() => handleOpenPaymentWizard()}
-                      className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs uppercase tracking-wider shadow-lg hover:opacity-95"
+                      className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs uppercase tracking-wider shadow-lg hover:opacity-95"
                     >
                       + ENREGISTRER UN PAIEMENT CLIENT
                     </button>
                   ) : (
                     <button
                       onClick={() => setNewExpenseModal(true)}
-                      className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-600 text-white font-black text-xs uppercase tracking-wider shadow-lg hover:opacity-95"
+                      className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-600 text-white font-black text-xs uppercase tracking-wider shadow-lg hover:opacity-95"
                     >
                       + ENREGISTRER UNE DÉPENSE
                     </button>
