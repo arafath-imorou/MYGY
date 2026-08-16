@@ -87,6 +87,7 @@ export default function AdminDashboard() {
   const [payMode, setPayMode] = useState("ESPECES");
   const [payRef, setPayRef] = useState("");
   const [payAgent, setPayAgent] = useState("Ghislaine LOKO DJIDJOHO (Direction)");
+  const [successReceiptModal, setSuccessReceiptModal] = useState<any>(null);
 
   // Expense Modal State
   const [newExpenseModal, setNewExpenseModal] = useState(false);
@@ -360,30 +361,45 @@ export default function AdminDashboard() {
           return updated;
         });
 
+        const newPay = updatedOrd.payments && updatedOrd.payments.length > 0 ? updatedOrd.payments[updatedOrd.payments.length - 1] : null;
+        const custObj = customers.find((c) => c.id === targetOrder.customerId) || targetOrder.customer;
+        const custName = custObj ? `${custObj.firstName || ""} ${custObj.lastName || ""}`.trim() : "Client VIP";
+        const recNumber = newPay?.receiptNumber || `REC-2026-${String(Date.now()).slice(-4)}`;
+
         // 3. Update Receipts List state & local cache
-        if (updatedOrd.payments && updatedOrd.payments.length > 0) {
-          const newPay = updatedOrd.payments[updatedOrd.payments.length - 1];
-          const newReceipt = {
-            id: newPay.id || `rec_${Date.now()}`,
-            receiptNumber: newPay.receiptNumber || `REC-2026-${String(Date.now()).slice(-4)}`,
-            amount: newPay.amount,
-            paymentMode: newPay.paymentMode,
-            createdAt: newPay.createdAt || new Date().toISOString(),
-            customer: targetOrder.customer || customers.find((c) => c.id === targetOrder.customerId),
-            order: targetOrder,
-          };
-          setRecettesList((prev) => {
-            const updatedRec = [newReceipt, ...prev.filter((r) => r.id !== newReceipt.id)];
-            setStoredLocal("gy_recettes", updatedRec);
-            return updatedRec;
-          });
-        }
+        const newReceipt = {
+          id: newPay?.id || `rec_${Date.now()}`,
+          receiptNumber: recNumber,
+          amount: payAmount,
+          paymentMode: payMode,
+          createdAt: newPay?.createdAt || new Date().toISOString(),
+          customer: custObj,
+          customerId: targetOrder.customerId,
+          order: targetOrder,
+          receivedBy: payAgent,
+        };
+
+        setRecettesList((prev) => {
+          const updatedRec = [newReceipt, ...prev.filter((r) => r.id !== newReceipt.id)];
+          setStoredLocal("gy_recettes", updatedRec);
+          return updatedRec;
+        });
 
         setPaymentWizardModal(false);
+
+        // 4. Pop up Success Notification Modal
+        setSuccessReceiptModal({
+          receiptNumber: recNumber,
+          amount: payAmount,
+          customerName: custName,
+          orderRef: targetOrder.reference || "ORD-2026-3719",
+          balanceDue: updatedOrd.balanceDue ?? Math.max(0, (targetOrder.totalAmount || 50000) - payAmount),
+        });
+
         setPayAmount(0);
         setPayRef("");
 
-        // 4. Instant re-fetch to sync all Executive Dashboard metrics across tabs
+        // 5. Instant re-fetch to sync all Executive Dashboard metrics across tabs
         await fetchData();
 
         setActiveMenu("finances");
@@ -1714,6 +1730,70 @@ export default function AdminDashboard() {
                         ))
                       )}
                     </div>
+
+                    {/* Historique Détaillé des Paiements et Reçus du Client */}
+                    <div className="space-y-4 pt-6 border-t border-[#2A2A38]">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                          <h3 className="font-serif text-2xl font-bold text-white">HISTORIQUE DÉTAILLÉ DES PAIEMENTS & REÇUS</h3>
+                          <p className="text-xs text-gy-textMuted mt-0.5">Tous les versements et reçus officiels enregistrés pour {selectedCust?.firstName} {selectedCust?.lastName}</p>
+                        </div>
+                        <button
+                          onClick={() => handleOpenPaymentWizard(selectedCust)}
+                          className="px-4 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black uppercase hover:bg-emerald-500 hover:text-white transition-all shadow-md shrink-0 cursor-pointer"
+                        >
+                          + ENREGISTRER UN PAIEMENT
+                        </button>
+                      </div>
+
+                      {(() => {
+                        const custRecettes = recettesList.filter((r) => r.customerId === selectedCust?.id || r.customer?.id === selectedCust?.id || (r.order && custOrders.some((o) => o.id === r.orderId || o.reference === r.order?.reference)));
+                        return custRecettes.length === 0 ? (
+                          <div className="framed-card p-6 text-center text-gy-textMuted text-sm font-semibold border border-[#2A2A38]">
+                            Aucun reçu de paiement enregistré pour ce client pour le moment.
+                          </div>
+                        ) : (
+                          <div className="framed-card p-2 overflow-hidden border-2 border-emerald-500/40 bg-[#121217]">
+                            <div className="overflow-x-auto">
+                              <table className="framed-table text-left text-sm text-gy-text font-aptos">
+                                <thead>
+                                  <tr>
+                                    <th className="min-w-[130px]">N° REÇU</th>
+                                    <th className="min-w-[150px]">N° COMMANDE</th>
+                                    <th className="min-w-[160px]">MONTANT ENCAISSÉ</th>
+                                    <th className="min-w-[150px]">MODE RÈGLEMENT</th>
+                                    <th className="min-w-[140px]">DATE PAIEMENT</th>
+                                    <th className="min-w-[180px]">AGENT RÉCEPTEUR</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {custRecettes.map((r) => (
+                                    <tr key={r.id}>
+                                      <td className="font-bold text-white">
+                                        <span className="framed-badge-gold text-xs font-black">{r.receiptNumber}</span>
+                                      </td>
+                                      <td className="font-bold text-[#D4AF37]">{r.order?.reference || "ORD-2026-3719"}</td>
+                                      <td>
+                                        <span className="framed-badge-emerald text-base font-bold">
+                                          {formatFcfa(r.amount)}
+                                        </span>
+                                      </td>
+                                      <td>
+                                        <span className="px-3 py-1 bg-[#181820] border border-[#2A2A38] rounded-xl text-xs font-bold text-sky-400 uppercase">
+                                          {r.paymentMode}
+                                        </span>
+                                      </td>
+                                      <td className="font-semibold text-gy-textMuted">{formatDate(r.createdAt)}</td>
+                                      <td className="text-gy-textMuted text-xs font-bold">{r.receivedBy || "Administration GY"}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
                 );
               })()}
@@ -2311,6 +2391,52 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* SUCCESS PAYMENT NOTIFICATION MODAL */}
+      {successReceiptModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="bg-[#121217] border-2 border-emerald-500/80 rounded-3xl p-8 max-w-md w-full text-center space-y-6 shadow-[0_0_60px_rgba(16,185,129,0.5)] font-aptos">
+            <div className="w-16 h-16 bg-emerald-500/20 border-2 border-emerald-400 rounded-full flex items-center justify-center mx-auto text-emerald-400 font-black text-3xl shadow-[0_0_20px_rgba(16,185,129,0.8)]">
+              ✓
+            </div>
+            <div>
+              <span className="text-xs font-black text-emerald-400 uppercase tracking-widest block">CONFIRMATION OFFICIELLE</span>
+              <h3 className="font-serif text-2xl font-bold text-white mt-1">PAIEMENT ENREGISTRÉ AVEC SUCCÈS !</h3>
+              <p className="text-xs text-gy-textMuted mt-2">
+                Le reçu N° <strong className="text-emerald-400">{successReceiptModal.receiptNumber}</strong> de <strong className="text-[#D4AF37]">{formatFcfa(successReceiptModal.amount)}</strong> a été généré et classé dans les paiements.
+              </p>
+            </div>
+            <div className="p-4 bg-[#181820] border border-[#2A2A38] rounded-2xl text-left space-y-2.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-gy-textMuted font-bold">Client :</span>
+                <span className="text-white font-black">{successReceiptModal.customerName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gy-textMuted font-bold">N° Commande :</span>
+                <span className="text-[#D4AF37] font-black">{successReceiptModal.orderRef}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gy-textMuted font-bold">Montant Encaissé :</span>
+                <span className="text-emerald-400 font-black text-sm">{formatFcfa(successReceiptModal.amount)}</span>
+              </div>
+              <div className="flex justify-between border-t border-[#2A2A38] pt-2">
+                <span className="text-gy-textMuted font-bold">Nouveau Solde Restant :</span>
+                <span className="text-amber-400 font-black text-sm">{formatFcfa(successReceiptModal.balanceDue)}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setSuccessReceiptModal(null);
+                setActiveMenu("finances");
+                setFinanceSubTab("recettes");
+              }}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white font-black text-xs uppercase tracking-wider shadow-lg hover:brightness-110 transition-all cursor-pointer"
+            >
+              VOIR DANS LES PAIEMENTS & REÇUS →
+            </button>
           </div>
         </div>
       )}
