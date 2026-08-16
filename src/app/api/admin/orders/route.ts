@@ -167,15 +167,30 @@ export async function PUT(req: Request) {
   try {
     const { orderId, newStatus, currentStage, newPayment } = await req.json();
 
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: { items: true, payments: true },
-    });
+    if (!orderId) {
+      return NextResponse.json({ error: "ID de commande manquant." }, { status: 400 });
+    }
 
-    if (!order) {
+    let order: any = null;
+    try {
+      order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { items: true, payments: true, customer: true },
+      });
+    } catch (e) {
+      console.warn("Prisma findUnique order skipped:", e);
+    }
+
+    // Fallback to Cloud Database if not found in Prisma SQLite
+    const cloudData = await getCloudData();
+    const cloudOrders = cloudData.orders || [];
+    const cloudOrder = cloudOrders.find((o: any) => o.id === orderId);
+
+    if (!order && !cloudOrder) {
       return NextResponse.json({ error: "Commande non trouvée" }, { status: 404 });
     }
 
+    const baseOrder = order || cloudOrder;
     let updatedData: any = {};
 
     if (newStatus) {
@@ -183,54 +198,103 @@ export async function PUT(req: Request) {
       updatedData.clientStepStatus = mapOrderStatusToClientStep(newStatus);
     }
 
-    if (newPayment && newPayment.amount > 0) {
-      const receiptCount = await prisma.payment.count();
+    let newReceiptObj: any = null;
+
+    if (newPayment && Number(newPayment.amount) > 0) {
+      const receiptCount = (cloudData.recettes || []).length || 0;
       const receiptNumber = `REC-2026-${String(receiptCount + 1).padStart(4, "0")}`;
 
-      await prisma.payment.create({
-        data: {
-          receiptNumber,
-          orderId: order.id,
-          customerId: order.customerId,
-          amount: newPayment.amount,
-          paymentMode: newPayment.paymentMode || "ESPECES",
-          transactionRef: newPayment.transactionRef,
-          receivedBy: newPayment.receivedBy || "Administration GY",
-          notes: newPayment.notes,
-        },
-      });
-
-      const totalPaid = order.totalPaid + newPayment.amount;
-      const balanceDue = Math.max(0, order.totalAmount - totalPaid);
+      const paymentAmt = Number(newPayment.amount);
+      const totalPaid = Number(baseOrder.totalPaid || 0) + paymentAmt;
+      const totalAmount = Number(baseOrder.totalAmount || 0);
+      const balanceDue = Math.max(0, totalAmount - totalPaid);
 
       updatedData.totalPaid = totalPaid;
       updatedData.balanceDue = balanceDue;
 
-      if (balanceDue === 0 && order.status === "SOLDE_A_PAYER") {
-        updatedData.status = "PRET";
-        updatedData.clientStepStatus = "PRETE";
+      if (balanceDue === 0 && (baseOrder.status === "SOLDE_A_PAYER" || baseOrder.status === "ACOMPTE_ATTENDU")) {
+        updatedData.status = "PRODUCTION";
+        updatedData.clientStepStatus = "EN_CONFECTION";
+      }
+
+      newReceiptObj = {
+        id: `rec_${Date.now()}`,
+        receiptNumber,
+        orderId: baseOrder.id,
+        customerId: baseOrder.customerId,
+        amount: paymentAmt,
+        paymentMode: newPayment.paymentMode || "ESPECES",
+        transactionRef: newPayment.transactionRef || "",
+        receivedBy: newPayment.receivedBy || "Ghislaine LOKO DJIDJOHO",
+        createdAt: new Date().toISOString(),
+        order: { reference: baseOrder.reference || "ORD-2026-0001" },
+        customer: baseOrder.customer || null,
+      };
+
+      try {
+        await prisma.payment.create({
+          data: {
+            receiptNumber,
+            orderId: baseOrder.id,
+            customerId: baseOrder.customerId,
+            amount: paymentAmt,
+            paymentMode: newPayment.paymentMode || "ESPECES",
+            transactionRef: newPayment.transactionRef || "",
+            receivedBy: newPayment.receivedBy || "Ghislaine LOKO DJIDJOHO",
+            notes: newPayment.notes || null,
+          },
+        });
+      } catch (payErr) {
+        console.warn("Prisma payment create fallback:", payErr);
       }
     }
 
-    if (currentStage && order.items.length > 0) {
-      await prisma.orderItem.updateMany({
-        where: { orderId: order.id },
-        data: { currentStage },
-      });
+    if (currentStage && baseOrder.items && baseOrder.items.length > 0) {
+      try {
+        await prisma.orderItem.updateMany({
+          where: { orderId: baseOrder.id },
+          data: { currentStage },
+        });
+      } catch (e) {}
     }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
-      data: updatedData,
-      include: {
-        customer: true,
-        items: true,
-        payments: true,
-      },
+    let updatedOrder: any = { ...baseOrder, ...updatedData };
+
+    try {
+      if (order) {
+        updatedOrder = await prisma.order.update({
+          where: { id: orderId },
+          data: updatedData,
+          include: { customer: true, items: true, payments: true },
+        });
+      }
+    } catch (e) {
+      console.warn("Prisma update order fallback:", e);
+    }
+
+    // Sync to Cloud Store
+    await updateCloudData((store) => {
+      const existingOrders = store.orders || [];
+      const existingRecettes = store.recettes || [];
+
+      const updatedOrders = existingOrders.map((o: any) =>
+        o.id === orderId ? { ...o, ...updatedOrder } : o
+      );
+
+      const updatedRecettes = newReceiptObj
+        ? [newReceiptObj, ...existingRecettes.filter((r: any) => r.id !== newReceiptObj.id)]
+        : existingRecettes;
+
+      return {
+        ...store,
+        orders: updatedOrders,
+        recettes: updatedRecettes,
+      };
     });
 
     return NextResponse.json(updatedOrder);
   } catch (error: any) {
+    console.error("PUT /api/admin/orders error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

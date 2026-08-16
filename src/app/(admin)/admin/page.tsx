@@ -322,6 +322,8 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
+        const updatedOrd = await res.json();
+        setOrders((prev) => prev.map((o) => (o.id === selectedPayOrder.id ? { ...o, ...updatedOrd } : o)));
         setPaymentWizardModal(false);
         setPayAmount(0);
         setPayRef("");
@@ -329,7 +331,8 @@ export default function AdminDashboard() {
         setActiveMenu("finances");
         setFinanceSubTab("recettes");
       } else {
-        alert("Erreur lors de l'enregistrement du reçu.");
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Erreur lors de l'enregistrement du reçu.");
       }
     } catch (e) {
       console.error(e);
