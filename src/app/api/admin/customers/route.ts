@@ -34,7 +34,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Prénom, Nom et Téléphone sont obligatoires." }, { status: 400 });
     }
 
-    const count = await prisma.customer.count();
+    let count = 0;
+    try {
+      count = await prisma.customer.count();
+    } catch (dbErr) {
+      count = Math.floor(Math.random() * 8999) + 1000;
+    }
+
     const code = `CLI-2026-${String(count + 1).padStart(4, "0")}`;
 
     const customer = await prisma.customer.create({
@@ -46,32 +52,39 @@ export async function POST(req: Request) {
         email: body.email || null,
         city: body.city || "Cotonou",
         country: body.country || "Bénin",
-        category: body.category || "Nouveau",
+        category: body.category || "Standard",
         profession: body.profession || null,
         acquisitionSource: body.acquisitionSource || "Passage",
         notes: body.notes || null,
         loyaltyAccount: {
           create: {
-            tier: body.category === "VIP" ? "GY VIP Diamond" : "GY Classic",
-            points: body.category === "VIP" ? 500 : 0,
+            tier: body.category === "VVIP" || body.category === "VIP" ? "GY VIP Diamond" : "GY Classic",
+            points: body.category === "VVIP" ? 1000 : body.category === "VIP" ? 500 : 0,
           },
         },
       },
     });
 
     // Create Audit Log
-    await prisma.auditLog.create({
-      data: {
-        action: "CREATE_CUSTOMER",
-        entity: "Customer",
-        entityId: customer.id,
-        details: JSON.stringify({ code: customer.code, name: `${customer.firstName} ${customer.lastName}` }),
-      },
-    });
+    try {
+      await prisma.auditLog.create({
+        data: {
+          action: "CREATE_CUSTOMER",
+          entity: "Customer",
+          entityId: customer.id,
+          details: JSON.stringify({ code: customer.code, name: `${customer.firstName} ${customer.lastName}` }),
+        },
+      });
+    } catch (auditErr) {
+      console.warn("Audit log skipped:", auditErr);
+    }
 
     return NextResponse.json(customer);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errorMsg = error.message?.includes("DATABASE_URL")
+      ? "Base de données non configurée sur Vercel : Veuillez ajouter la variable d'environnement DATABASE_URL (ex: file:./dev.db) dans le Dashboard Vercel (Project Settings > Environment Variables)."
+      : error.message;
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
 

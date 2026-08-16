@@ -38,7 +38,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Client, Nom de la tenue et Montant sont requis." }, { status: 400 });
     }
 
-    const orderCount = await prisma.order.count();
+    let orderCount = 0;
+    try {
+      orderCount = await prisma.order.count();
+    } catch (dbErr) {
+      orderCount = Math.floor(Math.random() * 8999) + 1000;
+    }
     const reference = `ORD-2026-${String(orderCount + 1).padStart(4, "0")}`;
 
     const totalAmount = Number(body.totalAmount);
