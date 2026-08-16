@@ -40,14 +40,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Prénom, Nom et Téléphone sont obligatoires." }, { status: 400 });
     }
 
-    let count = 0;
-    try {
-      count = await prisma.customer.count();
-    } catch (dbErr) {
-      count = Math.floor(Math.random() * 8999) + 1000;
-    }
+    const currentYear = new Date().getFullYear();
+    const cloudData = await getCloudData();
+    const existingCusts = cloudData.customers || [];
+    let count = existingCusts.length;
 
-    const code = `CLI-2026-${String(count + 1).padStart(4, "0")}`;
+    try {
+      const dbCount = await prisma.customer.count();
+      if (dbCount > count) count = dbCount;
+    } catch (dbErr) {}
+
+    const orderNum = String(count + 1).padStart(3, "0");
+    const code = `CLI/GYMC/${currentYear}/${orderNum}`;
     let customerResult: any = null;
 
     try {
