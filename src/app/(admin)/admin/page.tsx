@@ -26,6 +26,54 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // AUTHENTICATION & LOGIN PORTAL STATE
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("gy_logged_in") === "true";
+    }
+    return false;
+  });
+  const [loginEmail, setLoginEmail] = useState("gymaisoncouture@gmail.com");
+  const [loginPassword, setLoginPassword] = useState("gymc2026.");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  const handleLoginSubmit = async (e?: any) => {
+    if (e) e.preventDefault();
+    setLoginError("");
+    setLoginLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword, portal: "admin" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("gy_logged_in", "true");
+          localStorage.setItem("gy_user_email", data.user.email);
+        }
+      } else {
+        setLoginError(data.error || "Email ou mot de passe incorrect");
+      }
+    } catch (err) {
+      setLoginError("Erreur de connexion au serveur");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("gy_logged_in");
+      localStorage.removeItem("gy_user_email");
+      sessionStorage.clear();
+    }
+  };
+
   // =========================================================
   // STEP-BY-STEP CLIENT PAYMENT WIZARD MODAL STATE
   // =========================================================
@@ -600,6 +648,70 @@ export default function AdminDashboard() {
       .includes((searchTerm || "").toLowerCase())
   );
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#0B0B0E] text-[#E5E5EB] flex items-center justify-center p-4 font-aptos">
+        <div className="glass-panel max-w-md w-full p-8 rounded-3xl border-2 border-[#D4AF37]/50 shadow-2xl space-y-6">
+          <div className="text-center space-y-3">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#F3E5AB] via-[#D4AF37] to-[#AA7C11] flex items-center justify-center font-aptos font-black text-black text-3xl shadow-[0_0_30px_rgba(212,175,55,0.5)] mx-auto">
+              GY
+            </div>
+            <div>
+              <h1 className="font-serif text-3xl font-bold text-white tracking-wide">GY MAISON HAUTE COUTURE</h1>
+              <p className="text-xs font-black text-[#D4AF37] uppercase tracking-widest mt-1">PORTAIL D&apos;ACCÈS SÉCURISÉ ADMIN ERP</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleLoginSubmit} className="space-y-4 pt-2">
+            {loginError && (
+              <div className="p-3 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold text-center">
+                {loginError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-gy-textMuted mb-1 font-semibold text-xs uppercase tracking-wider">Identifiant / Email *</label>
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="gymaisoncouture@gmail.com"
+                className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl p-3.5 text-white font-bold text-sm focus:border-[#D4AF37] focus:outline-none"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-gy-textMuted mb-1 font-semibold text-xs uppercase tracking-wider">Mot de Passe *</label>
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="••••••••••••"
+                className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl p-3.5 text-white font-bold text-sm focus:border-[#D4AF37] focus:outline-none"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:opacity-95 transition-opacity"
+            >
+              {loginLoading ? "CONNEXION EN COURS..." : "SE CONNECTER AU PORTAIL ADMIN"}
+            </button>
+          </form>
+
+          <div className="text-center pt-2 border-t border-[#2A2A38]">
+            <span className="text-[11px] text-gy-textMuted block">
+              Compte administrateur : <strong className="text-[#D4AF37]">gymaisoncouture@gmail.com</strong>
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0B0B0E] text-[#E5E5EB] flex overflow-hidden font-aptos">
       {/* MOBILE DRAWER OVERLAY */}
@@ -912,19 +1024,13 @@ export default function AdminDashboard() {
                 <div className="text-xs text-[#D4AF37] font-bold">Directrice Générale</div>
               </div>
             </div>
-            <Link
-              href="/"
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  localStorage.removeItem("gy_auth_user");
-                  sessionStorage.clear();
-                }
-              }}
+            <button
+              onClick={handleLogout}
               title="Déconnexion"
               className="text-rose-400 hover:bg-rose-500 hover:text-white font-black text-xs px-3.5 py-2 border border-rose-500/40 rounded-xl transition-colors uppercase"
             >
               DÉCONNEXION
-            </Link>
+            </button>
           </div>
         </div>
       </aside>
@@ -951,18 +1057,12 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <Link
-              href="/"
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  localStorage.removeItem("gy_auth_user");
-                  sessionStorage.clear();
-                }
-              }}
-              className="px-4 py-2.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white border border-rose-500/40 rounded-xl font-black text-xs transition-all uppercase tracking-wider shadow-md shrink-0"
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white border border-rose-500/40 rounded-xl font-black text-xs transition-all uppercase tracking-wider shadow-md shrink-0 cursor-pointer"
             >
               DÉCONNEXION
-            </Link>
+            </button>
           </div>
         </header>
 
