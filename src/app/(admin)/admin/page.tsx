@@ -123,29 +123,29 @@ export default function AdminDashboard() {
         fetch("/api/admin/finances"),
       ]);
 
-      const dashData = await dashRes.json();
-      const ordersData = await ordersRes.json();
-      const custData = await custRes.json();
-      const finData = await finRes.json();
+      const dashData = dashRes.ok ? await dashRes.json() : {};
+      const ordersData = ordersRes.ok ? await ordersRes.json() : [];
+      const custData = custRes.ok ? await custRes.json() : [];
+      const finData = finRes.ok ? await finRes.json() : {};
 
       setMetrics(dashData.metrics || {});
-      setOrders(ordersData || []);
-      setCustomers(custData || []);
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      setCustomers(Array.isArray(custData) ? custData : []);
 
-      setRecettesList(finData.recettes || []);
-      setDepensesList(finData.depenses || []);
+      setRecettesList(Array.isArray(finData.recettes) ? finData.recettes : []);
+      setDepensesList(Array.isArray(finData.depenses) ? finData.depenses : []);
       setFinanceMetrics(finData.metrics || {});
 
-      if (custData && custData.length > 0 && !newOrderCustomerId) {
+      if (Array.isArray(custData) && custData.length > 0 && !newOrderCustomerId) {
         setNewOrderCustomerId(custData[0].id);
         setPayCustomerId(custData[0].id);
       }
-      if (ordersData && ordersData.length > 0 && !payOrderId) {
+      if (Array.isArray(ordersData) && ordersData.length > 0 && !payOrderId) {
         setPayOrderId(ordersData[0].id);
       }
       setStockItems(dashData.lowStockItems || []);
     } catch (e) {
-      console.error(e);
+      console.error("fetchData error:", e);
     } finally {
       setLoading(false);
     }
@@ -437,26 +437,26 @@ export default function AdminDashboard() {
     return new Date(dStr).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
   };
 
-  const filteredCustomers = customers.filter((c) =>
-    `${c.firstName} ${c.lastName} ${c.code} ${c.phone}`.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCustomers = (Array.isArray(customers) ? customers : []).filter((c) =>
+    `${c?.firstName || ""} ${c?.lastName || ""} ${c?.code || ""} ${c?.phone || ""}`.toLowerCase().includes((searchTerm || "").toLowerCase())
   );
 
-  const filteredOrders = orders.filter((o) =>
-    `${o.reference} ${o.customer?.firstName} ${o.customer?.lastName} ${o.items[0]?.itemName}`
+  const filteredOrders = (Array.isArray(orders) ? orders : []).filter((o) =>
+    `${o?.reference || ""} ${o?.customer?.firstName || ""} ${o?.customer?.lastName || ""} ${o?.items?.[0]?.itemName || ""}`
       .toLowerCase()
-      .includes(searchTerm.toLowerCase())
+      .includes((searchTerm || "").toLowerCase())
   );
 
-  const filteredRecettes = recettesList.filter((r) =>
-    `${r.receiptNumber} ${r.customer?.firstName} ${r.customer?.lastName} ${r.order?.reference}`
+  const filteredRecettes = (Array.isArray(recettesList) ? recettesList : []).filter((r) =>
+    `${r?.receiptNumber || ""} ${r?.customer?.firstName || ""} ${r?.customer?.lastName || ""} ${r?.order?.reference || ""}`
       .toLowerCase()
-      .includes(searchTerm.toLowerCase())
+      .includes((searchTerm || "").toLowerCase())
   );
 
-  const filteredDepenses = depensesList.filter((d) =>
-    `${d.reference} ${d.category} ${d.description} ${d.supplier}`
+  const filteredDepenses = (Array.isArray(depensesList) ? depensesList : []).filter((d) =>
+    `${d?.reference || ""} ${d?.category || ""} ${d?.description || ""} ${d?.supplier || ""}`
       .toLowerCase()
-      .includes(searchTerm.toLowerCase())
+      .includes((searchTerm || "").toLowerCase())
   );
 
   return (
