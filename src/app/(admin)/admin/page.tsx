@@ -217,8 +217,29 @@ export default function AdminDashboard() {
       const serverRecettes = Array.isArray(finData.recettes) ? finData.recettes : [];
       const serverDepenses = Array.isArray(finData.depenses) ? finData.depenses : [];
 
-      const mergedCusts = [...serverCusts, ...localCusts.filter((l: any) => !serverCusts.some((s: any) => s.id === l.id))];
-      const mergedOrders = [...serverOrders, ...localOrders.filter((l: any) => !serverOrders.some((s: any) => s.id === l.id))];
+      // If server has been reset to zero, enforce empty arrays and wipe browser localStorage!
+      let mergedCusts: any[] = serverCusts;
+      let mergedOrders: any[] = serverOrders;
+
+      if (serverCusts.length > 0) {
+        mergedCusts = [...serverCusts, ...localCusts.filter((l: any) => !serverCusts.some((s: any) => s.id === l.id))];
+      } else {
+        localStorage.removeItem("gy_customers");
+      }
+
+      if (serverOrders.length > 0) {
+        mergedOrders = [...serverOrders, ...localOrders.filter((l: any) => !serverOrders.some((s: any) => s.id === l.id))];
+      } else {
+        localStorage.removeItem("gy_orders");
+      }
+
+      if (serverRecettes.length === 0) {
+        localStorage.removeItem("gy_recettes");
+      }
+
+      if (serverDepenses.length === 0) {
+        localStorage.removeItem("gy_depenses");
+      }
 
       // Extract payments embedded inside mergedOrders
       const embeddedPayments: any[] = [];
@@ -255,18 +276,15 @@ export default function AdminDashboard() {
       });
 
       const finalRecettes = [...serverRecettes];
-      embeddedPayments.forEach((ep) => {
-        if (!finalRecettes.some((r: any) => r.id === ep.id || r.receiptNumber === ep.receiptNumber || (r.orderId === ep.orderId && r.amount === ep.amount))) {
-          finalRecettes.push(ep);
-        }
-      });
-      localRecettes.forEach((lr: any) => {
-        if (!finalRecettes.some((r: any) => r.id === lr.id)) {
-          finalRecettes.push(lr);
-        }
-      });
+      if (serverCusts.length > 0 || serverOrders.length > 0) {
+        embeddedPayments.forEach((ep) => {
+          if (!finalRecettes.some((r: any) => r.id === ep.id || r.receiptNumber === ep.receiptNumber || (r.orderId === ep.orderId && r.amount === ep.amount))) {
+            finalRecettes.push(ep);
+          }
+        });
+      }
 
-      const mergedDepenses = [...serverDepenses, ...localDepenses.filter((l: any) => !serverDepenses.some((s: any) => s.id === l.id))];
+      const mergedDepenses = serverDepenses.length > 0 ? [...serverDepenses, ...localDepenses.filter((l: any) => !serverDepenses.some((s: any) => s.id === l.id))] : [];
 
       setStoredLocal("gy_customers", mergedCusts);
       setStoredLocal("gy_orders", mergedOrders);
