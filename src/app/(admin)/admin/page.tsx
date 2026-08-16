@@ -1241,7 +1241,7 @@ export default function AdminDashboard() {
                     <thead>
                       <tr>
                         <th className="min-w-[130px]">REF</th>
-                        <th className="min-w-[170px]">CLIENT VIP</th>
+                        <th className="min-w-[170px]">CLIENT</th>
                         <th className="min-w-[260px]">TENUE & TISSU VOULU</th>
                         <th className="min-w-[140px]">DATE COMMANDE</th>
                         <th className="min-w-[170px]">DATE RETRAIT SOUHAITÉ</th>
@@ -1252,14 +1252,19 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredOrders.map((o) => (
-                        <tr key={o.id}>
-                          <td className="font-bold text-white">
-                            <span className="framed-badge-gold text-xs font-black">{o.reference}</span>
-                          </td>
-                          <td className="font-bold text-white text-base">
-                            {o.customer?.firstName} {o.customer?.lastName}
-                          </td>
+                      {filteredOrders.map((o) => {
+                        const cust = customers.find((c) => c.id === o.customerId) || o.customer;
+                        const custName = cust
+                          ? `${cust.firstName || ""} ${cust.lastName || ""}`.trim() || cust.fullName || cust.name || "Client"
+                          : o.customerName || (o.customer ? `${o.customer.firstName || ""} ${o.customer.lastName || ""}`.trim() : "Client");
+                        return (
+                          <tr key={o.id}>
+                            <td className="font-bold text-white">
+                              <span className="framed-badge-gold text-xs font-black">{o.reference}</span>
+                            </td>
+                            <td className="font-bold text-white text-base">
+                              {custName}
+                            </td>
                           <td>
                             <div className="p-2.5 rounded-xl bg-gy-dark/90 border border-gy-gold/30">
                               <strong className="text-gy-gold text-base block font-bold">{o.items[0]?.itemName || "Création Sur-Mesure"}</strong>
@@ -1317,7 +1322,8 @@ export default function AdminDashboard() {
                             </div>
                           </td>
                         </tr>
-                      ))}
+                      );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1405,7 +1411,7 @@ export default function AdminDashboard() {
                         <tr>
                           <th className="min-w-[130px]">N° REÇU</th>
                           <th className="min-w-[140px]">REF COMMANDE</th>
-                          <th className="min-w-[180px]">CLIENT VIP</th>
+                          <th className="min-w-[180px]">CLIENT</th>
                           <th className="min-w-[160px]">MONTANT ENCAISSÉ</th>
                           <th className="min-w-[160px]">MODE DE PAIEMENT</th>
                           <th className="min-w-[140px]">DATE ENCAISSÉ</th>
@@ -1413,15 +1419,20 @@ export default function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredRecettes.map((r) => (
-                          <tr key={r.id}>
-                            <td className="font-bold text-white">
-                              <span className="framed-badge-gold text-xs font-black">{r.receiptNumber}</span>
-                            </td>
-                            <td className="font-bold text-[#D4AF37]">{r.order?.reference || "ORD-2026-0001"}</td>
-                            <td className="font-bold text-white text-base">
-                              {r.customer ? `${r.customer.firstName} ${r.customer.lastName}` : "Client VIP"}
-                            </td>
+                        {filteredRecettes.map((r) => {
+                          const cust = customers.find((c) => c.id === r.customerId) || r.customer;
+                          const cName = cust
+                            ? `${cust.firstName || ""} ${cust.lastName || ""}`.trim() || cust.fullName || cust.name || "Client"
+                            : r.customer ? `${r.customer.firstName || ""} ${r.customer.lastName || ""}`.trim() : "Client";
+                          return (
+                            <tr key={r.id}>
+                              <td className="font-bold text-white">
+                                <span className="framed-badge-gold text-xs font-black">{r.receiptNumber}</span>
+                              </td>
+                              <td className="font-bold text-[#D4AF37]">{r.order?.reference || "ORD-2026-0001"}</td>
+                              <td className="font-bold text-white text-base">
+                                {cName}
+                              </td>
                             <td>
                               <span className="framed-badge-emerald text-base font-bold">
                                 {formatFcfa(r.amount)}
@@ -1435,7 +1446,8 @@ export default function AdminDashboard() {
                             <td className="font-semibold text-gy-textMuted">{formatDate(r.createdAt)}</td>
                             <td className="text-gy-textMuted text-xs font-bold">{r.receivedBy || "Administration GY"}</td>
                           </tr>
-                        ))}
+                        );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -1685,7 +1697,7 @@ export default function AdminDashboard() {
                     <thead>
                       <tr>
                         <th className="min-w-[130px]">REF COMMANDE</th>
-                        <th className="min-w-[170px]">CLIENT VIP</th>
+                        <th className="min-w-[170px]">CLIENT</th>
                         <th className="min-w-[240px]">TENUE & DÉTAILS TISSU</th>
                         <th className="min-w-[160px]">DATE RETRAIT SOUHAITÉ</th>
                         <th className="min-w-[180px]">ÉTAPE ACTUELLE</th>
@@ -1693,14 +1705,19 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {orders.map((o) => (
-                        <tr key={o.id}>
-                          <td className="font-bold text-white">
-                            <span className="framed-badge-gold text-xs font-black">{o.reference}</span>
-                          </td>
-                          <td className="font-bold text-white text-base">
-                            {o.customer?.firstName} {o.customer?.lastName}
-                          </td>
+                      {orders.map((o) => {
+                        const cust = customers.find((c) => c.id === o.customerId) || o.customer;
+                        const cName = cust
+                          ? `${cust.firstName || ""} ${cust.lastName || ""}`.trim() || cust.fullName || cust.name || "Client"
+                          : o.customerName || (o.customer ? `${o.customer.firstName || ""} ${o.customer.lastName || ""}`.trim() : "Client");
+                        return (
+                          <tr key={o.id}>
+                            <td className="font-bold text-white">
+                              <span className="framed-badge-gold text-xs font-black">{o.reference}</span>
+                            </td>
+                            <td className="font-bold text-white text-base">
+                              {cName}
+                            </td>
                           <td>
                             <div className="p-2.5 rounded-xl bg-gy-dark/90 border border-gy-gold/30">
                               <strong className="text-gy-gold text-base block font-bold">{o.items?.[0]?.itemName || "Création Sur-Mesure"}</strong>
@@ -1765,7 +1782,8 @@ export default function AdminDashboard() {
                             </div>
                           </td>
                         </tr>
-                      ))}
+                      );
+                      })}
                     </tbody>
                   </table>
                 </div>
