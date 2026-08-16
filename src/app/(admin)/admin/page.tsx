@@ -202,7 +202,7 @@ export default function AdminDashboard() {
       ]);
 
       const dashData = dashRes.ok ? await dashRes.json() : {};
-      const ordersData = dashRes.ok && ordersRes.ok ? await ordersRes.json() : [];
+      const ordersData = ordersRes.ok ? await ordersRes.json() : [];
       const custData = custRes.ok ? await custRes.json() : [];
       const finData = finRes.ok ? await finRes.json() : {};
 
@@ -216,10 +216,13 @@ export default function AdminDashboard() {
       const serverRecettes = Array.isArray(finData.recettes) ? finData.recettes : [];
       const serverDepenses = Array.isArray(finData.depenses) ? finData.depenses : [];
 
-      const mergedCusts = [...localCusts, ...serverCusts.filter((s: any) => !localCusts.some((l: any) => l.id === s.id))];
-      const mergedOrders = [...localOrders, ...serverOrders.filter((s: any) => !localOrders.some((l: any) => l.id === s.id))];
-      const mergedRecettes = [...localRecettes, ...serverRecettes.filter((s: any) => !localRecettes.some((l: any) => l.id === s.id))];
-      const mergedDepenses = [...localDepenses, ...serverDepenses.filter((s: any) => !localDepenses.some((l: any) => l.id === s.id))];
+      const mergedCusts = [...serverCusts, ...localCusts.filter((l: any) => !serverCusts.some((s: any) => s.id === l.id))];
+      const mergedOrders = [...serverOrders, ...localOrders.filter((l: any) => !serverOrders.some((s: any) => s.id === l.id))];
+      const mergedRecettes = [...serverRecettes, ...localRecettes.filter((l: any) => !serverRecettes.some((s: any) => s.id === l.id))];
+      const mergedDepenses = [...serverDepenses, ...localDepenses.filter((l: any) => !serverDepenses.some((s: any) => s.id === l.id))];
+
+      setStoredLocal("gy_customers", mergedCusts);
+      setStoredLocal("gy_orders", mergedOrders);
 
       setMetrics(dashData.metrics || {});
       setOrders(mergedOrders);

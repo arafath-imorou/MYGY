@@ -8,15 +8,30 @@ export interface CloudStoreData {
   depenses: any[];
 }
 
+let memoryCache: CloudStoreData = {
+  customers: [],
+  orders: [],
+  recettes: [],
+  depenses: [],
+};
+
 export async function getCloudData(): Promise<CloudStoreData> {
   try {
     const res = await fetch(STORE_URL, { cache: "no-store" });
-    if (!res.ok) return { customers: [], orders: [], recettes: [], depenses: [] };
+    if (!res.ok) return memoryCache;
     const json = await res.json();
-    return json.data || { customers: [], orders: [], recettes: [], depenses: [] };
+    if (json && json.data) {
+      memoryCache = {
+        customers: json.data.customers || memoryCache.customers,
+        orders: json.data.orders || memoryCache.orders,
+        recettes: json.data.recettes || memoryCache.recettes,
+        depenses: json.data.depenses || memoryCache.depenses,
+      };
+    }
+    return memoryCache;
   } catch (e) {
     console.error("getCloudData error:", e);
-    return { customers: [], orders: [], recettes: [], depenses: [] };
+    return memoryCache;
   }
 }
 
@@ -26,6 +41,7 @@ export async function updateCloudData(
   try {
     const current = await getCloudData();
     const updated = updater(current);
+    memoryCache = updated;
     await fetch(STORE_URL, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -37,6 +53,6 @@ export async function updateCloudData(
     return updated;
   } catch (e) {
     console.error("updateCloudData error:", e);
-    return { customers: [], orders: [], recettes: [], depenses: [] };
+    return memoryCache;
   }
 }
