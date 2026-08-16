@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function AdminDashboard() {
   const [activeMenu, setActiveMenu] = useState<
-    "dashboard" | "clients" | "commandes" | "atelier" | "finances" | "rh" | "administrations"
+    "dashboard" | "clients" | "espace-client" | "commandes" | "atelier" | "finances" | "rh" | "administrations"
   >("clients");
 
   const [financeSubTab, setFinanceSubTab] = useState<"recettes" | "depenses">("recettes");
@@ -505,6 +505,17 @@ export default function AdminDashboard() {
               }`}
             >
               <span>CLIENTS</span>
+            </button>
+
+            <button
+              onClick={() => setActiveMenu("espace-client")}
+              className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+                activeMenu === "espace-client"
+                  ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
+                  : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
+              }`}
+            >
+              <span>ESPACE CLIENT VIP</span>
             </button>
 
             <button
@@ -1034,10 +1045,262 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* OTHER MODULES */}
+          {/* ========================================================= */}
+          {/* ESPACE CLIENT VIP MODULE                                  */}
+          {/* ========================================================= */}
+          {activeMenu === "espace-client" && (
+            <div className="space-y-8">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h2 className="font-serif text-4xl font-bold text-white">ESPACE PRIVÉ MEMBRE VIP</h2>
+                  <p className="text-sm text-gy-textMuted mt-1">Suivi en temps réel des créations sur-mesure, rendez-vous d&apos;essayages et reçus clients</p>
+                </div>
+
+                <div className="flex items-center space-x-3 bg-gy-card p-2 rounded-2xl border border-gy-gold/40">
+                  <span className="text-xs font-bold text-gy-gold uppercase px-2">SELECTIONNER CLIENT :</span>
+                  <select
+                    value={payCustomerId}
+                    onChange={(e) => setPayCustomerId(e.target.value)}
+                    className="bg-gy-dark border border-gy-border rounded-xl p-2.5 text-xs text-white font-bold focus:outline-none focus:border-gy-gold"
+                  >
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.firstName} {c.lastName} ({c.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* VIP Client Hero Card */}
+              {(() => {
+                const selectedCust = customers.find((c) => c.id === payCustomerId) || customers[0];
+                const custOrders = orders.filter((o) => o.customerId === selectedCust?.id);
+                const totalPaid = custOrders.reduce((sum, o) => sum + (o.totalPaid || 0), 0);
+                const totalDue = custOrders.reduce((sum, o) => sum + (o.balanceDue || 0), 0);
+
+                return (
+                  <div className="space-y-6">
+                    <div className="framed-card p-8 border-2 border-gy-gold/50 bg-gradient-to-r from-[#181820] to-[#121217] relative overflow-hidden">
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div>
+                          <span className="px-4 py-1 rounded-full text-xs font-black bg-gy-gold/20 text-gy-gold border border-gy-gold/40 uppercase tracking-wider">
+                            MEMBRE VIP DIAMOND
+                          </span>
+                          <h3 className="font-serif text-3xl font-bold text-white mt-3">
+                            {selectedCust ? `${selectedCust.firstName} ${selectedCust.lastName}` : "Princesse Yasmine"}
+                          </h3>
+                          <p className="text-xs text-gy-textMuted mt-1">
+                            TÉL: {selectedCust?.phone || "+229 97 00 00 01"} • VILLE: {selectedCust?.city || "Cotonou"}
+                          </p>
+                        </div>
+
+                        <div className="flex space-x-4 text-center">
+                          <div className="bg-gy-dark p-4 rounded-2xl border border-gy-border">
+                            <span className="text-[10px] font-bold text-gy-textMuted uppercase block">Créations en cours</span>
+                            <strong className="text-xl font-black text-white">{custOrders.length}</strong>
+                          </div>
+                          <div className="bg-gy-dark p-4 rounded-2xl border border-gy-border">
+                            <span className="text-[10px] font-bold text-gy-textMuted uppercase block">Total Payé</span>
+                            <strong className="text-xl font-black text-emerald-400">{formatFcfa(totalPaid)}</strong>
+                          </div>
+                          <div className="bg-gy-dark p-4 rounded-2xl border border-gy-border">
+                            <span className="text-[10px] font-bold text-gy-textMuted uppercase block">Solde Restant</span>
+                            <strong className="text-xl font-black text-amber-400">{formatFcfa(totalDue)}</strong>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Timeline des Créations */}
+                    <div className="space-y-4">
+                      <h3 className="font-serif text-2xl font-bold text-white">SUIVI DE CONFECTION SUR-MESURE</h3>
+
+                      {custOrders.length === 0 ? (
+                        <div className="framed-card p-6 text-center text-gy-textMuted text-sm font-semibold">
+                          Aucune commande enregistrée pour ce client.
+                        </div>
+                      ) : (
+                        custOrders.map((o) => (
+                          <div key={o.id} className="framed-card p-6 space-y-4 border border-gy-border">
+                            <div className="flex justify-between items-center border-b border-gy-border pb-3">
+                              <div>
+                                <span className="text-xs font-bold text-gy-gold uppercase">{o.reference}</span>
+                                <h4 className="font-serif text-xl font-bold text-white mt-0.5">
+                                  {o.items?.[0]?.itemName || "Tenue Haute Couture"}
+                                </h4>
+                                <span className="text-xs text-gy-textMuted block mt-0.5">TISSU: {o.items?.[0]?.fabricDetails || "Sélectionné en boutique"}</span>
+                              </div>
+                              <span className="px-4 py-1.5 rounded-xl bg-gy-dark border border-gy-gold/40 text-xs font-black text-gy-gold uppercase">
+                                RETRAIT PRÉVU: {formatDate(o.promisedDate)}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                              <div className={`p-3 rounded-xl border text-center text-xs font-bold ${o.status === "ACOMPTE_ATTENDU" ? "bg-amber-500/20 text-amber-400 border-amber-500/50" : "bg-gy-dark/50 text-gy-textMuted border-gy-border"}`}>
+                                1. COMMANDE & MESURES
+                              </div>
+                              <div className={`p-3 rounded-xl border text-center text-xs font-bold ${o.status === "PRODUCTION" ? "bg-sky-500/20 text-sky-400 border-sky-500/50" : "bg-gy-dark/50 text-gy-textMuted border-gy-border"}`}>
+                                2. CONFECTION ATELIER
+                              </div>
+                              <div className={`p-3 rounded-xl border text-center text-xs font-bold ${o.status === "ESSAYAGE" ? "bg-purple-500/20 text-purple-400 border-purple-500/50" : "bg-gy-dark/50 text-gy-textMuted border-gy-border"}`}>
+                                3. ESSAYAGE & AJUSTEMENT
+                              </div>
+                              <div className={`p-3 rounded-xl border text-center text-xs font-bold ${o.status === "PRET" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/50" : "bg-gy-dark/50 text-gy-textMuted border-gy-border"}`}>
+                                4. PRÊT À LIVRER
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* ATELIER PRODUCTION WORKBENCH                              */}
+          {/* ========================================================= */}
           {activeMenu === "atelier" && (
-            <div className="framed-card p-8">
-              <h2 className="font-serif text-3xl font-bold text-white mb-4">PRODUCTION & PLANNING ATELIER</h2>
+            <div className="space-y-8">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="font-serif text-4xl font-bold text-white">WORKBENCH PRODUCTION ATELIER</h2>
+                  <p className="text-sm text-gy-textMuted mt-1">Avancement en direct des travaux de coupe, assemblage, essayages et repassage</p>
+                </div>
+                <button
+                  onClick={() => setActiveMenu("commandes")}
+                  className="px-6 py-3.5 rounded-2xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95"
+                >
+                  + VOIR TOUTES LES COMMANDES
+                </button>
+              </div>
+
+              {/* Atelier KPI Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
+                <div className="framed-card p-5 border-l-4 border-l-amber-400">
+                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">À Faire (En attente)</span>
+                  <h3 className="font-serif text-3xl font-black text-amber-400 mt-2">
+                    {orders.filter((o) => o.status === "ACOMPTE_ATTENDU").length}
+                  </h3>
+                </div>
+
+                <div className="framed-card p-5 border-l-4 border-l-sky-400">
+                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">En Confection</span>
+                  <h3 className="font-serif text-3xl font-black text-sky-400 mt-2">
+                    {orders.filter((o) => o.status === "PRODUCTION").length}
+                  </h3>
+                </div>
+
+                <div className="framed-card p-5 border-l-4 border-l-purple-400">
+                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Essayages & Contrôle</span>
+                  <h3 className="font-serif text-3xl font-black text-purple-400 mt-2">
+                    {orders.filter((o) => o.status === "ESSAYAGE" || o.status === "CONTROLE_QUALITE").length}
+                  </h3>
+                </div>
+
+                <div className="framed-card p-5 border-l-4 border-l-emerald-400">
+                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Prêts à Livrer</span>
+                  <h3 className="font-serif text-3xl font-black text-emerald-400 mt-2">
+                    {orders.filter((o) => o.status === "PRET").length}
+                  </h3>
+                </div>
+              </div>
+
+              {/* Table des Travaux d'Atelier */}
+              <div className="framed-card p-2 overflow-hidden border-2 border-gy-border">
+                <div className="overflow-x-auto">
+                  <table className="framed-table text-left text-sm text-gy-text font-aptos">
+                    <thead>
+                      <tr>
+                        <th className="min-w-[130px]">REF COMMANDE</th>
+                        <th className="min-w-[170px]">CLIENT VIP</th>
+                        <th className="min-w-[240px]">TENUE & DÉTAILS TISSU</th>
+                        <th className="min-w-[160px]">DATE RETRAIT SOUHAITÉ</th>
+                        <th className="min-w-[180px]">ÉTAPE ACTUELLE</th>
+                        <th className="min-w-[200px] text-center">ACTION RAPIDE ATELIER</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.map((o) => (
+                        <tr key={o.id}>
+                          <td className="font-bold text-white">
+                            <span className="framed-badge-gold text-xs font-black">{o.reference}</span>
+                          </td>
+                          <td className="font-bold text-white text-base">
+                            {o.customer?.firstName} {o.customer?.lastName}
+                          </td>
+                          <td>
+                            <div className="p-2.5 rounded-xl bg-gy-dark/90 border border-gy-gold/30">
+                              <strong className="text-gy-gold text-base block font-bold">{o.items?.[0]?.itemName || "Création Sur-Mesure"}</strong>
+                              <span className="text-xs text-gy-textMuted block mt-1">TISSU: {o.items?.[0]?.fabricDetails || "Fourni par le client"}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="framed-badge-amber text-xs font-bold">
+                              {formatDate(o.promisedDate)}
+                            </span>
+                          </td>
+                          <td>
+                            <select
+                              value={o.status}
+                              onChange={(e) => handleUpdateOrderStatus(o.id, e.target.value)}
+                              className="bg-gy-dark border border-gy-gold/50 text-xs rounded-xl p-2.5 text-gy-gold font-bold focus:outline-none w-full"
+                            >
+                              <option value="ACOMPTE_ATTENDU">ACOMPTE ATTENDU</option>
+                              <option value="PRODUCTION">PRODUCTION EN ATELIER</option>
+                              <option value="ESSAYAGE">ESSAYAGE CLIENT</option>
+                              <option value="RETOUCHE">RETOUCHE</option>
+                              <option value="CONTROLE_QUALITE">CONTRÔLE QUALITÉ</option>
+                              <option value="SOLDE_A_PAYER">SOLDE À PAYER</option>
+                              <option value="PRET">PRÊT À LIVRER</option>
+                              <option value="CLOTURE">CLÔTURÉ</option>
+                            </select>
+                          </td>
+                          <td>
+                            <div className="flex items-center justify-center space-x-2">
+                              {o.status === "ACOMPTE_ATTENDU" && (
+                                <button
+                                  onClick={() => handleUpdateOrderStatus(o.id, "PRODUCTION")}
+                                  className="px-3 py-2 bg-sky-500 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-md"
+                                >
+                                  DÉMARRER ATELIER
+                                </button>
+                              )}
+
+                              {o.status === "PRODUCTION" && (
+                                <button
+                                  onClick={() => handleUpdateOrderStatus(o.id, "ESSAYAGE")}
+                                  className="px-3 py-2 bg-purple-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md"
+                                >
+                                  PASSER EN ESSAYAGE
+                                </button>
+                              )}
+
+                              {(o.status === "ESSAYAGE" || o.status === "RETOUCHE" || o.status === "CONTROLE_QUALITE") && (
+                                <button
+                                  onClick={() => handleUpdateOrderStatus(o.id, "PRET")}
+                                  className="px-3 py-2 bg-emerald-500 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-md"
+                                >
+                                  MARQUER PRÊT
+                                </button>
+                              )}
+
+                              {o.status === "PRET" && (
+                                <span className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black uppercase">
+                                  PRÊT À LIVRER
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
 
