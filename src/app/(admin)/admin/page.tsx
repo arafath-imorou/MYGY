@@ -657,9 +657,11 @@ export default function AdminDashboard() {
       <div className="min-h-screen bg-[#0B0B0E] text-[#E5E5EB] flex items-center justify-center p-4 font-aptos">
         <div className="glass-panel max-w-md w-full p-8 rounded-3xl border-2 border-[#D4AF37]/50 shadow-2xl space-y-6">
           <div className="text-center space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#F3E5AB] via-[#D4AF37] to-[#AA7C11] flex items-center justify-center font-aptos font-black text-black text-3xl shadow-[0_0_30px_rgba(212,175,55,0.5)] mx-auto">
-              GY
-            </div>
+            <img
+              src="/logogy.png"
+              alt="GY MAISON COUTURE"
+              className="h-20 w-auto object-contain mx-auto drop-shadow-[0_0_25px_rgba(212,175,55,0.5)]"
+            />
             <div>
               <h1 className="font-serif text-3xl font-bold text-white tracking-wide">GY MAISON COUTURE</h1>
               <p className="text-xs font-black text-[#D4AF37] uppercase tracking-widest mt-1">PORTAIL D&apos;ACCÈS SÉCURISÉ ADMIN ERP</p>
@@ -737,18 +739,12 @@ export default function AdminDashboard() {
           <aside className="relative w-80 max-w-[85vw] bg-[#121217] border-r border-[#2A2A38] flex flex-col justify-between select-none z-50 h-full font-aptos">
             <div className="overflow-y-auto max-h-screen">
               <div className="p-5 border-b border-[#2A2A38] flex items-center justify-between sticky top-0 bg-[#121217] z-20">
-                <Link href="/" className="flex items-center space-x-3 group">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#F3E5AB] via-[#D4AF37] to-[#AA7C11] flex items-center justify-center font-aptos font-extrabold text-black text-xl shadow-[0_0_22px_rgba(212,175,55,0.45)]">
-                    GY
-                  </div>
-                  <div>
-                    <h1 className="font-aptos text-xl font-black text-white tracking-wide leading-tight">
-                      GY MAISON
-                    </h1>
-                    <span className="text-[10px] font-extrabold text-[#D4AF37] uppercase tracking-wider block">
-                      HAUTE COUTURE • ERP
-                    </span>
-                  </div>
+                <Link href="/" className="flex items-center group">
+                  <img
+                    src="/logogy.png"
+                    alt="GY MAISON COUTURE"
+                    className="h-12 w-auto object-contain drop-shadow-[0_0_20px_rgba(212,175,55,0.45)] group-hover:scale-105 transition-all"
+                  />
                 </Link>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
@@ -888,18 +884,12 @@ export default function AdminDashboard() {
       <aside className="hidden lg:flex w-80 bg-[#121217] border-r border-[#2A2A38] flex-col justify-between select-none z-30 shrink-0 font-aptos">
         <div className="overflow-y-auto max-h-screen">
           <div className="p-6 border-b border-[#2A2A38] flex items-center justify-between sticky top-0 bg-[#121217] z-20">
-            <Link href="/" className="flex items-center space-x-3.5 group">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#F3E5AB] via-[#D4AF37] to-[#AA7C11] flex items-center justify-center font-aptos font-extrabold text-black text-2xl shadow-[0_0_22px_rgba(212,175,55,0.45)] group-hover:scale-105 transition-all">
-                GY
-              </div>
-              <div>
-                <h1 className="font-aptos text-2xl font-black text-white tracking-wide leading-tight group-hover:text-[#D4AF37] transition-colors">
-                  GY MAISON
-                </h1>
-                <span className="text-[11px] font-extrabold text-[#D4AF37] uppercase tracking-wider block">
-                  HAUTE COUTURE • ERP
-                </span>
-              </div>
+            <Link href="/" className="flex items-center group">
+              <img
+                src="/logogy.png"
+                alt="GY MAISON COUTURE"
+                className="h-14 w-auto object-contain drop-shadow-[0_0_22px_rgba(212,175,55,0.5)] group-hover:scale-105 transition-all"
+              />
             </Link>
           </div>
 
@@ -1029,9 +1019,11 @@ export default function AdminDashboard() {
         <div className="p-4 border-t border-[#2A2A38] bg-[#0E0E12] sticky bottom-0 bg-[#121217]">
           <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#181820] border-2 border-[#D4AF37]/40 shadow-md">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#8C6B1B] text-black flex items-center justify-center font-black text-sm shadow-md font-aptos">
-                GY
-              </div>
+              <img
+                src="/logogy.png"
+                alt="GY"
+                className="h-10 w-auto object-contain drop-shadow-md"
+              />
               <div className="text-left">
                 <div className="text-sm font-black text-white leading-tight">Ghislaine LOKO DJIDJOHO</div>
                 <div className="text-xs text-[#D4AF37] font-bold">Directrice Générale</div>
