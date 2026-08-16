@@ -352,6 +352,10 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
+        const newCust = await res.json();
+        if (newCust && newCust.id) {
+          setCustomers((prev) => [newCust, ...prev.filter((c) => c.id !== newCust.id)]);
+        }
         setNewCustomerModal(false);
         setNewCustFirstName("");
         setNewCustLastName("");
@@ -392,6 +396,10 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
+        const newOrd = await res.json();
+        if (newOrd && newOrd.id) {
+          setOrders((prev) => [newOrd, ...prev.filter((o) => o.id !== newOrd.id)]);
+        }
         setNewOrderModal(false);
         setNewOrderItemName("");
         setNewOrderFabricDetails("");
