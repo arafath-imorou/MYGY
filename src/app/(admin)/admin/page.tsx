@@ -273,19 +273,29 @@ export default function AdminDashboard() {
       setStoredLocal("gy_recettes", finalRecettes);
       setStoredLocal("gy_depenses", mergedDepenses);
 
-      setMetrics(dashData.metrics || {});
+      // Compute Executive Dashboard metrics dynamically from mergedOrders & finalRecettes
+      const dynamicTotalRevenue = mergedOrders.reduce((acc: number, o: any) => acc + Number(o.totalAmount || 0), 0);
+      const dynamicTotalCollected = finalRecettes.reduce((acc: number, r: any) => acc + Number(r.amount || 0), 0);
+      const dynamicTotalReceivables = mergedOrders.reduce((acc: number, o: any) => acc + Number(o.balanceDue || 0), 0);
+
+      setMetrics({
+        totalRevenueMonth: dynamicTotalRevenue,
+        totalCollected: dynamicTotalCollected,
+        totalReceivables: dynamicTotalReceivables,
+        totalOrders: mergedOrders.length,
+        lowStockCount: dashData.metrics?.lowStockCount || 0,
+      });
+
       setOrders(mergedOrders);
       setCustomers(mergedCusts);
 
       setRecettesList(finalRecettes);
       setDepensesList(mergedDepenses);
 
-      // Compute total recettes metric dynamically
-      const dynamicTotalRecettes = finalRecettes.reduce((acc, r) => acc + Number(r.amount || 0), 0);
       setFinanceMetrics({
         ...(finData.metrics || {}),
-        totalRecettes: dynamicTotalRecettes,
-        netBalance: dynamicTotalRecettes - (finData.metrics?.totalDepenses || 0),
+        totalRecettes: dynamicTotalCollected,
+        netBalance: dynamicTotalCollected - (finData.metrics?.totalDepenses || 0),
       });
 
       if (mergedCusts.length > 0 && !newOrderCustomerId) {
