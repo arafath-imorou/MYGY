@@ -114,6 +114,25 @@ export default function AdminDashboard() {
   const [newOrderDepositRequired, setNewOrderDepositRequired] = useState<number>(0);
   const [newOrderPriority, setNewOrderPriority] = useState("VIP");
 
+  const getStoredLocal = (key: string) => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  };
+
+  const setStoredLocal = (key: string, data: any[]) => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -125,24 +144,39 @@ export default function AdminDashboard() {
       ]);
 
       const dashData = dashRes.ok ? await dashRes.json() : {};
-      const ordersData = ordersRes.ok ? await ordersRes.json() : [];
+      const ordersData = dashRes.ok && ordersRes.ok ? await ordersRes.json() : [];
       const custData = custRes.ok ? await custRes.json() : [];
       const finData = finRes.ok ? await finRes.json() : {};
 
-      setMetrics(dashData.metrics || {});
-      setOrders(Array.isArray(ordersData) ? ordersData : []);
-      setCustomers(Array.isArray(custData) ? custData : []);
+      const localCusts = getStoredLocal("gy_customers");
+      const localOrders = getStoredLocal("gy_orders");
+      const localRecettes = getStoredLocal("gy_recettes");
+      const localDepenses = getStoredLocal("gy_depenses");
 
-      setRecettesList(Array.isArray(finData.recettes) ? finData.recettes : []);
-      setDepensesList(Array.isArray(finData.depenses) ? finData.depenses : []);
+      const serverCusts = Array.isArray(custData) ? custData : [];
+      const serverOrders = Array.isArray(ordersData) ? ordersData : [];
+      const serverRecettes = Array.isArray(finData.recettes) ? finData.recettes : [];
+      const serverDepenses = Array.isArray(finData.depenses) ? finData.depenses : [];
+
+      const mergedCusts = [...localCusts, ...serverCusts.filter((s: any) => !localCusts.some((l: any) => l.id === s.id))];
+      const mergedOrders = [...localOrders, ...serverOrders.filter((s: any) => !localOrders.some((l: any) => l.id === s.id))];
+      const mergedRecettes = [...localRecettes, ...serverRecettes.filter((s: any) => !localRecettes.some((l: any) => l.id === s.id))];
+      const mergedDepenses = [...localDepenses, ...serverDepenses.filter((s: any) => !localDepenses.some((l: any) => l.id === s.id))];
+
+      setMetrics(dashData.metrics || {});
+      setOrders(mergedOrders);
+      setCustomers(mergedCusts);
+
+      setRecettesList(mergedRecettes);
+      setDepensesList(mergedDepenses);
       setFinanceMetrics(finData.metrics || {});
 
-      if (Array.isArray(custData) && custData.length > 0 && !newOrderCustomerId) {
-        setNewOrderCustomerId(custData[0].id);
-        setPayCustomerId(custData[0].id);
+      if (mergedCusts.length > 0 && !newOrderCustomerId) {
+        setNewOrderCustomerId(mergedCusts[0].id);
+        setPayCustomerId(mergedCusts[0].id);
       }
-      if (Array.isArray(ordersData) && ordersData.length > 0 && !payOrderId) {
-        setPayOrderId(ordersData[0].id);
+      if (mergedOrders.length > 0 && !payOrderId) {
+        setPayOrderId(mergedOrders[0].id);
       }
       setStockItems(dashData.lowStockItems || []);
     } catch (e) {
@@ -335,13 +369,12 @@ export default function AdminDashboard() {
       return;
     }
     try {
-      setCustomers((prev) => prev.filter((c) => c.id !== customerId));
-      const res = await fetch(`/api/admin/customers?id=${customerId}`, {
-        method: "DELETE",
+      setCustomers((prev) => {
+        const updated = prev.filter((c) => c.id !== customerId);
+        setStoredLocal("gy_customers", updated);
+        return updated;
       });
-      if (res.ok) {
-        fetchData();
-      }
+      fetch(`/api/admin/customers?id=${customerId}`, { method: "DELETE" });
     } catch (e) {
       console.error("Error deleting customer:", e);
     }
@@ -371,7 +404,11 @@ export default function AdminDashboard() {
       if (res.ok) {
         const newCust = await res.json();
         if (newCust && newCust.id) {
-          setCustomers((prev) => [newCust, ...prev.filter((c) => c.id !== newCust.id)]);
+          setCustomers((prev) => {
+            const updated = [newCust, ...prev.filter((c) => c.id !== newCust.id)];
+            setStoredLocal("gy_customers", updated);
+            return updated;
+          });
         }
         setNewCustomerModal(false);
         setNewCustFirstName("");
@@ -379,7 +416,6 @@ export default function AdminDashboard() {
         setNewCustPhone("");
         setNewCustEmail("");
         setNewCustNotes("");
-        fetchData();
         setActiveMenu("clients");
       } else {
         const err = await res.json();
@@ -415,7 +451,11 @@ export default function AdminDashboard() {
       if (res.ok) {
         const newOrd = await res.json();
         if (newOrd && newOrd.id) {
-          setOrders((prev) => [newOrd, ...prev.filter((o) => o.id !== newOrd.id)]);
+          setOrders((prev) => {
+            const updated = [newOrd, ...prev.filter((o) => o.id !== newOrd.id)];
+            setStoredLocal("gy_orders", updated);
+            return updated;
+          });
         }
         setNewOrderModal(false);
         setNewOrderItemName("");
@@ -423,7 +463,6 @@ export default function AdminDashboard() {
         setNewOrderCustomNotes("");
         setNewOrderTotalAmount(0);
         setNewOrderDepositRequired(0);
-        fetchData();
         setActiveMenu("commandes");
       } else {
         const err = await res.json();
