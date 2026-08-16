@@ -34,7 +34,7 @@ export default function AdminDashboard() {
     return false;
   });
   const [loginEmail, setLoginEmail] = useState("gymaisoncouture@gmail.com");
-  const [loginPassword, setLoginPassword] = useState("gymc2026.");
+  const [loginPassword, setLoginPassword] = useState("gymc2026");
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);

@@ -35,9 +35,9 @@ export async function POST(req: Request) {
       user = {
         id: "usr_admin_gy_2026",
         email,
-        fullName: "Direction GY Maison Couture",
+        fullName: "Ghislaine LOKO DJIDJOHO",
         role: "SUPER_ADMIN",
-        passwordHash: "hashed_gymc2026._gy2026",
+        passwordHash: "hashed_gymc2026_gy2026",
       };
     }
 
