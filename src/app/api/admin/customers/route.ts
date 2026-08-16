@@ -1,27 +1,30 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCloudData, updateCloudData } from "@/lib/cloudDb";
 
 export async function GET() {
   try {
-    const customers = await prisma.customer.findMany({
-      include: {
-        measurements: {
-          orderBy: { takenAt: "desc" },
+    let dbCustomers: any[] = [];
+    try {
+      dbCustomers = await prisma.customer.findMany({
+        include: {
+          measurements: { orderBy: { takenAt: "desc" } },
+          orders: { include: { items: true, payments: true }, orderBy: { createdAt: "desc" } },
+          appointments: true,
+          loyaltyAccount: true,
         },
-        orders: {
-          include: {
-            items: true,
-            payments: true,
-          },
-          orderBy: { createdAt: "desc" },
-        },
-        appointments: true,
-        loyaltyAccount: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (e) {
+      console.warn("Prisma customer query fallback:", e);
+    }
 
-    return NextResponse.json(customers);
+    const cloudData = await getCloudData();
+    const cloudCusts = cloudData.customers || [];
+
+    const merged = [...cloudCusts, ...dbCustomers.filter((p) => !cloudCusts.some((c: any) => c.id === p.id))];
+
+    return NextResponse.json(merged);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -42,9 +45,10 @@ export async function POST(req: Request) {
     }
 
     const code = `CLI-2026-${String(count + 1).padStart(4, "0")}`;
+    let customerResult: any = null;
 
     try {
-      const customer = await prisma.customer.create({
+      customerResult = await prisma.customer.create({
         data: {
           code,
           firstName: body.firstName,
@@ -71,18 +75,16 @@ export async function POST(req: Request) {
           data: {
             action: "CREATE_CUSTOMER",
             entity: "Customer",
-            entityId: customer.id,
-            details: JSON.stringify({ code: customer.code, name: `${customer.firstName} ${customer.lastName}` }),
+            entityId: customerResult.id,
+            details: JSON.stringify({ code: customerResult.code, name: `${customerResult.firstName} ${customerResult.lastName}` }),
           },
         });
       } catch (auditErr) {
         console.warn("Audit log skipped:", auditErr);
       }
-
-      return NextResponse.json(customer);
     } catch (createErr: any) {
       console.warn("Prisma Customer Create fallback:", createErr);
-      const fallbackCustomer = {
+      customerResult = {
         id: `cust_${Date.now()}`,
         code,
         firstName: body.firstName,
@@ -94,8 +96,16 @@ export async function POST(req: Request) {
         createdAt: new Date().toISOString(),
         orders: [],
       };
-      return NextResponse.json(fallbackCustomer);
     }
+
+    // Save to Cloud Database so ALL devices see this customer instantly
+    await updateCloudData((store) => {
+      const existing = store.customers || [];
+      const updatedCusts = [customerResult, ...existing.filter((c: any) => c.id !== customerResult.id)];
+      return { ...store, customers: updatedCusts };
+    });
+
+    return NextResponse.json(customerResult);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -110,62 +120,29 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "ID client manquant." }, { status: 400 });
     }
 
-    // Update customer personal info
-    const updatedCustomer = await prisma.customer.update({
-      where: { id },
-      data: {
-        firstName,
-        lastName,
-        phone,
-        email: email || null,
-        city: city || "Cotonou",
-        category: category || "VIP",
-        profession: profession || null,
-        notes: notes || null,
-      },
-    });
-
-    // Save or update measurements if provided
-    if (measurements) {
-      await prisma.customerMeasurement.create({
+    let updatedCustomer: any = null;
+    try {
+      updatedCustomer = await prisma.customer.update({
+        where: { id },
         data: {
-          customerId: id,
-          poitrine: measurements.poitrine ? Number(measurements.poitrine) : null,
-          sousPoitrine: measurements.sousPoitrine ? Number(measurements.sousPoitrine) : null,
-          taille: measurements.taille ? Number(measurements.taille) : null,
-          hanches: measurements.hanches ? Number(measurements.hanches) : null,
-          carrure: measurements.carrure ? Number(measurements.carrure) : null,
-          epaule: measurements.epaule ? Number(measurements.epaule) : null,
-          bras: measurements.bras ? Number(measurements.bras) : null,
-          poignet: measurements.poignet ? Number(measurements.poignet) : null,
-          hauteurPoitrine: measurements.hauteurPoitrine ? Number(measurements.hauteurPoitrine) : null,
-          ecartPoitrine: measurements.ecartPoitrine ? Number(measurements.ecartPoitrine) : null,
-          longueurCorsage: measurements.longueurCorsage ? Number(measurements.longueurCorsage) : null,
-          longueurDos: measurements.longueurDos ? Number(measurements.longueurDos) : null,
-          hauteurBassin: measurements.hauteurBassin ? Number(measurements.hauteurBassin) : null,
-          longueurRobe: measurements.longueurRobe ? Number(measurements.longueurRobe) : null,
-          longueurJupe: measurements.longueurJupe ? Number(measurements.longueurJupe) : null,
-          entrejambe: measurements.entrejambe ? Number(measurements.entrejambe) : null,
-          pantalon: measurements.pantalon ? Number(measurements.pantalon) : null,
-          cuisse: measurements.cuisse ? Number(measurements.cuisse) : null,
-          genou: measurements.genou ? Number(measurements.genou) : null,
-          mollet: measurements.mollet ? Number(measurements.mollet) : null,
-          cheville: measurements.cheville ? Number(measurements.cheville) : null,
-          hauteurTotale: measurements.hauteurTotale ? Number(measurements.hauteurTotale) : null,
-          morphologie: measurements.morphologie || null,
-          notes: measurements.notes || null,
+          firstName,
+          lastName,
+          phone,
+          email: email || null,
+          city: city || "Cotonou",
+          category: category || "VIP",
+          profession: profession || null,
+          notes: notes || null,
         },
       });
+    } catch (e) {
+      updatedCustomer = { id, firstName, lastName, phone, email, city, category, profession, notes };
     }
 
-    // Create Audit Log
-    await prisma.auditLog.create({
-      data: {
-        action: "UPDATE_CUSTOMER",
-        entity: "Customer",
-        entityId: id,
-        details: JSON.stringify({ name: `${updatedCustomer.firstName} ${updatedCustomer.lastName}` }),
-      },
+    await updateCloudData((store) => {
+      const existing = store.customers || [];
+      const updatedCusts = existing.map((c: any) => (c.id === id ? { ...c, ...updatedCustomer } : c));
+      return { ...store, customers: updatedCusts };
     });
 
     return NextResponse.json(updatedCustomer);
@@ -195,6 +172,12 @@ export async function DELETE(req: Request) {
     } catch (delErr) {
       console.warn("Prisma Customer Delete fallback:", delErr);
     }
+
+    await updateCloudData((store) => {
+      const existing = store.customers || [];
+      const updatedCusts = existing.filter((c: any) => c.id !== id);
+      return { ...store, customers: updatedCusts };
+    });
 
     return NextResponse.json({ success: true, deletedId: id });
   } catch (error: any) {

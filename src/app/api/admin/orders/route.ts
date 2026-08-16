@@ -1,30 +1,41 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { mapOrderStatusToClientStep } from "@/lib/workflows";
+import { getCloudData, updateCloudData } from "@/lib/cloudDb";
 
 export async function GET() {
   try {
-    const orders = await prisma.order.findMany({
-      include: {
-        customer: true,
-        items: {
-          include: {
-            productionJobs: true,
+    let dbOrders: any[] = [];
+    try {
+      dbOrders = await prisma.order.findMany({
+        include: {
+          customer: true,
+          items: {
+            include: {
+              productionJobs: true,
+            },
+          },
+          payments: true,
+          fittings: true,
+          qualityChecks: true,
+          stockReservations: {
+            include: {
+              inventoryItem: true,
+            },
           },
         },
-        payments: true,
-        fittings: true,
-        qualityChecks: true,
-        stockReservations: {
-          include: {
-            inventoryItem: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (e) {
+      console.warn("Prisma orders query fallback:", e);
+    }
 
-    return NextResponse.json(orders);
+    const cloudData = await getCloudData();
+    const cloudOrders = cloudData.orders || [];
+
+    const merged = [...cloudOrders, ...dbOrders.filter((p) => !cloudOrders.some((c: any) => c.id === p.id))];
+
+    return NextResponse.json(merged);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -52,9 +63,10 @@ export async function POST(req: Request) {
 
     const orderDate = body.orderDate ? new Date(body.orderDate) : new Date();
     const promisedDate = body.promisedDate ? new Date(body.promisedDate) : new Date(Date.now() + 14 * 86400 * 1000);
+    let orderResult: any = null;
 
     try {
-      const order = await prisma.order.create({
+      orderResult = await prisma.order.create({
         data: {
           reference,
           customerId: body.customerId,
@@ -96,19 +108,21 @@ export async function POST(req: Request) {
       });
 
       // Create Audit Log
-      await prisma.auditLog.create({
-        data: {
-          action: "CREATE_ORDER",
-          entity: "Order",
-          entityId: order.id,
-          details: JSON.stringify({ reference: order.reference, totalAmount: order.totalAmount, fabric: body.fabricDetails }),
-        },
-      });
-
-      return NextResponse.json(order);
+      try {
+        await prisma.auditLog.create({
+          data: {
+            action: "CREATE_ORDER",
+            entity: "Order",
+            entityId: orderResult.id,
+            details: JSON.stringify({ reference: orderResult.reference, totalAmount: orderResult.totalAmount, fabric: body.fabricDetails }),
+          },
+        });
+      } catch (auditErr) {
+        console.warn("Audit log skipped:", auditErr);
+      }
     } catch (createErr) {
       console.warn("Prisma Order Create fallback:", createErr);
-      const fallbackOrder = {
+      orderResult = {
         id: `ord_${Date.now()}`,
         reference,
         customerId: body.customerId,
@@ -131,8 +145,16 @@ export async function POST(req: Request) {
           },
         ],
       };
-      return NextResponse.json(fallbackOrder);
     }
+
+    // Save to Cloud Database so ALL devices see this order instantly
+    await updateCloudData((store) => {
+      const existing = store.orders || [];
+      const updatedOrders = [orderResult, ...existing.filter((o: any) => o.id !== orderResult.id)];
+      return { ...store, orders: updatedOrders };
+    });
+
+    return NextResponse.json(orderResult);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
