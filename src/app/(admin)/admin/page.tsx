@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 export default function AdminDashboard() {
   const [activeMenu, setActiveMenu] = useState<
@@ -188,6 +189,38 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchData();
+
+    // 1. Auto-sync interval every 8 seconds for all connected devices
+    const interval = setInterval(() => {
+      fetchData();
+    }, 8000);
+
+    // 2. Immediate sync when user refocuses tab/screen
+    const handleFocus = () => {
+      fetchData();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    // 3. Supabase Realtime Channel for instant push updates
+    let channel: any;
+    try {
+      channel = supabase
+        .channel("gy-realtime-sync")
+        .on("postgres_changes", { event: "*", schema: "public" }, () => {
+          fetchData();
+        })
+        .subscribe();
+    } catch (e) {
+      console.warn("Realtime channel subscription skipped:", e);
+    }
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
 
   // Filtered orders for selected customer in payment wizard
