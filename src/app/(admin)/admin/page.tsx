@@ -1247,67 +1247,85 @@ export default function AdminDashboard() {
           {/* ========================================================= */}
           {activeMenu === "espace-client" && (
             <div className="space-y-8">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h2 className="font-serif text-4xl font-bold text-white">ESPACE PRIVÉ MEMBRE VIP</h2>
-                  <p className="text-sm text-gy-textMuted mt-1">Suivi en temps réel des créations sur-mesure, rendez-vous d&apos;essayages et reçus clients</p>
-                </div>
-
-                <div className="flex items-center space-x-3 bg-gy-card p-2 rounded-2xl border border-gy-gold/40">
-                  <span className="text-xs font-bold text-gy-gold uppercase px-2">SELECTIONNER CLIENT :</span>
-                  <select
-                    value={payCustomerId}
-                    onChange={(e) => setPayCustomerId(e.target.value)}
-                    className="bg-gy-dark border border-gy-border rounded-xl p-2.5 text-xs text-white font-bold focus:outline-none focus:border-gy-gold"
+              {customers.length === 0 ? (
+                <div className="framed-card p-12 text-center text-gy-textMuted space-y-4 border-2 border-gy-border">
+                  <div className="text-2xl font-black text-white font-serif">AUCUN CLIENT ENREGISTRÉ</div>
+                  <p className="text-sm text-gy-textMuted max-w-md mx-auto">
+                    La base de données est actuellement vide. Veuillez créer un premier client pour accéder à son espace privé VIP.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setActiveMenu("clients");
+                      setNewCustomerModal(true);
+                    }}
+                    className="px-6 py-3.5 rounded-2xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95"
                   >
-                    {customers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.firstName} {c.lastName} ({c.code})
-                      </option>
-                    ))}
-                  </select>
+                    + CRÉER UN CLIENT
+                  </button>
                 </div>
-              </div>
-
-              {/* VIP Client Hero Card */}
-              {(() => {
-                const selectedCust = customers.find((c) => c.id === payCustomerId) || customers[0];
-                const custOrders = orders.filter((o) => o.customerId === selectedCust?.id);
-                const totalPaid = custOrders.reduce((sum, o) => sum + (o.totalPaid || 0), 0);
-                const totalDue = custOrders.reduce((sum, o) => sum + (o.balanceDue || 0), 0);
-
-                return (
-                  <div className="space-y-6">
-                    <div className="framed-card p-8 border-2 border-gy-gold/50 bg-gradient-to-r from-[#181820] to-[#121217] relative overflow-hidden">
-                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                        <div>
-                          <span className="px-4 py-1 rounded-full text-xs font-black bg-gy-gold/20 text-gy-gold border border-gy-gold/40 uppercase tracking-wider">
-                            MEMBRE VIP DIAMOND
-                          </span>
-                          <h3 className="font-serif text-3xl font-bold text-white mt-3">
-                            {selectedCust ? `${selectedCust.firstName} ${selectedCust.lastName}` : "Princesse Yasmine"}
-                          </h3>
-                          <p className="text-xs text-gy-textMuted mt-1">
-                            TÉL: {selectedCust?.phone || "+229 97 00 00 01"} • VILLE: {selectedCust?.city || "Cotonou"}
-                          </p>
-                        </div>
-
-                        <div className="flex space-x-4 text-center">
-                          <div className="bg-gy-dark p-4 rounded-2xl border border-gy-border">
-                            <span className="text-[10px] font-bold text-gy-textMuted uppercase block">Créations en cours</span>
-                            <strong className="text-xl font-black text-white">{custOrders.length}</strong>
-                          </div>
-                          <div className="bg-gy-dark p-4 rounded-2xl border border-gy-border">
-                            <span className="text-[10px] font-bold text-gy-textMuted uppercase block">Total Payé</span>
-                            <strong className="text-xl font-black text-emerald-400">{formatFcfa(totalPaid)}</strong>
-                          </div>
-                          <div className="bg-gy-dark p-4 rounded-2xl border border-gy-border">
-                            <span className="text-[10px] font-bold text-gy-textMuted uppercase block">Solde Restant</span>
-                            <strong className="text-xl font-black text-amber-400">{formatFcfa(totalDue)}</strong>
-                          </div>
-                        </div>
-                      </div>
+              ) : (
+                <>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                      <h2 className="font-serif text-4xl font-bold text-white">ESPACE PRIVÉ MEMBRE VIP</h2>
+                      <p className="text-sm text-gy-textMuted mt-1">Suivi en temps réel des créations sur-mesure, rendez-vous d&apos;essayages et reçus clients</p>
                     </div>
+
+                    <div className="flex items-center space-x-3 bg-gy-card p-2 rounded-2xl border border-gy-gold/40">
+                      <span className="text-xs font-bold text-gy-gold uppercase px-2">SELECTIONNER CLIENT :</span>
+                      <select
+                        value={payCustomerId}
+                        onChange={(e) => setPayCustomerId(e.target.value)}
+                        className="bg-gy-dark border border-gy-border rounded-xl p-2.5 text-xs text-white font-bold focus:outline-none focus:border-gy-gold"
+                      >
+                        {customers.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.firstName} {c.lastName} ({c.code})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* VIP Client Hero Card */}
+                  {(() => {
+                    const selectedCust = customers.find((c) => c.id === payCustomerId) || customers[0];
+                    const custOrders = orders.filter((o) => o.customerId === selectedCust?.id);
+                    const totalPaid = custOrders.reduce((sum, o) => sum + (o.totalPaid || 0), 0);
+                    const totalDue = custOrders.reduce((sum, o) => sum + (o.balanceDue || 0), 0);
+
+                    return (
+                      <div className="space-y-6">
+                        <div className="framed-card p-8 border-2 border-gy-gold/50 bg-gradient-to-r from-[#181820] to-[#121217] relative overflow-hidden">
+                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                            <div>
+                              <span className="px-4 py-1 rounded-full text-xs font-black bg-gy-gold/20 text-gy-gold border border-gy-gold/40 uppercase tracking-wider">
+                                MEMBRE {selectedCust?.category?.toUpperCase() || "VIP"}
+                              </span>
+                              <h3 className="font-serif text-3xl font-bold text-white mt-3">
+                                {selectedCust?.firstName} {selectedCust?.lastName}
+                              </h3>
+                              <p className="text-xs text-gy-textMuted mt-1">
+                                TÉL: {selectedCust?.phone || "-"} • VILLE: {selectedCust?.city || "Cotonou"}
+                              </p>
+                            </div>
+
+                            <div className="flex space-x-4 text-center">
+                              <div className="bg-gy-dark p-4 rounded-2xl border border-gy-border">
+                                <span className="text-[10px] font-bold text-gy-textMuted uppercase block">Créations en cours</span>
+                                <strong className="text-xl font-black text-white">{custOrders.length}</strong>
+                              </div>
+                              <div className="bg-gy-dark p-4 rounded-2xl border border-gy-border">
+                                <span className="text-[10px] font-bold text-gy-textMuted uppercase block">Total Payé</span>
+                                <strong className="text-xl font-black text-emerald-400">{formatFcfa(totalPaid)}</strong>
+                              </div>
+                              <div className="bg-gy-dark p-4 rounded-2xl border border-gy-border">
+                                <span className="text-[10px] font-bold text-gy-textMuted uppercase block">Solde Restant</span>
+                                <strong className="text-xl font-black text-amber-400">{formatFcfa(totalDue)}</strong>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
 
                     {/* Timeline des Créations */}
                     <div className="space-y-4">
@@ -1354,8 +1372,10 @@ export default function AdminDashboard() {
                   </div>
                 );
               })()}
-            </div>
+            </>
           )}
+        </div>
+      )}
 
           {/* ========================================================= */}
           {/* ATELIER PRODUCTION WORKBENCH                              */}
