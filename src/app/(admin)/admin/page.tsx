@@ -736,7 +736,7 @@ export default function AdminDashboard() {
             className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <aside className="relative w-80 max-w-[85vw] bg-[#121217] border-r border-[#2A2A38] flex flex-col justify-between select-none z-50 h-full font-aptos">
+          <aside className="relative w-64 max-w-[85vw] bg-[#121217] border-r border-[#2A2A38] flex flex-col justify-between select-none z-50 h-full font-aptos">
             <div className="overflow-y-auto max-h-screen">
               <div className="p-5 border-b border-[#2A2A38] flex items-center justify-between sticky top-0 bg-[#121217] z-20">
                 <Link href="/" className="flex items-center group">
@@ -881,26 +881,26 @@ export default function AdminDashboard() {
       )}
 
       {/* DESKTOP SIDEBAR NAVIGATION */}
-      <aside className="hidden lg:flex w-80 bg-[#121217] border-r border-[#2A2A38] flex-col justify-between select-none z-30 shrink-0 font-aptos">
+      <aside className="hidden lg:flex w-64 bg-[#121217] border-r border-[#2A2A38] flex-col justify-between select-none z-30 shrink-0 font-aptos">
         <div className="overflow-y-auto max-h-screen">
-          <div className="p-6 border-b border-[#2A2A38] flex items-center justify-between sticky top-0 bg-[#121217] z-20">
-            <Link href="/" className="flex items-center group">
+          <div className="p-5 border-b border-[#2A2A38] flex items-center justify-center sticky top-0 bg-[#121217] z-20">
+            <Link href="/" className="flex items-center justify-center group">
               <img
                 src="/logogy.png"
                 alt="GY MAISON COUTURE"
-                className="h-14 w-auto object-contain drop-shadow-[0_0_22px_rgba(212,175,55,0.5)] group-hover:scale-105 transition-all"
+                className="h-12 w-auto object-contain drop-shadow-[0_0_22px_rgba(212,175,55,0.5)] group-hover:scale-105 transition-all"
               />
             </Link>
           </div>
 
-          <div className="px-4 py-6 space-y-2.5 text-sm">
-            <div className="px-3 mb-3 text-[11px] font-black text-[#D4AF37] uppercase tracking-widest">
+          <div className="px-3 py-5 space-y-2 text-sm">
+            <div className="px-3 mb-2 text-[10px] font-black text-[#D4AF37] uppercase tracking-widest">
               MENUS PRINCIPAUX
             </div>
 
             <button
               onClick={() => setActiveMenu("dashboard")}
-              className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+              className={`w-full flex items-center justify-start px-4 py-3 rounded-xl text-xs sm:text-sm transition-all tracking-wider font-extrabold ${
                 activeMenu === "dashboard"
                   ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
                   : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
@@ -911,7 +911,7 @@ export default function AdminDashboard() {
 
             <button
               onClick={() => setActiveMenu("clients")}
-              className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+              className={`w-full flex items-center justify-start px-4 py-3 rounded-xl text-xs sm:text-sm transition-all tracking-wider font-extrabold ${
                 activeMenu === "clients"
                   ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
                   : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
@@ -922,18 +922,18 @@ export default function AdminDashboard() {
 
             <button
               onClick={() => setActiveMenu("espace-client")}
-              className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+              className={`w-full flex items-center justify-start px-4 py-3 rounded-xl text-xs sm:text-sm transition-all tracking-wider font-extrabold ${
                 activeMenu === "espace-client"
                   ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
                   : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
               }`}
             >
-              <span>ESPACE CLIENT VIP</span>
+              <span>ESPACE CLIENT</span>
             </button>
 
             <button
               onClick={() => setActiveMenu("commandes")}
-              className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+              className={`w-full flex items-center justify-start px-4 py-3 rounded-xl text-xs sm:text-sm transition-all tracking-wider font-extrabold ${
                 activeMenu === "commandes"
                   ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
                   : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
@@ -944,7 +944,7 @@ export default function AdminDashboard() {
 
             <button
               onClick={() => setActiveMenu("atelier")}
-              className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+              className={`w-full flex items-center justify-start px-4 py-3 rounded-xl text-xs sm:text-sm transition-all tracking-wider font-extrabold ${
                 activeMenu === "atelier"
                   ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
                   : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
@@ -956,7 +956,7 @@ export default function AdminDashboard() {
             <div>
               <button
                 onClick={() => setActiveMenu("finances")}
-                className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+                className={`w-full flex items-center justify-start px-4 py-3 rounded-xl text-xs sm:text-sm transition-all tracking-wider font-extrabold ${
                   activeMenu === "finances"
                     ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
                     : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
@@ -966,10 +966,10 @@ export default function AdminDashboard() {
               </button>
 
               {activeMenu === "finances" && (
-                <div className="pl-4 pr-2 py-2 space-y-1.5 border-l-2 border-[#D4AF37]/50 ml-5 mt-2 bg-[#0E0E12] rounded-xl">
+                <div className="pl-3 pr-2 py-2 space-y-1.5 border-l-2 border-[#D4AF37]/50 ml-4 mt-2 bg-[#0E0E12] rounded-xl">
                   <button
                     onClick={() => setFinanceSubTab("recettes")}
-                    className={`w-full text-left py-2.5 px-3 rounded-xl text-xs font-black transition-all tracking-wider ${
+                    className={`w-full text-left py-2 px-3 rounded-xl text-xs font-black transition-all tracking-wider ${
                       financeSubTab === "recettes"
                         ? "bg-[#D4AF37]/20 text-[#F3E5AB] border border-[#D4AF37]/50 shadow-sm"
                         : "text-[#A3A3B3] hover:text-white hover:bg-[#181820]"
@@ -980,7 +980,7 @@ export default function AdminDashboard() {
 
                   <button
                     onClick={() => setFinanceSubTab("depenses")}
-                    className={`w-full text-left py-2.5 px-3 rounded-xl text-xs font-black transition-all tracking-wider ${
+                    className={`w-full text-left py-2 px-3 rounded-xl text-xs font-black transition-all tracking-wider ${
                       financeSubTab === "depenses"
                         ? "bg-[#D4AF37]/20 text-[#F3E5AB] border border-[#D4AF37]/50 shadow-sm"
                         : "text-[#A3A3B3] hover:text-white hover:bg-[#181820]"
@@ -994,7 +994,7 @@ export default function AdminDashboard() {
 
             <button
               onClick={() => setActiveMenu("rh")}
-              className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+              className={`w-full flex items-center justify-start px-4 py-3 rounded-xl text-xs sm:text-sm transition-all tracking-wider font-extrabold ${
                 activeMenu === "rh"
                   ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
                   : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
@@ -1005,7 +1005,7 @@ export default function AdminDashboard() {
 
             <button
               onClick={() => setActiveMenu("administrations")}
-              className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+              className={`w-full flex items-center justify-start px-4 py-3 rounded-xl text-xs sm:text-sm transition-all tracking-wider font-extrabold ${
                 activeMenu === "administrations"
                   ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
                   : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
@@ -1016,25 +1016,25 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="p-4 border-t border-[#2A2A38] bg-[#0E0E12] sticky bottom-0 bg-[#121217]">
-          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#181820] border-2 border-[#D4AF37]/40 shadow-md">
-            <div className="flex items-center space-x-3">
+        <div className="p-3 border-t border-[#2A2A38] bg-[#0E0E12] sticky bottom-0 bg-[#121217]">
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#181820] border border-[#D4AF37]/40 shadow-md">
+            <div className="flex items-center space-x-2 min-w-0">
               <img
                 src="/logogy.png"
                 alt="GY"
-                className="h-10 w-auto object-contain drop-shadow-md"
+                className="h-8 w-auto object-contain drop-shadow-md shrink-0"
               />
-              <div className="text-left">
-                <div className="text-sm font-black text-white leading-tight">Ghislaine LOKO DJIDJOHO</div>
-                <div className="text-xs text-[#D4AF37] font-bold">Directrice Générale</div>
+              <div className="text-left min-w-0">
+                <div className="text-xs font-black text-white leading-tight truncate">Ghislaine LOKO</div>
+                <div className="text-[10px] text-[#D4AF37] font-bold truncate">Directrice Générale</div>
               </div>
             </div>
             <button
               onClick={handleLogout}
               title="Déconnexion"
-              className="text-rose-400 hover:bg-rose-500 hover:text-white font-black text-xs px-3.5 py-2 border border-rose-500/40 rounded-xl transition-colors uppercase"
+              className="text-rose-400 hover:bg-rose-500 hover:text-white font-black text-[10px] px-2 py-1 border border-rose-500/40 rounded-lg transition-colors uppercase shrink-0"
             >
-              DÉCONNEXION
+              SORTIR
             </button>
           </div>
         </div>
