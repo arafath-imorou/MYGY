@@ -86,7 +86,7 @@ export default function AdminDashboard() {
   const [payAmount, setPayAmount] = useState<number>(0);
   const [payMode, setPayMode] = useState("ESPECES");
   const [payRef, setPayRef] = useState("");
-  const [payAgent, setPayAgent] = useState("Grace Yessoufou (Direction)");
+  const [payAgent, setPayAgent] = useState("Ghislaine LOKO DJIDJOHO (Direction)");
 
   // Expense Modal State
   const [newExpenseModal, setNewExpenseModal] = useState(false);
@@ -1033,7 +1033,7 @@ export default function AdminDashboard() {
                 GY
               </div>
               <div className="text-left">
-                <div className="text-sm font-black text-white leading-tight">Grace Yessoufou</div>
+                <div className="text-sm font-black text-white leading-tight">Ghislaine LOKO DJIDJOHO</div>
                 <div className="text-xs text-[#D4AF37] font-bold">Directrice Générale</div>
               </div>
             </div>
