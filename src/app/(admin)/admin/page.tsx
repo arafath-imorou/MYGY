@@ -137,11 +137,12 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const noCacheOpts: RequestInit = { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate" } };
       const [dashRes, ordersRes, custRes, finRes] = await Promise.all([
-        fetch("/api/admin/dashboard"),
-        fetch("/api/admin/orders"),
-        fetch("/api/admin/customers"),
-        fetch("/api/admin/finances"),
+        fetch("/api/admin/dashboard", noCacheOpts),
+        fetch("/api/admin/orders", noCacheOpts),
+        fetch("/api/admin/customers", noCacheOpts),
+        fetch("/api/admin/finances", noCacheOpts),
       ]);
 
       const dashData = dashRes.ok ? await dashRes.json() : {};
