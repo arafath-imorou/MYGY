@@ -1,56 +1,47 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCloudData } from "@/lib/cloudDb";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
   try {
-    const orders = await prisma.order.findMany({
-      include: {
-        customer: true,
-        items: true,
-        payments: true,
-      },
-    });
+    let dbOrders: any[] = [];
+    try {
+      dbOrders = await prisma.order.findMany({
+        include: {
+          customer: true,
+          items: true,
+          payments: true,
+        },
+      });
+    } catch (e) {
+      console.warn("Prisma dashboard orders query fallback:", e);
+    }
 
-    const inventory = await prisma.inventoryItem.findMany();
+    const cloudData = await getCloudData();
+    const cloudOrders = cloudData.orders || [];
+
+    const orders = [...cloudOrders, ...dbOrders.filter((p) => !cloudOrders.some((c: any) => c.id === p.id))];
 
     // Financial Metrics
     let totalRevenueMonth = 0;
     let totalCollected = 0;
     let totalReceivables = 0;
 
-    orders.forEach((o) => {
-      totalRevenueMonth += o.totalAmount;
-      totalCollected += o.totalPaid;
-      totalReceivables += o.balanceDue;
+    orders.forEach((o: any) => {
+      totalRevenueMonth += Number(o.totalAmount || 0);
+      totalCollected += Number(o.totalPaid || 0);
+      totalReceivables += Number(o.balanceDue || 0);
     });
 
-    // Production Stage Counters
-    const productionStats = {
-      coupe: 0,
-      couture: 0,
-      broderie: 0,
-      retouche: 0,
-      qualite: 0,
-      pret: 0,
-    };
+    let inventory: any[] = [];
+    try {
+      inventory = await prisma.inventoryItem.findMany();
+    } catch (e) {}
 
-    orders.forEach((o) => {
-      o.items.forEach((item) => {
-        if (item.currentStage === "COUPE") productionStats.coupe++;
-        else if (item.currentStage === "COUTURE") productionStats.couture++;
-        else if (item.currentStage === "BRODERIE") productionStats.broderie++;
-        else if (item.currentStage === "RETOUCHE") productionStats.retouche++;
-        else if (item.currentStage === "CONTROLE_QUALITE") productionStats.qualite++;
-        else if (item.currentStage === "PRET") productionStats.pret++;
-      });
-    });
-
-    // Stock Alerts
     const lowStockItems = inventory.filter((i) => i.availableStock <= i.minThreshold);
-
     const recentOrders = orders.slice(0, 5);
 
     return NextResponse.json({
@@ -61,8 +52,6 @@ export async function GET() {
         totalOrders: orders.length,
         lowStockCount: lowStockItems.length,
       },
-      productionStats,
-      lowStockItems,
       recentOrders,
     });
   } catch (error: any) {

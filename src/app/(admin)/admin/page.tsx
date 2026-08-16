@@ -336,11 +336,56 @@ export default function AdminDashboard() {
 
       if (res.ok) {
         const updatedOrd = await res.json();
-        setOrders((prev) => prev.map((o) => (o.id === targetOrder.id || o.reference === targetOrder.reference ? { ...o, ...updatedOrd } : o)));
+
+        // 1. Update Orders state & local cache
+        setOrders((prev) => {
+          const updated = prev.map((o) => (o.id === targetOrder.id || o.reference === targetOrder.reference ? { ...o, ...updatedOrd } : o));
+          setStoredLocal("gy_orders", updated);
+          return updated;
+        });
+
+        // 2. Update Customers state so ESPACE CLIENT & customer view reflects payment instantly
+        setCustomers((prev) => {
+          const updated = prev.map((c) => {
+            if (c.id === targetOrder.customerId || c.id === updatedOrd.customerId) {
+              const existingOrders = c.orders || [];
+              const updatedCustOrders = existingOrders.map((o: any) =>
+                o.id === targetOrder.id || o.reference === targetOrder.reference ? { ...o, ...updatedOrd } : o
+              );
+              return { ...c, orders: updatedCustOrders };
+            }
+            return c;
+          });
+          setStoredLocal("gy_customers", updated);
+          return updated;
+        });
+
+        // 3. Update Receipts List state & local cache
+        if (updatedOrd.payments && updatedOrd.payments.length > 0) {
+          const newPay = updatedOrd.payments[updatedOrd.payments.length - 1];
+          const newReceipt = {
+            id: newPay.id || `rec_${Date.now()}`,
+            receiptNumber: newPay.receiptNumber || `REC-2026-${String(Date.now()).slice(-4)}`,
+            amount: newPay.amount,
+            paymentMode: newPay.paymentMode,
+            createdAt: newPay.createdAt || new Date().toISOString(),
+            customer: targetOrder.customer || customers.find((c) => c.id === targetOrder.customerId),
+            order: targetOrder,
+          };
+          setRecettesList((prev) => {
+            const updatedRec = [newReceipt, ...prev.filter((r) => r.id !== newReceipt.id)];
+            setStoredLocal("gy_recettes", updatedRec);
+            return updatedRec;
+          });
+        }
+
         setPaymentWizardModal(false);
         setPayAmount(0);
         setPayRef("");
-        fetchData();
+
+        // 4. Instant re-fetch to sync all Executive Dashboard metrics across tabs
+        await fetchData();
+
         setActiveMenu("finances");
         setFinanceSubTab("recettes");
       } else {
