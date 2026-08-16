@@ -648,7 +648,7 @@ export default function AdminDashboard() {
                 </div>
                 <button
                   onClick={() => setNewOrderModal(true)}
-                  className="px-6 py-3.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95"
+                  className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#FFE885] via-[#D4AF37] to-[#C5A059] text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.4)] border-2 border-[#FFF3B0] hover:scale-[1.02] transition-all"
                 >
                   + NOUVELLE COMMANDE VIP
                 </button>
@@ -705,7 +705,7 @@ export default function AdminDashboard() {
                 </div>
                 <button
                   onClick={() => setNewCustomerModal(true)}
-                  className="px-6 py-3.5 rounded-2xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95 transition-all"
+                  className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#FFE885] via-[#D4AF37] to-[#C5A059] text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.4)] border-2 border-[#FFF3B0] hover:scale-[1.02] transition-all"
                 >
                   + CRÉER NOUVEAU CLIENT
                 </button>
@@ -780,7 +780,7 @@ export default function AdminDashboard() {
                 </div>
                 <button
                   onClick={() => setNewOrderModal(true)}
-                  className="px-6 py-3.5 rounded-2xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95 transition-all"
+                  className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#FFE885] via-[#D4AF37] to-[#C5A059] text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.4)] border-2 border-[#FFF3B0] hover:scale-[1.02] transition-all"
                 >
                   + ENREGISTRER UNE COMMANDE
                 </button>

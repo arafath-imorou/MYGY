@@ -25,6 +25,16 @@
   }
 }
 
+.bg-gold-gradient {
+  background: linear-gradient(135deg, #FFE885 0%, #D4AF37 50%, #C5A059 100%) !important;
+  color: #000000 !important;
+  font-weight: 900 !important;
+}
+
+.shadow-gold {
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4) !important;
+}
+
 /* Custom Framed Table & Card Utilities */
 .framed-table {
   border-collapse: separate;
