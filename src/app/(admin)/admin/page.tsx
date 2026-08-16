@@ -224,6 +224,8 @@ export default function AdminDashboard() {
 
       setStoredLocal("gy_customers", mergedCusts);
       setStoredLocal("gy_orders", mergedOrders);
+      setStoredLocal("gy_recettes", mergedRecettes);
+      setStoredLocal("gy_depenses", mergedDepenses);
 
       setMetrics(dashData.metrics || {});
       setOrders(mergedOrders);
