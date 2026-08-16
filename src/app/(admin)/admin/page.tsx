@@ -35,6 +35,7 @@ export default function AdminDashboard() {
   });
   const [loginEmail, setLoginEmail] = useState("gymaisoncouture@gmail.com");
   const [loginPassword, setLoginPassword] = useState("gymc2026.");
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -660,7 +661,7 @@ export default function AdminDashboard() {
               GY
             </div>
             <div>
-              <h1 className="font-serif text-3xl font-bold text-white tracking-wide">GY MAISON HAUTE COUTURE</h1>
+              <h1 className="font-serif text-3xl font-bold text-white tracking-wide">GY MAISON COUTURE</h1>
               <p className="text-xs font-black text-[#D4AF37] uppercase tracking-widest mt-1">PORTAIL D&apos;ACCÈS SÉCURISÉ ADMIN ERP</p>
             </div>
           </div>
@@ -686,14 +687,23 @@ export default function AdminDashboard() {
 
             <div>
               <label className="block text-gy-textMuted mb-1 font-semibold text-xs uppercase tracking-wider">Mot de Passe *</label>
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl p-3.5 text-white font-bold text-sm focus:border-[#D4AF37] focus:outline-none"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl p-3.5 pr-24 text-white font-bold text-sm focus:border-[#D4AF37] focus:outline-none"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg bg-[#252533] border border-[#3A3A4D] text-[#D4AF37] hover:text-white font-black text-[11px] uppercase tracking-wider transition-colors"
+                >
+                  {showPassword ? "MASQUER" : "VOIR"}
+                </button>
+              </div>
             </div>
 
             <button
