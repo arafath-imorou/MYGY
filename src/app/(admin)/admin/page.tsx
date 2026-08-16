@@ -330,6 +330,23 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteCustomer = async (customerId: string, customerName: string) => {
+    if (!confirm(`Voulez-vous vraiment supprimer définitivement le client "${customerName}" ?`)) {
+      return;
+    }
+    try {
+      setCustomers((prev) => prev.filter((c) => c.id !== customerId));
+      const res = await fetch(`/api/admin/customers?id=${customerId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        fetchData();
+      }
+    } catch (e) {
+      console.error("Error deleting customer:", e);
+    }
+  };
+
   const handleCreateCustomer = async () => {
     if (!newCustFirstName || !newCustLastName || !newCustPhone) {
       alert("Veuillez remplir le prénom, le nom et le téléphone.");
@@ -929,6 +946,13 @@ export default function AdminDashboard() {
                                 className="px-4 py-2 rounded-xl bg-gy-gold/20 text-gy-gold hover:bg-gy-gold hover:text-black border border-gy-gold/50 transition-colors text-xs font-black uppercase tracking-wider"
                               >
                                 MODIFIER
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteCustomer(c.id, `${c.firstName} ${c.lastName}`)}
+                                className="px-4 py-2 rounded-xl bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/40 transition-colors text-xs font-black uppercase tracking-wider"
+                              >
+                                SUPPRIMER
                               </button>
                             </div>
                           </td>

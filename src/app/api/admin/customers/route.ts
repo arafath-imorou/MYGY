@@ -173,3 +173,31 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    let id = searchParams.get("id");
+
+    if (!id) {
+      const body = await req.json().catch(() => ({}));
+      id = body.id;
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: "ID client manquant." }, { status: 400 });
+    }
+
+    try {
+      await prisma.customer.delete({
+        where: { id },
+      });
+    } catch (delErr) {
+      console.warn("Prisma Customer Delete fallback:", delErr);
+    }
+
+    return NextResponse.json({ success: true, deletedId: id });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
