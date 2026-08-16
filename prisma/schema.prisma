@@ -1,0 +1,563 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  fullName      String
+  role          String    @default("CLIENT") // SUPER_ADMIN, DIRECTION, RESPONSIBLE_ATELIER, COUTURIER, CLIENT, etc.
+  phone         String?
+  avatarUrl     String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  employee      Employee?
+  customer      Customer?
+  auditLogs     AuditLog[]
+  comments      Comment[]
+  notifications Notification[]
+}
+
+model Employee {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matricule       String   @unique
+  jobTitle        String
+  department      String
+  skills          String?  // JSON string array of skills
+  contractType    String   // CDI, CDD, Prestataire
+  salaryBase      Float    @default(0)
+  hireDate        DateTime @default(now())
+  status          String   @default("ACTIF") // ACTIF, CONGE, INACTIF
+  createdAt       DateTime @default(now())
+
+  taskAssignments TaskAssignment[]
+  commissions     Commission[]
+  ordersResponsible Order[] @relation("OrderCommercial")
+}
+
+model Customer {
+  id                  String   @id @default(uuid())
+  userId              String?  @unique
+  user                User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  code                String   @unique // CLI-2026-0001
+  firstName           String
+  lastName            String
+  gender              String?  // F, M, Autre
+  birthDate           DateTime?
+  phone               String
+  whatsapp            String?
+  email               String?
+  address             String?
+  city                String?  @default("Cotonou")
+  country             String?  @default("Bénin")
+  profession          String?
+  language            String   @default("Français")
+  instagram           String?  
+  acquisitionSource   String?  // Instagram, Recommandation, Passage, Evénement
+  photoUrl            String?
+  notes               String?
+  preferences         String?
+  marketingConsent    Boolean  @default(true)
+  category            String   @default("Nouveau") // Prospect, Nouveau, Actif, Fidèle, VIP, Inactif
+  tags                String?  // JSON tags array
+
+  measurements        CustomerMeasurement[]
+  appointments        Appointment[]
+  quotations          Quotation[]
+  orders              Order[]
+  payments            Payment[]
+  loyaltyAccount      LoyaltyAccount?
+  tickets             SAVTicket[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model CustomerMeasurement {
+  id                  String   @id @default(uuid())
+  customerId          String
+  customer            Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  takenAt             DateTime @default(now())
+  unit                String   @default("cm") // cm or inches
+  
+  // 22 Measures
+  poitrine            Float?
+  sousPoitrine        Float?
+  taille              Float?
+  hanches             Float?
+  carrure             Float?
+  epaule              Float?
+  bras                Float?
+  poignet             Float?
+  hauteurPoitrine     Float?
+  ecartPoitrine       Float?
+  longueurCorsage     Float?
+  longueurDos         Float?
+  hauteurBassin       Float?
+  longueurRobe        Float?
+  longueurJupe        Float?
+  entrejambe          Float?
+  pantalon            Float?
+  cuisse              Float?
+  genou               Float?
+  mollet              Float?
+  cheville            Float?
+  hauteurTotale       Float?
+
+  morphologie         String?  // A, X, H, V, O, 8
+  posture             String?  // Droite, Voutée, Cambrée
+  preferedEase        String?  // Ajusté, Ajustement Moyen, Ample
+  notes               String?
+  photoUrl            String?
+  customMeasures      String?  // JSON string for extra custom metrics
+
+  createdAt           DateTime @default(now())
+}
+
+model Prospect {
+  id              String   @id @default(uuid())
+  code            String   @unique
+  fullName        String
+  phone           String
+  email           String?
+  source          String?
+  need            String?
+  estimatedBudget Float?
+  eventName       String?
+  eventDate       DateTime?
+  commercialName  String?
+  pipelineStage   String   @default("NOUVEAU") // NOUVEAU, CONTACTE, RDV_PREVU, DEVIS_ENVOYE, REFLEXION, GAGNE, PERDU
+  notes           String?
+  followUpDate    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Collection {
+  id              String   @id @default(uuid())
+  name            String
+  code            String   @unique
+  concept         String?
+  storytelling    String?
+  moodboardUrl    String?
+  season          String   // Printemps-Été, Automne-Hiver, Capsul
+  year            Int      @default(2026)
+  artisticDirector String?
+  budget          Float    @default(0)
+  status          String   @default("CONCEPTION") // CONCEPTION, ACTIVE, ARCHIVEE
+  models          FashionModel[]
+  createdAt       DateTime @default(now())
+}
+
+model FashionModel {
+  id              String   @id @default(uuid())
+  code            String   @unique // MOD-2026-001
+  name            String
+  category        String   // Robe de mariée, Haute Couture, Tailleur, Soirée, Costume
+  description     String?
+  collectionId    String?
+  collection      Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  indicativePrice Float    @default(0)
+  estimatedCost   Float    @default(0)
+  difficultyLevel String   @default("Moyen") // Facile, Moyen, Élevé, Expert
+  averageHours    Float    @default(10)
+  photoUrl        String?
+  sketchUrl       String?
+  patternUrl      String?
+  materialsSpec   String?  // JSON string detailing fabric meter requirements
+  status          String   @default("COMMERCIALISABLE") // Concept, Prototype, Validé, Commercialisable, Archivé
+  
+  orderItems      OrderItem[]
+  createdAt       DateTime @default(now())
+}
+
+model Appointment {
+  id              String   @id @default(uuid())
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type            String   // Decouverte, PriseDeMesures, ChoixModele, Essayage1, Essayage2, EssayageFinal, Retrait, SAV
+  startTime       DateTime
+  endTime         DateTime
+  location        String   @default("Boutique Principale - Cotonou")
+  assignedStaff   String?
+  notes           String?
+  status          String   @default("PLANIFIE") // PLANIFIE, CONFIRME, ARRIVE, EN_COURS, TERMINE, ANNULE
+  changeRequested Boolean  @default(false)
+  requestedNotes  String?
+  createdAt       DateTime @default(now())
+}
+
+model Quotation {
+  id              String   @id @default(uuid())
+  reference       String   @unique // DEV-2026-001
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  validUntil      DateTime
+  subtotal        Float    @default(0)
+  discount        Float    @default(0)
+  tax             Float    @default(0)
+  totalAmount     Float    @default(0)
+  status          String   @default("BROUILLON") // BROUILLON, ENVOYE, CONSULTÉ, ACCEPTE, REFUSE, CONVERTI
+  notes           String?
+  items           QuotationItem[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model QuotationItem {
+  id            String    @id @default(uuid())
+  quotationId   String
+  quotation     Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  designName    String
+  description   String?
+  quantity      Int       @default(1)
+  unitPrice     Float
+  customOptions String?
+  totalPrice    Float
+}
+
+model Order {
+  id                String       @id @default(uuid())
+  reference         String       @unique // ORD-2026-001
+  customerId        String
+  customer          Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orderDate         DateTime     @default(now())
+  eventDate         DateTime?
+  promisedDate      DateTime
+  priority          String       @default("STANDARD") // STANDARD, HAUTE, URGENTE, VIP
+  commercialId      String?
+  commercial        Employee?    @relation("OrderCommercial", fields: [commercialId], references: [id], onDelete: SetNull)
+  
+  status            String       @default("ACOMPTE_ATTENDU")
+  clientStepStatus  String       @default("COMMANDE_CONFIRMEE")
+  
+  totalAmount       Float        @default(0)
+  depositRequired   Float        @default(0)
+  totalPaid         Float        @default(0)
+  balanceDue        Float        @default(0)
+  
+  items             OrderItem[]
+  payments          Payment[]
+  fittings          Fitting[]
+  qualityChecks     QualityCheck[]
+  stockReservations StockReservation[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model OrderItem {
+  id                String       @id @default(uuid())
+  orderId           String
+  order             Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fashionModelId    String?
+  fashionModel      FashionModel? @relation(fields: [fashionModelId], references: [id], onDelete: SetNull)
+  itemName          String       // ex: Robe de Soirée Champagne Gold
+  fabricDetails     String?
+  customNotes       String?
+  price             Float
+  estimatedCost     Float        @default(0)
+  realCost          Float        @default(0)
+  currentStage      String       @default("COUPE") // COUPE, ASSEMBLAGE, COUTURE, BRODERIE, RETOUCHE, PRET
+  isReadyForDelivery Boolean     @default(false)
+  
+  productionJobs    ProductionJob[]
+  alterations       Alteration[]
+  attachments       Attachment[]
+  createdAt         DateTime     @default(now())
+}
+
+model ProductionJob {
+  id            String       @id @default(uuid())
+  orderItemId   String
+  orderItem     OrderItem    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  stage         String       @default("COUPE")
+  status        String       @default("A_FAIRE") // A_FAIRE, EN_COURS, EN_PAUSE, TERMINE, BLOQUE
+  assignedRole  String       @default("COUTURIER")
+  estimatedMin  Int          @default(120)
+  actualMin     Int          @default(0)
+  qrCode        String       @unique
+  startedAt     DateTime?
+  completedAt   DateTime?
+
+  taskAssignments TaskAssignment[]
+  issues        AtelierIssue[]
+  createdAt     DateTime     @default(now())
+}
+
+model TaskAssignment {
+  id              String        @id @default(uuid())
+  productionJobId String
+  productionJob   ProductionJob @relation(fields: [productionJobId], references: [id], onDelete: Cascade)
+  employeeId      String
+  employee        Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  assignedAt      DateTime      @default(now())
+  startedAt       DateTime?
+  endedAt         DateTime?
+  notes           String?
+  photoUrl        String?
+}
+
+model AtelierIssue {
+  id              String        @id @default(uuid())
+  productionJobId String
+  productionJob   ProductionJob @relation(fields: [productionJobId], references: [id], onDelete: Cascade)
+  type            String        // Tissu insuffisant, Tissu endommagé, Mauvaise mesure, Problème patron, Matériel défectueux, Consultation styliste
+  severity        String        @default("Moyenne") // Faible, Moyenne, Élevée, Bloquante
+  description     String
+  reportedBy      String
+  isResolved      Boolean       @default(false)
+  resolutionNotes String?
+  createdAt       DateTime      @default(now())
+}
+
+model Fitting {
+  id              String        @id @default(uuid())
+  fittingNumber   Int           @default(1)
+  orderId         String
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fittingDate     DateTime
+  observations    String?
+  clientSatisfaction String?    // Excellent, Bon, Retouches Nécessaires, Insatisfait
+  photoUrl        String?
+  status          String        @default("PLANIFIE")
+  alterations     Alteration[]
+  createdAt       DateTime      @default(now())
+}
+
+model Alteration {
+  id            String       @id @default(uuid())
+  fittingId     String?
+  fitting       Fitting?     @relation(fields: [fittingId], references: [id], onDelete: SetNull)
+  orderItemId   String
+  orderItem     OrderItem    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  description   String
+  assignedTo    String?
+  priority      String       @default("HAUTE")
+  isCompleted   Boolean      @default(false)
+  completedAt   DateTime?
+  createdAt     DateTime     @default(now())
+}
+
+model QualityCheck {
+  id              String        @id @default(uuid())
+  orderId         String
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  checkedBy       String
+  checkedAt       DateTime      @default(now())
+  
+  // Checklist boolean fields
+  coupeConforme   Boolean       @default(true)
+  mensurationsOK  Boolean       @default(true)
+  couturesOK      Boolean       @default(true)
+  fermeturesOK    Boolean       @default(true)
+  boutonsOK       Boolean       @default(true)
+  doublureOK      Boolean       @default(true)
+  broderiesOK     Boolean       @default(true)
+  finitionsOK     Boolean       @default(true)
+  symetrieOK      Boolean       @default(true)
+  filsCoupesOK    Boolean       @default(true)
+  repassageOK     Boolean       @default(true)
+  tachesAbsence   Boolean       @default(true)
+  emballageOK     Boolean       @default(true)
+  
+  status          String        @default("EN_ATTENTE") // EN_ATTENTE, APPROUVE, A_CORRIGER, REJETE
+  comments        String?
+  photoUrl        String?
+}
+
+model InventoryItem {
+  id            String   @id @default(uuid())
+  reference     String   @unique
+  name          String
+  category      String   // Tissu, Pagne, Dentelle, Doublure, Bouton, Fermeture, Fil, Perle, Strass, Accessoire, Emballage
+  unit          String   @default("Mètre") // Mètre, Pièce, Bobine, Boîte, Paquet
+  color         String?
+  physicalStock Float    @default(0)
+  reservedStock Float    @default(0)
+  availableStock Float   @default(0)
+  minThreshold  Float    @default(5)
+  location      String?  @default("Rayon A - Atelier Central")
+  unitCost      Float    @default(0)
+  supplierName  String?
+  photoUrl      String?
+
+  fabricDetails FabricDetail?
+  movements     StockMovement[]
+  reservations  StockReservation[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model FabricDetail {
+  id              String        @id @default(uuid())
+  inventoryItemId String        @unique
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  composition     String?       // Soie, Satin, Mikado, Dentelle de Calais, Organza, Pagne Wax
+  pattern         String?       // Uni, Floral, Géométrique
+  widthMeters     Float?        @default(1.5)
+  batchLot        String?
+}
+
+model StockMovement {
+  id              String        @id @default(uuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  type            String        // ENTRÉE, SORTIE, AJUSTEMENT, CONSOMMATION_ATELIER
+  quantity        Float
+  reason          String?
+  performedBy     String
+  createdAt       DateTime      @default(now())
+}
+
+model StockReservation {
+  id              String        @id @default(uuid())
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  orderId         String
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  quantity        Float
+  isConsumed      Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+}
+
+model Supplier {
+  id          String   @id @default(uuid())
+  companyName String
+  contactName String?
+  phone       String
+  email       String?
+  address     String?
+  city        String?
+  category    String   // Tissus, Accessoires, Sous-Traitance, Service
+  rating      Int      @default(5)
+  createdAt   DateTime @default(now())
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique // FACT-2026-001
+  orderId       String?
+  customerId    String
+  amountTotal   Float
+  amountPaid    Float         @default(0)
+  balance       Float         @default(0)
+  status        String        @default("IMPAYÉE") // PAYÉE, PARTIELLEMENT_PAYÉE, IMPAYÉE, ANNULÉE
+  dueDate       DateTime
+  pdfUrl        String?
+  createdAt     DateTime      @default(now())
+}
+
+model Payment {
+  id            String      @id @default(uuid())
+  receiptNumber String      @unique // REC-2026-0001
+  orderId       String
+  order         Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId    String
+  customer      Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  amount        Float
+  paymentMode   String      @default("ESPECES")
+  transactionRef String?
+  notes         String?
+  receiptUrl    String?
+  receivedBy    String
+  createdAt     DateTime    @default(now())
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  category    String   // Matière, Sous-traitance, Transport, Outillage, Loyer, Électricité, Autre
+  description String
+  amount      Float
+  paymentMode String   @default("Caisse Espèces")
+  spentBy     String
+  receiptUrl  String?
+  createdAt   DateTime @default(now())
+}
+
+model Commission {
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  orderId     String?
+  type        String   // VENTE_PERCENT, PIECE_WORK, BRODERIE_BONUS, PRIME
+  amount      Float
+  isPaid      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model SAVTicket {
+  id          String   @id @default(uuid())
+  ticketCode  String   @unique // SAV-2026-001
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  subject     String
+  description String
+  type        String   // Retouche post-livraison, Défaut constaté, Conseil d'entretien, Autre
+  photoUrl    String?
+  status      String   @default("NOUVEAU") // NOUVEAU, EN_COURS, TRAITE, FERME
+  createdAt   DateTime @default(now())
+}
+
+model LoyaltyAccount {
+  id          String   @id @default(uuid())
+  customerId  String   @unique
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tier        String   @default("GY Classic") // GY Classic, GY Silver, GY Gold, GY VIP Diamond
+  points      Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
+
+model Attachment {
+  id          String     @id @default(uuid())
+  orderItemId String?
+  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  fileName    String
+  fileUrl     String
+  fileType    String     // image/jpeg, application/pdf, etc.
+  visibility  String     @default("INTERNAL_ONLY")
+  uploadedBy  String
+  createdAt   DateTime   @default(now())
+}
+
+model Comment {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetType  String     // ORDER, ORDER_ITEM, ATELIER_JOB, CUSTOMER
+  targetId    String
+  content     String
+  visibility  String     @default("INTERNAL_ONLY")
+  createdAt   DateTime   @default(now())
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  linkUrl     String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action      String   // CREATE, UPDATE, DELETE, LOGIN, WORKFLOW_STAGE_CHANGE, PAYMENT_REC
+  entity      String   // Order, Payment, Customer, Fabric, Fitting, QualityCheck
+  entityId    String
+  details     String?  // JSON string detailing the old & new values
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+}

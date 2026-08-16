@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #0B0B0E;
+    --foreground: #E5E5EB;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Aptos', 'Aptos Display', 'Segoe UI', 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-serif, .font-aptos {
+    font-family: 'Aptos Display', 'Aptos', 'Segoe UI', sans-serif;
+    font-weight: 700;
+  }
+}
+
+/* Custom Framed Table & Card Utilities */
+.framed-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+.framed-table th {
+  background-color: #0F0F14;
+  border-bottom: 2px solid #2A2A36;
+  border-right: 1px solid #2A2A36;
+  padding: 14px 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: #D4AF37;
+}
+
+.framed-table th:last-child {
+  border-right: none;
+}
+
+.framed-table td {
+  border-bottom: 1px solid #2A2A36;
+  border-right: 1px solid #2A2A36;
+  padding: 16px;
+  vertical-align: middle;
+  background-color: #141419;
+}
+
+.framed-table td:last-child {
+  border-right: none;
+}
+
+.framed-table tr:hover td {
+  background-color: #1C1C24;
+}
+
+.framed-card {
+  background: #141419;
+  border: 1px solid #2A2A36;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.framed-badge-gold {
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #F3E5AB;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+.framed-badge-emerald {
+  background: rgba(48, 164, 108, 0.12);
+  border: 1px solid rgba(48, 164, 108, 0.4);
+  color: #4DE798;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+.framed-badge-amber {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #FBBF24;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: #141419;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2A2A36;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+}
+
+.glass-panel {
+  background: rgba(20, 20, 25, 0.95);
+  backdrop-filter: blur(14px);
+  border: 1px solid #2A2A36;
+}
