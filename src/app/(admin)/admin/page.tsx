@@ -541,6 +541,17 @@ export default function AdminDashboard() {
       const mergedCusts: any[] = [...serverCusts, ...localCusts.filter((l: any) => !serverCusts.some((s: any) => s.id === l.id))];
       const mergedOrders: any[] = [...serverOrders, ...localOrders.filter((l: any) => !serverOrders.some((s: any) => s.id === l.id))];
 
+      // Auto-sync un-uploaded local items to Supabase PostgreSQL cloud database
+      const unsyncedCusts = localCusts.filter((l: any) => !serverCusts.some((s: any) => s.id === l.id));
+      const unsyncedOrders = localOrders.filter((l: any) => !serverOrders.some((s: any) => s.id === l.id));
+      if (unsyncedCusts.length > 0 || unsyncedOrders.length > 0) {
+        fetch("/api/admin/customers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ syncBatch: true, customers: unsyncedCusts, orders: unsyncedOrders }),
+        }).catch(() => null);
+      }
+
       // Extract payments embedded inside mergedOrders
       const embeddedPayments: any[] = [];
       mergedOrders.forEach((o: any) => {

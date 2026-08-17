@@ -36,6 +36,21 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+
+    if (body.syncBatch) {
+      const { customers, orders } = body;
+      const updated = await updateCloudData((store) => {
+        const existingCusts = store.customers || [];
+        const existingOrders = store.orders || [];
+        const newCusts = Array.isArray(customers) ? customers : [];
+        const newOrders = Array.isArray(orders) ? orders : [];
+        const mergedCusts = [...existingCusts, ...newCusts.filter((nc: any) => !existingCusts.some((ec: any) => ec.id === nc.id))];
+        const mergedOrders = [...existingOrders, ...newOrders.filter((no: any) => !existingOrders.some((eo: any) => eo.id === no.id))];
+        return { ...store, customers: mergedCusts, orders: mergedOrders };
+      });
+      return NextResponse.json({ success: true, customers: updated.customers, orders: updated.orders });
+    }
+
     if (!body.firstName || !body.lastName || !body.phone) {
       return NextResponse.json({ error: "Prénom, Nom et Téléphone sont obligatoires." }, { status: 400 });
     }
