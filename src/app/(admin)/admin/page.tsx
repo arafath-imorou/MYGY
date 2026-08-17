@@ -971,6 +971,23 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteRecette = async (recetteId: string, receiptNum: string) => {
+    if (!confirm(`Voulez-vous vraiment supprimer cet encaissement / reçu "${receiptNum}" ?`)) {
+      return;
+    }
+    try {
+      setRecettesList((prev) => {
+        const updated = prev.filter((r) => r.id !== recetteId && r.receiptNumber !== receiptNum);
+        setStoredLocal("gy_recettes", updated);
+        return updated;
+      });
+      await fetch(`/api/admin/finances?id=${recetteId}&type=recette`, { method: "DELETE" });
+      await fetchData();
+    } catch (e) {
+      console.error("Error deleting recette:", e);
+    }
+  };
+
   const handleCreateCustomer = async () => {
     if (!newCustFirstName || !newCustLastName || !newCustPhone) {
       alert("Veuillez remplir le prénom, le nom et le téléphone.");
@@ -2068,6 +2085,7 @@ export default function AdminDashboard() {
                           <th className="min-w-[160px]">MODE DE PAIEMENT</th>
                           <th className="min-w-[140px]">DATE ENCAISSÉ</th>
                           <th className="min-w-[160px]">REÇU PAR</th>
+                          <th className="min-w-[120px] text-center">ACTION</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2097,6 +2115,14 @@ export default function AdminDashboard() {
                             </td>
                             <td className="font-semibold text-gy-textMuted">{formatDate(r.createdAt)}</td>
                             <td className="text-gy-textMuted text-xs font-bold">{r.receivedBy || "Administration GY"}</td>
+                            <td className="text-center">
+                              <button
+                                onClick={() => handleDeleteRecette(r.id, r.receiptNumber)}
+                                className="px-3 py-1.5 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-extrabold uppercase hover:bg-rose-500 hover:text-white transition-all cursor-pointer"
+                              >
+                                [ SUPPRIMER ]
+                              </button>
+                            </td>
                           </tr>
                         );
                         })}

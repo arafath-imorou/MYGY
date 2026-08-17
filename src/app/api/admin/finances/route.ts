@@ -170,3 +170,69 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    let id = searchParams.get("id");
+    let type = searchParams.get("type") || "recette";
+
+    if (!id) {
+      const body = await req.json().catch(() => ({}));
+      id = body.id;
+      if (body.type) type = body.type;
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: "ID manquant." }, { status: 400 });
+    }
+
+    try {
+      if (type === "depense") {
+        await (prisma as any).auditLog?.deleteMany({ where: { entityId: id } }).catch(() => null);
+      } else {
+        await (prisma as any).payment?.deleteMany({ where: { OR: [{ id }, { receiptNumber: id }] } }).catch(() => null);
+      }
+    } catch (e) {}
+
+    await updateCloudData((store) => {
+      if (type === "depense") {
+        const existingDep = store.depenses || [];
+        return {
+          ...store,
+          depenses: existingDep.filter((d: any) => d.id !== id && d.reference !== id),
+        };
+      } else {
+        const existingRec = store.recettes || [];
+        const existingOrders = store.orders || [];
+
+        const targetRec = existingRec.find((r: any) => r.id === id || r.receiptNumber === id);
+        const orderIdToClean = targetRec ? targetRec.orderId : null;
+
+        const updatedOrders = existingOrders.map((o: any) => {
+          if (o.id === orderIdToClean || o.payments?.some((p: any) => p.id === id || p.receiptNumber === id)) {
+            const updatedPayments = (o.payments || []).filter((p: any) => p.id !== id && p.receiptNumber !== id);
+            const newTotalPaid = updatedPayments.reduce((acc: number, p: any) => acc + Number(p.amount || 0), 0);
+            return {
+              ...o,
+              payments: updatedPayments,
+              totalPaid: newTotalPaid,
+              balanceDue: Math.max(0, Number(o.totalAmount || 0) - newTotalPaid),
+            };
+          }
+          return o;
+        });
+
+        return {
+          ...store,
+          recettes: existingRec.filter((r: any) => r.id !== id && r.receiptNumber !== id),
+          orders: updatedOrders,
+        };
+      }
+    });
+
+    return NextResponse.json({ success: true, deletedId: id });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
