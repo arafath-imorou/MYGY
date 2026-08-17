@@ -267,6 +267,8 @@ export default function AdminDashboard() {
   const [employeesList, setEmployeesList] = useState<any[]>(DEFAULT_EMPLOYEES);
   const [rhRoleFilter, setRhRoleFilter] = useState("TOUS");
   const [newEmployeeModal, setNewEmployeeModal] = useState(false);
+  const [editEmployeeModal, setEditEmployeeModal] = useState(false);
+  const [editingEmpId, setEditingEmpId] = useState("");
   const [empFirstName, setEmpFirstName] = useState("");
   const [empLastName, setEmpLastName] = useState("");
   const [empRole, setEmpRole] = useState("Tailleur");
@@ -916,6 +918,85 @@ export default function AdminDashboard() {
       } else {
         const err = await res.json().catch(() => ({}));
         alert(err.error || "Erreur lors de la création du membre du personnel.");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleOpenEditEmployee = (emp: any) => {
+    setEditingEmpId(emp.id);
+    setEmpFirstName(emp.firstName || "");
+    setEmpLastName(emp.lastName || "");
+    setEmpRole(emp.role || "Tailleur");
+    setEmpDepartment(emp.department || "Atelier Confection");
+    setEmpPhone(emp.phone || "");
+    setEmpEmail(emp.email || "");
+    setEmpContractType(emp.contractType || "CDI");
+    setEmpSalary(emp.salary || 150000);
+    setEmpHireDate(emp.hireDate || new Date().toISOString().split("T")[0]);
+    setEditEmployeeModal(true);
+  };
+
+  const handleSaveEditEmployee = async () => {
+    if (!editingEmpId || !empFirstName || !empLastName || !empRole) {
+      alert("Veuillez remplir le prénom, le nom et le rôle du membre du personnel.");
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin/employees", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingEmpId,
+          firstName: empFirstName,
+          lastName: empLastName,
+          role: empRole,
+          department: empDepartment,
+          phone: empPhone,
+          email: empEmail,
+          contractType: empContractType,
+          salary: Number(empSalary || 150000),
+          hireDate: empHireDate,
+        }),
+      });
+
+      if (res.ok) {
+        const updatedEmp = await res.json();
+        setEmployeesList((prev) => {
+          const updated = prev.map((e) => (e.id === editingEmpId ? { ...e, ...updatedEmp } : e));
+          setStoredLocal("gy_employees", updated);
+          return updated;
+        });
+        setEditEmployeeModal(false);
+        setEditingEmpId("");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Erreur lors de la modification de l'employé.");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDeleteEmployee = async (emp: any) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${emp.firstName} ${emp.lastName} (${emp.role}) du personnel ?`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/employees?id=${emp.id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setEmployeesList((prev) => {
+          const updated = prev.filter((e) => e.id !== emp.id);
+          setStoredLocal("gy_employees", updated);
+          return updated;
+        });
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Erreur lors de la suppression de l'employé.");
       }
     } catch (e) {
       console.error(e);
@@ -2307,6 +2388,7 @@ export default function AdminDashboard() {
                         <th className="min-w-[120px]">CONTRAT</th>
                         <th className="min-w-[150px]">SALAIRE MENSUEL</th>
                         <th className="min-w-[110px]">STATUT</th>
+                        <th className="min-w-[180px] text-center">ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2355,6 +2437,22 @@ export default function AdminDashboard() {
                               <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black uppercase">
                                 {emp.status || "ACTIF"}
                               </span>
+                            </td>
+                            <td className="text-center">
+                              <div className="flex items-center justify-center space-x-2">
+                                <button
+                                  onClick={() => handleOpenEditEmployee(emp)}
+                                  className="px-2.5 py-1 bg-[#181820] border border-[#2A2A38] text-white hover:border-[#D4AF37] hover:text-[#D4AF37] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                >
+                                  [ MODIFIER ]
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteEmployee(emp)}
+                                  className="px-2.5 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                >
+                                  [ SUPPRIMER ]
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -2534,6 +2632,139 @@ export default function AdminDashboard() {
                   className="w-1/2 py-3.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase shadow-gold hover:opacity-95"
                 >
                   ENREGISTRER EMPLOYÉ
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: MODIFIER UN MEMBRE DU PERSONNEL                     */}
+      {/* ========================================================= */}
+      {editEmployeeModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-panel max-w-lg w-full p-8 rounded-3xl border border-[#D4AF37]/50 shadow-2xl font-aptos my-8">
+            <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
+              <h3 className="font-serif text-2xl font-bold text-white">MODIFIER LES INFORMATIONS DU PERSONNEL</h3>
+              <button onClick={() => setEditEmployeeModal(false)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
+                [ FERMER ]
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Prénom *</label>
+                  <input
+                    type="text"
+                    value={empFirstName}
+                    onChange={(e) => setEmpFirstName(e.target.value)}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Nom *</label>
+                  <input
+                    type="text"
+                    value={empLastName}
+                    onChange={(e) => setEmpLastName(e.target.value)}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Poste / Rôle Officiel *</label>
+                  <select
+                    value={empRole}
+                    onChange={(e) => {
+                      setEmpRole(e.target.value);
+                      if (e.target.value === "Directrice Générale") setEmpDepartment("Direction Générale");
+                      else if (e.target.value === "Assistante") setEmpDepartment("Administration & Accueil");
+                      else if (e.target.value === "Tailleur") setEmpDepartment("Atelier Confection & Coupe");
+                      else if (e.target.value === "Agent d'entretien") setEmpDepartment("Entretien Atelier & Showroom");
+                      else if (e.target.value === "Agent de liaison") setEmpDepartment("Logistique & Livraisons VIP");
+                    }}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-[#D4AF37] focus:outline-none"
+                  >
+                    <option value="Directrice Générale">Directrice Générale</option>
+                    <option value="Assistante">Assistante</option>
+                    <option value="Tailleur">Tailleur / Couturier</option>
+                    <option value="Agent d'entretien">Agent d'entretien</option>
+                    <option value="Agent de liaison">Agent de liaison</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Département *</label>
+                  <input
+                    type="text"
+                    value={empDepartment}
+                    onChange={(e) => setEmpDepartment(e.target.value)}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Téléphone</label>
+                  <input
+                    type="text"
+                    value={empPhone}
+                    onChange={(e) => setEmpPhone(e.target.value)}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Email</label>
+                  <input
+                    type="email"
+                    value={empEmail}
+                    onChange={(e) => setEmpEmail(e.target.value)}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Type de Contrat</label>
+                  <select
+                    value={empContractType}
+                    onChange={(e) => setEmpContractType(e.target.value)}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-[#D4AF37] focus:outline-none"
+                  >
+                    <option value="CDI">CDI</option>
+                    <option value="CDD">CDD</option>
+                    <option value="Prestataire">Prestataire</option>
+                    <option value="Stagiaire">Stagiaire</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Salaire Mensuel (FCFA) *</label>
+                  <input
+                    type="number"
+                    value={empSalary}
+                    onChange={(e) => setEmpSalary(Number(e.target.value))}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-emerald-400 font-bold text-base focus:border-[#D4AF37] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => setEditEmployeeModal(false)}
+                  className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase"
+                >
+                  ANNULER
+                </button>
+                <button
+                  onClick={handleSaveEditEmployee}
+                  className="w-1/2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs uppercase shadow-lg hover:opacity-95"
+                >
+                  ENREGISTRER MODIFICATIONS
                 </button>
               </div>
             </div>

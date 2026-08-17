@@ -54,3 +54,64 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json();
+    const { id, firstName, lastName, role, department, phone, email, contractType, salary, hireDate, status } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "ID de l'employé requis." }, { status: 400 });
+    }
+
+    let updatedEmp: any = null;
+    await updateCloudData((store) => {
+      const currentEmps = store.employees || [];
+      const updated = currentEmps.map((e: any) => {
+        if (e.id === id) {
+          updatedEmp = {
+            ...e,
+            firstName: firstName ?? e.firstName,
+            lastName: lastName ?? e.lastName,
+            role: role ?? e.role,
+            department: department ?? e.department,
+            phone: phone ?? e.phone,
+            email: email ?? e.email,
+            contractType: contractType ?? e.contractType,
+            salary: salary ? Number(salary) : e.salary,
+            hireDate: hireDate ?? e.hireDate,
+            status: status ?? e.status,
+          };
+          return updatedEmp;
+        }
+        return e;
+      });
+      return { ...store, employees: updated };
+    });
+
+    return NextResponse.json(updatedEmp || { id, ...body });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID de l'employé requis." }, { status: 400 });
+    }
+
+    await updateCloudData((store) => {
+      const currentEmps = store.employees || [];
+      const updated = currentEmps.filter((e: any) => e.id !== id);
+      return { ...store, employees: updated };
+    });
+
+    return NextResponse.json({ success: true, deletedId: id });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
