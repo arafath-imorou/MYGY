@@ -33,6 +33,26 @@ export default function AdminDashboard() {
     }
     return false;
   });
+  const [currentUser, setCurrentUser] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      const savedEmail = localStorage.getItem("gy_user_email");
+      const savedName = localStorage.getItem("gy_user_name");
+      const savedRole = localStorage.getItem("gy_user_role");
+      const isFatia = savedEmail === "teeadjao@gmail.com" || savedName?.includes("ADJAO");
+      if (savedName || savedEmail) {
+        return {
+          fullName: isFatia ? "Fatia ADJAO MOUFTAOU" : (savedName || "Ghislaine LOKO DJIDJOHO"),
+          email: savedEmail || "gymaisoncouture@gmail.com",
+          role: isFatia ? "Assistante" : (savedRole === "ADMINISTRATION" ? "Assistante" : "Directrice Générale"),
+        };
+      }
+    }
+    return {
+      fullName: "Ghislaine LOKO DJIDJOHO",
+      email: "gymaisoncouture@gmail.com",
+      role: "Directrice Générale",
+    };
+  });
   const [loginEmail, setLoginEmail] = useState("gymaisoncouture@gmail.com");
   const [loginPassword, setLoginPassword] = useState("gymc2026");
   const [showPassword, setShowPassword] = useState(false);
@@ -52,9 +72,22 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (res.ok && data.success) {
         setIsAuthenticated(true);
+        const isFatia = data.user.email === "teeadjao@gmail.com" || data.user.fullName?.includes("ADJAO");
+        const uName = isFatia ? "Fatia ADJAO MOUFTAOU" : (data.user.fullName || "Ghislaine LOKO DJIDJOHO");
+        const uRole = isFatia ? "Assistante" : (data.user.role === "ADMINISTRATION" ? "Assistante" : "Directrice Générale");
+
+        setCurrentUser({
+          fullName: uName,
+          email: data.user.email,
+          role: uRole,
+        });
+        setPayAgent(isFatia ? "Fatia ADJAO MOUFTAOU (Assistante)" : "Ghislaine LOKO DJIDJOHO (Direction)");
+
         if (typeof window !== "undefined") {
           localStorage.setItem("gy_logged_in", "true");
           localStorage.setItem("gy_user_email", data.user.email);
+          localStorage.setItem("gy_user_name", uName);
+          localStorage.setItem("gy_user_role", uRole);
         }
       } else {
         setLoginError(data.error || "Email ou mot de passe incorrect");
@@ -71,6 +104,8 @@ export default function AdminDashboard() {
     if (typeof window !== "undefined") {
       localStorage.removeItem("gy_logged_in");
       localStorage.removeItem("gy_user_email");
+      localStorage.removeItem("gy_user_name");
+      localStorage.removeItem("gy_user_role");
       sessionStorage.clear();
     }
   };
@@ -1478,8 +1513,8 @@ export default function AdminDashboard() {
                 className="h-8 w-auto object-contain drop-shadow-md shrink-0"
               />
               <div className="text-left min-w-0">
-                <div className="text-xs font-black text-white leading-tight truncate">Ghislaine LOKO</div>
-                <div className="text-[10px] text-[#D4AF37] font-bold truncate">Directrice Générale</div>
+                <div className="text-xs font-black text-white leading-tight truncate">{currentUser?.fullName || "Ghislaine LOKO"}</div>
+                <div className="text-[10px] text-[#D4AF37] font-bold truncate">{currentUser?.role || "Directrice Générale"}</div>
               </div>
             </div>
             <button
