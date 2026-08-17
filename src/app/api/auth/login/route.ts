@@ -41,6 +41,16 @@ export async function POST(req: Request) {
       };
     }
 
+    if (!user && email === "teeadjao@gmail.com") {
+      user = {
+        id: "usr_assistante_fatia",
+        email: "teeadjao@gmail.com",
+        fullName: "Fatia ADJAO MOUFTAOU",
+        role: "ADMINISTRATION",
+        passwordHash: "hashed_Assistantegymc2026_gy2026",
+      };
+    }
+
     if (!user || !verifyPassword(password, user.passwordHash)) {
       return NextResponse.json({ error: "Identifiants invalides" }, { status: 401 });
     }
