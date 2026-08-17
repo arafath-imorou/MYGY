@@ -299,7 +299,47 @@ export default function AdminDashboard() {
     },
   ];
 
+  const DEFAULT_ADMIN_USERS = [
+    {
+      id: "usr_admin_gy_2026",
+      fullName: "Ghislaine LOKO DJIDJOHO",
+      email: "gymaisoncouture@gmail.com",
+      role: "SUPER_ADMIN",
+      roleLabel: "SUPER ADMIN (DIRECTION)",
+      status: "ACTIF",
+      phone: "+229 97 00 00 01",
+      createdAt: "2024-01-01",
+    },
+    {
+      id: "usr_assistante_fatia",
+      fullName: "Fatia ADJAO MOUFTAOU",
+      email: "teeadjao@gmail.com",
+      role: "ADMINISTRATION",
+      roleLabel: "ASSISTANTE (ADMINISTRATION)",
+      status: "ACTIF",
+      phone: "+229 97 00 00 02",
+      createdAt: "2024-03-01",
+    },
+  ];
+
+  const DEFAULT_EXPENSE_CATEGORIES = [
+    { id: "exp_cat_1", code: "LIGNE-001", label: "Achat Tissus & Pagnes", category: "MATIERES_PREMIERES" },
+    { id: "exp_cat_2", code: "LIGNE-002", label: "Mercerie & Perles (Swarovski, Zips, Boutons)", category: "FOURNITURES" },
+    { id: "exp_cat_3", code: "LIGNE-003", label: "Salaires Artisans & Commissions", category: "PERSONNEL" },
+    { id: "exp_cat_4", code: "LIGNE-004", label: "Loyer Atelier / Boutique", category: "LOYER_CHARGES" },
+    { id: "exp_cat_5", code: "LIGNE-005", label: "Électricité SBEE & Eau SONEB", category: "UTILITIES" },
+    { id: "exp_cat_6", code: "LIGNE-006", label: "Transport, Transit & Packaging VIP", category: "LOGISTIQUE" },
+    { id: "exp_cat_7", code: "LIGNE-007", label: "Maintenance Machines & Divers", category: "ENTRETIEN" },
+  ];
+
   const [employeesList, setEmployeesList] = useState<any[]>(DEFAULT_EMPLOYEES);
+  const [adminUsersList, setAdminUsersList] = useState<any[]>(DEFAULT_ADMIN_USERS);
+  const [expenseCategories, setExpenseCategories] = useState<any[]>(DEFAULT_EXPENSE_CATEGORIES);
+  const [newExpenseCategoryModal, setNewExpenseCategoryModal] = useState(false);
+  const [newExpCatLabel, setNewExpCatLabel] = useState("");
+  const [newExpCatCode, setNewExpCatCode] = useState("");
+  const [newExpCatDesc, setNewExpCatDesc] = useState("");
+
   const [rhRoleFilter, setRhRoleFilter] = useState("TOUS");
   const [newEmployeeModal, setNewEmployeeModal] = useState(false);
   const [editEmployeeModal, setEditEmployeeModal] = useState(false);
@@ -313,6 +353,31 @@ export default function AdminDashboard() {
   const [empContractType, setEmpContractType] = useState("CDI");
   const [empSalary, setEmpSalary] = useState<number>(150000);
   const [empHireDate, setEmpHireDate] = useState(new Date().toISOString().split("T")[0]);
+
+  const handleCreateExpenseCategory = () => {
+    if (!newExpCatLabel) {
+      alert("Veuillez entrer le libellé de la ligne de dépense.");
+      return;
+    }
+    const newCat = {
+      id: `exp_cat_${Date.now()}`,
+      code: newExpCatCode ? newExpCatCode.toUpperCase() : `LIGNE-${String(expenseCategories.length + 1).padStart(3, "0")}`,
+      label: newExpCatLabel.toUpperCase(),
+      description: newExpCatDesc || "Ligne de dépense personnalisée",
+    };
+
+    setExpenseCategories((prev) => {
+      const updated = [...prev, newCat];
+      setStoredLocal("gy_expense_categories", updated);
+      return updated;
+    });
+
+    setExpCategory(newCat.label);
+    setNewExpenseCategoryModal(false);
+    setNewExpCatLabel("");
+    setNewExpCatCode("");
+    setNewExpCatDesc("");
+  };
 
   const handleAddItemToOrder = () => {
     setNewOrderItemsList((prev) => [
@@ -363,12 +428,13 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const noCacheOpts: RequestInit = { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate" } };
-      const [dashRes, ordersRes, custRes, finRes, empRes] = await Promise.all([
+      const [dashRes, ordersRes, custRes, finRes, empRes, usersRes] = await Promise.all([
         fetch("/api/admin/dashboard", noCacheOpts),
         fetch("/api/admin/orders", noCacheOpts),
         fetch("/api/admin/customers", noCacheOpts),
         fetch("/api/admin/finances", noCacheOpts),
         fetch("/api/admin/employees", noCacheOpts).catch(() => null),
+        fetch("/api/admin/users", noCacheOpts).catch(() => null),
       ]);
 
       const dashData = dashRes.ok ? await dashRes.json() : {};
@@ -376,6 +442,7 @@ export default function AdminDashboard() {
       const custData = custRes.ok ? await custRes.json() : [];
       const finData = finRes.ok ? await finRes.json() : {};
       const empData = empRes && empRes.ok ? await empRes.json() : [];
+      const usersData = usersRes && usersRes.ok ? await usersRes.json() : [];
 
       const serverEmps = Array.isArray(empData) ? empData : [];
       const localEmps = getStoredLocal("gy_employees");
@@ -385,6 +452,30 @@ export default function AdminDashboard() {
 
       setEmployeesList(mergedEmps);
       setStoredLocal("gy_employees", mergedEmps);
+
+      const localCategories = getStoredLocal("gy_expense_categories");
+      if (localCategories && localCategories.length > 0) {
+        setExpenseCategories(localCategories);
+      }
+
+      const serverUsers = Array.isArray(usersData) ? usersData : [];
+      const mergedUsers = [...DEFAULT_ADMIN_USERS];
+      serverUsers.forEach((su: any) => {
+        if (!mergedUsers.some((mu) => mu.email === su.email)) {
+          mergedUsers.push({
+            id: su.id,
+            fullName: su.fullName,
+            email: su.email,
+            role: su.role,
+            roleLabel: su.role === "SUPER_ADMIN" ? "SUPER ADMIN (DIRECTION)" : (su.role === "ADMINISTRATION" ? "ASSISTANTE (ADMINISTRATION)" : su.role),
+            status: "ACTIF",
+            phone: "+229 97 00 00 00",
+            createdAt: su.createdAt ? su.createdAt.split("T")[0] : "2026-08-17",
+          });
+        }
+      });
+      setAdminUsersList(mergedUsers);
+      setStoredLocal("gy_admin_users", mergedUsers);
 
       const localCusts = getStoredLocal("gy_customers");
       const localOrders = getStoredLocal("gy_orders");
@@ -2499,35 +2590,122 @@ export default function AdminDashboard() {
           )}
 
           {activeMenu === "administrations" && (
-            <div className="space-y-8">
+            <div className="space-y-8 font-aptos">
+              {/* Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h2 className="font-serif text-4xl font-bold text-white">ADMINISTRATION & ACCÈS SÉCURISÉS</h2>
-                  <p className="text-sm text-gy-textMuted mt-1">Gestion centrale des comptes administrateurs, rôles et privilèges d&apos;accès</p>
+                  <h2 className="font-serif text-4xl font-bold text-white">ADMINISTRATION & COMPTES ACCÈS</h2>
+                  <p className="text-sm text-gy-textMuted mt-1">Gestion centrale des comptes utilisateurs autorisés, rôles, privilèges et lignes de dépenses</p>
                 </div>
-                <button
-                  onClick={() => setNewAdminModal(true)}
-                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95 transition-opacity"
-                >
-                  + CRÉER UN COMPTE ADMIN
-                </button>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => setNewExpenseCategoryModal(true)}
+                    className="px-5 py-3.5 rounded-2xl bg-rose-500/20 text-rose-300 border border-rose-500/40 font-black text-xs uppercase tracking-wider hover:bg-rose-500 hover:text-white transition-all cursor-pointer"
+                  >
+                    + NOUVELLE LIGNE DE DÉPENSE
+                  </button>
+                  <button
+                    onClick={() => setNewAdminModal(true)}
+                    className="px-6 py-3.5 rounded-2xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95 transition-opacity cursor-pointer"
+                  >
+                    + CRÉER UN COMPTE ADMIN
+                  </button>
+                </div>
               </div>
 
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div className="framed-card p-5 border-l-4 border-l-[#D4AF37]">
+                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Comptes Administrateurs</span>
+                  <h3 className="font-serif text-3xl font-black text-white mt-2">{adminUsersList.length} Comptes Autorisés</h3>
+                </div>
+                <div className="framed-card p-5 border-l-4 border-l-purple-400">
+                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Lignes de Dépenses Actives</span>
+                  <h3 className="font-serif text-3xl font-black text-purple-400 mt-2">{expenseCategories.length} Postes Budgétaires</h3>
+                </div>
+                <div className="framed-card p-5 border-l-4 border-l-emerald-400">
+                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Statut Sécurité ERP</span>
+                  <h3 className="font-serif text-3xl font-black text-emerald-400 mt-2">100% SÉCURISÉ</h3>
+                </div>
+              </div>
+
+              {/* Accounts Table */}
               <div className="framed-card p-8 space-y-6">
-                <h3 className="font-serif text-2xl font-bold text-white border-b border-gy-border pb-4">
-                  COMPTES ADMINISTRATEURS AUTORISÉS
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-6 rounded-2xl bg-gy-dark border border-gy-gold/40 flex justify-between items-center">
-                    <div>
-                      <span className="px-3 py-1 rounded-full text-[10px] font-black bg-gy-gold/20 text-gy-gold border border-gy-gold/40 uppercase">
-                        SUPER ADMIN (DIRECTION)
-                      </span>
-                      <h4 className="font-bold text-white text-lg mt-2">Direction Maison GY</h4>
-                      <p className="text-xs text-gy-textMuted mt-0.5">admin@mygy.com</p>
-                    </div>
-                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black uppercase">ACTIF</span>
+                <div className="flex justify-between items-center border-b border-gy-border pb-4">
+                  <div>
+                    <h3 className="font-serif text-2xl font-bold text-white">
+                      COMPTES UTILISATEURS AUTORISÉS AU ERP
+                    </h3>
+                    <p className="text-xs text-gy-textMuted mt-0.5">Identifiants d&apos;accès enregistrés pour le portail d&apos;administration Maison GY</p>
                   </div>
+                  <span className="px-3 py-1 bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40 rounded-xl text-xs font-black uppercase">
+                    {adminUsersList.length} COMPTES ACTIFS
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {adminUsersList.map((usr, idx) => (
+                    <div key={usr.id || idx} className="p-6 rounded-2xl bg-gy-dark border border-gy-border hover:border-[#D4AF37]/60 transition-all flex flex-col justify-between space-y-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${
+                            usr.role === "SUPER_ADMIN"
+                              ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
+                              : "bg-purple-500/20 text-purple-400 border-purple-500/40"
+                          }`}>
+                            {usr.roleLabel || (usr.role === "SUPER_ADMIN" ? "SUPER ADMIN (DIRECTION)" : "ASSISTANTE (ADMINISTRATION)")}
+                          </span>
+                          <h4 className="font-bold text-white text-xl mt-3">{usr.fullName}</h4>
+                          <p className="text-xs text-[#D4AF37] font-bold mt-1">{usr.email}</p>
+                        </div>
+                        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black uppercase shrink-0">
+                          {usr.status || "ACTIF"}
+                        </span>
+                      </div>
+
+                      <div className="pt-3 border-t border-gy-border/60 flex items-center justify-between text-xs text-gy-textMuted">
+                        <span>Créé le {usr.createdAt || "01/01/2024"}</span>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => alert(`Identifiants & Privilèges:\nUtilisateur: ${usr.fullName}\nEmail: ${usr.email}\nRôle ERP: ${usr.roleLabel || usr.role}`)}
+                            className="px-3 py-1 bg-[#181820] border border-[#2A2A38] text-white hover:border-[#D4AF37] hover:text-[#D4AF37] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                          >
+                            [ DÉTAILS COMPTE ]
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Lignes & Catégories de Dépenses Section */}
+              <div className="framed-card p-8 space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gy-border pb-4 gap-4">
+                  <div>
+                    <h3 className="font-serif text-2xl font-bold text-white">
+                      LIGNES DE DÉPENSES & CATÉGORIES D&apos;EXPLOITATION
+                    </h3>
+                    <p className="text-xs text-gy-textMuted mt-0.5">Postes budgétaires pré-configurés pour la saisie des dépenses en comptabilité</p>
+                  </div>
+                  <button
+                    onClick={() => setNewExpenseCategoryModal(true)}
+                    className="px-5 py-2.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 font-black text-xs uppercase hover:bg-rose-500 hover:text-white transition-all cursor-pointer shrink-0"
+                  >
+                    + CRÉER UNE LIGNE DE DÉPENSE
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {expenseCategories.map((cat) => (
+                    <div key={cat.id} className="p-4 rounded-xl bg-gy-dark border border-gy-border flex items-center justify-between">
+                      <div>
+                        <span className="framed-badge-gold text-[10px] font-black">{cat.code}</span>
+                        <h5 className="font-bold text-white text-sm mt-1.5">{cat.label}</h5>
+                      </div>
+                      <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1 rounded-lg">ACTIF</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -3320,13 +3498,11 @@ export default function AdminDashboard() {
                   onChange={(e) => setExpCategory(e.target.value)}
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
                 >
-                  <option value="Achat Tissus">Achat Tissus & Pagnes</option>
-                  <option value="Mercerie & Accessoires">Mercerie & Perles (Swarovski, Zips, Boutons)</option>
-                  <option value="Salaires & Commissions">Salaires Artisans & Commissions</option>
-                  <option value="Loyer Boutique & Atelier">Loyer Atelier / Boutique</option>
-                  <option value="Électricité SBEE / SONEB">Électricité SBEE & Eau SONEB</option>
-                  <option value="Transport & Packaging">Transport, Transit & Packaging VIP</option>
-                  <option value="Maintenance & Divers">Maintenance Machines & Divers</option>
+                  {expenseCategories.map((c) => (
+                    <option key={c.id} value={c.label}>
+                      {c.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -3390,6 +3566,70 @@ export default function AdminDashboard() {
                   className="w-1/2 py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-600 text-white font-black text-xs uppercase shadow-lg"
                 >
                   VALIDER DÉPENSE
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CRÉER LIGNE DE DÉPENSE */}
+      {newExpenseCategoryModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 font-aptos">
+          <div className="glass-panel max-w-lg w-full p-8 rounded-3xl border border-rose-500/50 shadow-2xl">
+            <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
+              <h3 className="font-serif text-2xl font-bold text-white">CRÉER UNE LIGNE DE DÉPENSE</h3>
+              <button onClick={() => setNewExpenseCategoryModal(false)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
+                [ FERMER ]
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Libellé / Intitulé de la Ligne *</label>
+                <input
+                  type="text"
+                  value={newExpCatLabel}
+                  onChange={(e) => setNewExpCatLabel(e.target.value)}
+                  placeholder="ex: FRAIS DE TRANSIT & DOUANE"
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Code Ligne (Optionnel)</label>
+                <input
+                  type="text"
+                  value={newExpCatCode}
+                  onChange={(e) => setNewExpCatCode(e.target.value)}
+                  placeholder="ex: LIGNE-008"
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Description & Usage</label>
+                <textarea
+                  value={newExpCatDesc}
+                  onChange={(e) => setNewExpCatDesc(e.target.value)}
+                  placeholder="ex: Postes de charges liées au dédouanement des tissus VIP"
+                  rows={3}
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => setNewExpenseCategoryModal(false)}
+                  className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase"
+                >
+                  ANNULER
+                </button>
+                <button
+                  onClick={handleCreateExpenseCategory}
+                  className="w-1/2 py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-600 text-white font-black text-xs uppercase shadow-lg hover:opacity-95"
+                >
+                  ENREGISTRER LIGNE
                 </button>
               </div>
             </div>
