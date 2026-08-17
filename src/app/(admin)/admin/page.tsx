@@ -612,13 +612,8 @@ export default function AdminDashboard() {
           finalRecettes.push(ep);
         }
       });
-      localRecettes.forEach((lr: any) => {
-        if (!finalRecettes.some((r: any) => r.id === lr.id)) {
-          finalRecettes.push(lr);
-        }
-      });
 
-      const mergedDepenses = [...serverDepenses, ...localDepenses.filter((l: any) => !serverDepenses.some((s: any) => s.id === l.id))];
+      const mergedDepenses = [...serverDepenses];
 
       setStoredLocal("gy_customers", mergedCusts);
       setStoredLocal("gy_orders", mergedOrders);
