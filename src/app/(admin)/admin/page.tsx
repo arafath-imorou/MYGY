@@ -3310,14 +3310,12 @@ export default function AdminDashboard() {
                           handleItemChange(item.id, "itemName", e.target.value);
                           if (idx === 0) setNewOrderItemName(e.target.value);
                         }}
-                        placeholder={`ex: ${idx === 0 ? "Robe de Mariée Mikado" : idx === 1 ? "Robe Dame d'Honneur N°1" : "Tenue Sur-Mesure"}`}
                         className="bg-gy-dark border border-gy-border rounded-lg p-2 text-white font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
                       />
                       <input
                         type="number"
                         value={item.price || ""}
                         onChange={(e) => handleItemChange(item.id, "price", e.target.value === "" ? "" : Number(e.target.value))}
-                        placeholder="Prix de cette tenue (FCFA)"
                         className="bg-gy-dark border border-gy-border rounded-lg p-2 text-emerald-400 font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
                       />
                     </div>
@@ -3325,7 +3323,6 @@ export default function AdminDashboard() {
                       type="text"
                       value={item.fabricDetails}
                       onChange={(e) => handleItemChange(item.id, "fabricDetails", e.target.value)}
-                      placeholder="Tissu & détails spécifiques à cette tenue..."
                       className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-gy-textMuted text-xs focus:outline-none"
                     />
                   </div>
@@ -3359,7 +3356,6 @@ export default function AdminDashboard() {
                   value={newOrderFabricDetails}
                   onChange={(e) => setNewOrderFabricDetails(e.target.value)}
                   rows={2}
-                  placeholder="ex: Mikado de Soie Ivoire (6 mètres), dentelle de Calais assortie, perles Swarovski 4mm..."
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>
@@ -3370,7 +3366,6 @@ export default function AdminDashboard() {
                   type="number"
                   value={newOrderTotalAmount || ""}
                   onChange={(e) => setNewOrderTotalAmount(e.target.value === "" ? "" : Number(e.target.value))}
-                  placeholder="1200000"
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-emerald-400 font-bold text-base focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>
