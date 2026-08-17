@@ -568,9 +568,9 @@ export default function AdminDashboard() {
       const serverRecettes = Array.isArray(finData.recettes) ? finData.recettes : [];
       const serverDepenses = Array.isArray(finData.depenses) ? finData.depenses : [];
 
-      // Merge server and local data seamlessly so orders/customers recorded locally or on server are ALWAYS displayed
-      const mergedCusts: any[] = [...serverCusts, ...localCusts.filter((l: any) => !serverCusts.some((s: any) => s.id === l.id))];
-      const mergedOrders: any[] = [...serverOrders, ...localOrders.filter((l: any) => !serverOrders.some((s: any) => s.id === l.id))];
+      // Always treat server Cloud DB data as authoritative on page refresh
+      const mergedCusts: any[] = serverCusts.length > 0 || localCusts.length === 0 ? serverCusts : [...serverCusts, ...localCusts.filter((l: any) => !serverCusts.some((s: any) => s.id === l.id))];
+      const mergedOrders: any[] = serverOrders.length > 0 || localOrders.length === 0 ? serverOrders : [...serverOrders, ...localOrders.filter((l: any) => !serverOrders.some((s: any) => s.id === l.id))];
 
       // Auto-sync un-uploaded local items to Supabase PostgreSQL cloud database
       const unsyncedCusts = localCusts.filter((l: any) => !serverCusts.some((s: any) => s.id === l.id));
