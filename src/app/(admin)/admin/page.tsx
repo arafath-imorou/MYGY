@@ -3303,28 +3303,37 @@ export default function AdminDashboard() {
                       )}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">Nom de la Tenue *</label>
+                        <input
+                          type="text"
+                          value={item.itemName}
+                          onChange={(e) => {
+                            handleItemChange(item.id, "itemName", e.target.value);
+                            if (idx === 0) setNewOrderItemName(e.target.value);
+                          }}
+                          className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-white font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">Prix de cette Tenue (FCFA)</label>
+                        <input
+                          type="number"
+                          value={item.price || ""}
+                          onChange={(e) => handleItemChange(item.id, "price", e.target.value === "" ? "" : Number(e.target.value))}
+                          className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-emerald-400 font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">Détails & Tissu Spécifique</label>
                       <input
                         type="text"
-                        value={item.itemName}
-                        onChange={(e) => {
-                          handleItemChange(item.id, "itemName", e.target.value);
-                          if (idx === 0) setNewOrderItemName(e.target.value);
-                        }}
-                        className="bg-gy-dark border border-gy-border rounded-lg p-2 text-white font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
-                      />
-                      <input
-                        type="number"
-                        value={item.price || ""}
-                        onChange={(e) => handleItemChange(item.id, "price", e.target.value === "" ? "" : Number(e.target.value))}
-                        className="bg-gy-dark border border-gy-border rounded-lg p-2 text-emerald-400 font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
+                        value={item.fabricDetails}
+                        onChange={(e) => handleItemChange(item.id, "fabricDetails", e.target.value)}
+                        className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-gy-textMuted text-xs focus:outline-none"
                       />
                     </div>
-                    <input
-                      type="text"
-                      value={item.fabricDetails}
-                      onChange={(e) => handleItemChange(item.id, "fabricDetails", e.target.value)}
-                      className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-gy-textMuted text-xs focus:outline-none"
-                    />
                   </div>
                 ))}
               </div>
