@@ -23,6 +23,14 @@
     font-family: 'Aptos Display', 'Aptos', 'Segoe UI', sans-serif;
     font-weight: 700;
   }
+
+  input, textarea, select {
+    text-transform: uppercase !important;
+  }
+
+  input::placeholder, textarea::placeholder {
+    text-transform: uppercase !important;
+  }
 }
 
 .bg-gold-gradient {

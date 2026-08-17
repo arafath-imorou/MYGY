@@ -52,20 +52,25 @@ export async function POST(req: Request) {
 
     const orderNum = String(count + 1).padStart(3, "0");
     const code = `CLI/GYMC/${currentYear}/${orderNum}`;
+    const firstName = String(body.firstName || "").toUpperCase();
+    const lastName = String(body.lastName || "").toUpperCase();
+    const city = String(body.city || "Cotonou").toUpperCase();
+    const profession = body.profession ? String(body.profession).toUpperCase() : null;
+
     let customerResult: any = null;
 
     try {
       customerResult = await prisma.customer.create({
         data: {
           code,
-          firstName: body.firstName,
-          lastName: body.lastName,
+          firstName,
+          lastName,
           phone: body.phone,
           email: body.email || null,
-          city: body.city || "Cotonou",
+          city,
           country: body.country || "Bénin",
           category: body.category || "Standard",
-          profession: body.profession || null,
+          profession,
           acquisitionSource: body.acquisitionSource || "Passage",
           notes: body.notes || null,
           loyaltyAccount: {
@@ -94,11 +99,11 @@ export async function POST(req: Request) {
       customerResult = {
         id: `cust_${Date.now()}`,
         code,
-        firstName: body.firstName,
-        lastName: body.lastName,
+        firstName,
+        lastName,
         phone: body.phone,
         email: body.email || null,
-        city: body.city || "Cotonou",
+        city,
         category: body.category || "Standard",
         createdAt: new Date().toISOString(),
         orders: [],
