@@ -335,6 +335,7 @@ export default function AdminDashboard() {
   const [employeesList, setEmployeesList] = useState<any[]>(DEFAULT_EMPLOYEES);
   const [adminUsersList, setAdminUsersList] = useState<any[]>(DEFAULT_ADMIN_USERS);
   const [expenseCategories, setExpenseCategories] = useState<any[]>(DEFAULT_EXPENSE_CATEGORIES);
+  const [adminSubTab, setAdminSubTab] = useState<"comptes" | "lignes">("comptes");
   const [newExpenseCategoryModal, setNewExpenseCategoryModal] = useState(false);
   const [newExpCatLabel, setNewExpCatLabel] = useState("");
   const [newExpCatCode, setNewExpCatCode] = useState("");
@@ -2641,143 +2642,191 @@ export default function AdminDashboard() {
 
           {activeMenu === "administrations" && (
             <div className="space-y-8 font-aptos">
-              {/* Header */}
+              {/* Header Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h2 className="font-serif text-4xl font-bold text-white">ADMINISTRATION & COMPTES ACCÈS</h2>
-                  <p className="text-sm text-gy-textMuted mt-1">Gestion centrale des comptes utilisateurs autorisés, rôles, privilèges et lignes de dépenses</p>
+                  <h2 className="font-serif text-4xl font-bold text-white">ADMINISTRATION CENTRALISÉE</h2>
+                  <p className="text-sm text-gy-textMuted mt-1">Gestion des comptes utilisateurs autorisés, privilèges d&apos;accès et postes de dépenses</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={() => setNewExpenseCategoryModal(true)}
-                    className="px-5 py-3.5 rounded-2xl bg-rose-500/20 text-rose-300 border border-rose-500/40 font-black text-xs uppercase tracking-wider hover:bg-rose-500 hover:text-white transition-all cursor-pointer"
-                  >
-                    + NOUVELLE LIGNE DE DÉPENSE
-                  </button>
-                  <button
-                    onClick={() => setNewAdminModal(true)}
-                    className="px-6 py-3.5 rounded-2xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95 transition-opacity cursor-pointer"
-                  >
-                    + CRÉER UN COMPTE ADMIN
-                  </button>
+                  {adminSubTab === "comptes" ? (
+                    <button
+                      onClick={() => setNewAdminModal(true)}
+                      className="px-6 py-3.5 rounded-2xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95 transition-all cursor-pointer"
+                    >
+                      + CRÉER UN COMPTE ADMIN
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setNewExpenseCategoryModal(true)}
+                      className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-600 text-white font-black text-xs uppercase tracking-wider shadow-lg hover:opacity-95 transition-all cursor-pointer"
+                    >
+                      + NOUVELLE LIGNE DE DÉPENSE
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <div className="framed-card p-5 border-l-4 border-l-[#D4AF37]">
-                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Comptes Administrateurs</span>
-                  <h3 className="font-serif text-3xl font-black text-white mt-2">{adminUsersList.length} Comptes Autorisés</h3>
-                </div>
-                <div className="framed-card p-5 border-l-4 border-l-purple-400">
-                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Lignes de Dépenses Actives</span>
-                  <h3 className="font-serif text-3xl font-black text-purple-400 mt-2">{expenseCategories.length} Postes Budgétaires</h3>
-                </div>
-                <div className="framed-card p-5 border-l-4 border-l-emerald-400">
-                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Statut Sécurité ERP</span>
-                  <h3 className="font-serif text-3xl font-black text-emerald-400 mt-2">100% SÉCURISÉ</h3>
-                </div>
+              {/* Sub-Tab Navigation Header */}
+              <div className="flex border-b-2 border-[#2A2A38] space-x-3">
+                <button
+                  onClick={() => setAdminSubTab("comptes")}
+                  className={`py-3.5 px-6 font-black text-xs uppercase tracking-wider rounded-t-2xl transition-all border-t-2 border-x-2 ${
+                    adminSubTab === "comptes"
+                      ? "bg-[#141419] border-[#D4AF37] text-[#F3E5AB] shadow-md"
+                      : "bg-[#0E0E12] border-transparent text-[#A3A3B3] hover:text-white"
+                  }`}
+                >
+                  COMPTES UTILISATEURS ({adminUsersList.length})
+                </button>
+
+                <button
+                  onClick={() => setAdminSubTab("lignes")}
+                  className={`py-3.5 px-6 font-black text-xs uppercase tracking-wider rounded-t-2xl transition-all border-t-2 border-x-2 ${
+                    adminSubTab === "lignes"
+                      ? "bg-[#141419] border-[#D4AF37] text-[#F3E5AB] shadow-md"
+                      : "bg-[#0E0E12] border-transparent text-[#A3A3B3] hover:text-white"
+                  }`}
+                >
+                  LIGNES DE DÉPENSES ({expenseCategories.length})
+                </button>
               </div>
 
-              {/* Accounts Table */}
-              <div className="framed-card p-8 space-y-6">
-                <div className="flex justify-between items-center border-b border-gy-border pb-4">
-                  <div>
-                    <h3 className="font-serif text-2xl font-bold text-white">
-                      COMPTES UTILISATEURS AUTORISÉS AU ERP
-                    </h3>
-                    <p className="text-xs text-gy-textMuted mt-0.5">Identifiants d&apos;accès enregistrés pour le portail d&apos;administration Maison GY</p>
-                  </div>
-                  <span className="px-3 py-1 bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40 rounded-xl text-xs font-black uppercase">
-                    {adminUsersList.length} COMPTES ACTIFS
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {adminUsersList.map((usr, idx) => (
-                    <div key={usr.id || idx} className="p-6 rounded-2xl bg-gy-dark border border-gy-border hover:border-[#D4AF37]/60 transition-all flex flex-col justify-between space-y-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${
-                            usr.role === "SUPER_ADMIN"
-                              ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
-                              : "bg-purple-500/20 text-purple-400 border-purple-500/40"
-                          }`}>
-                            {usr.roleLabel || (usr.role === "SUPER_ADMIN" ? "SUPER ADMIN (DIRECTION)" : "ASSISTANTE (ADMINISTRATION)")}
-                          </span>
-                          <h4 className="font-bold text-white text-xl mt-3">{usr.fullName}</h4>
-                          <p className="text-xs text-[#D4AF37] font-bold mt-1">{usr.email}</p>
-                        </div>
-                        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black uppercase shrink-0">
-                          {usr.status || "ACTIF"}
-                        </span>
-                      </div>
-
-                      <div className="pt-3 border-t border-gy-border/60 flex items-center justify-between text-xs text-gy-textMuted">
-                        <span>Créé le {usr.createdAt || "01/01/2024"}</span>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => alert(`Identifiants & Privilèges:\nUtilisateur: ${usr.fullName}\nEmail: ${usr.email}\nRôle ERP: ${usr.roleLabel || usr.role}`)}
-                            className="px-3 py-1 bg-[#181820] border border-[#2A2A38] text-white hover:border-[#D4AF37] hover:text-[#D4AF37] rounded-lg text-xs font-bold transition-all cursor-pointer"
-                          >
-                            [ DÉTAILS COMPTE ]
-                          </button>
-                        </div>
-                      </div>
+              {/* SUB-TAB 1: COMPTES UTILISATEURS */}
+              {adminSubTab === "comptes" && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div className="framed-card p-5 border-l-4 border-l-[#D4AF37]">
+                      <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Comptes Administrateurs</span>
+                      <h3 className="font-serif text-3xl font-black text-white mt-2">{adminUsersList.length} Comptes Autorisés</h3>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Lignes & Catégories de Dépenses Section */}
-              <div className="framed-card p-8 space-y-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gy-border pb-4 gap-4">
-                  <div>
-                    <h3 className="font-serif text-2xl font-bold text-white">
-                      LIGNES DE DÉPENSES & CATÉGORIES D&apos;EXPLOITATION
-                    </h3>
-                    <p className="text-xs text-gy-textMuted mt-0.5">Postes budgétaires pré-configurés pour la saisie des dépenses en comptabilité</p>
-                  </div>
-                  <button
-                    onClick={() => setNewExpenseCategoryModal(true)}
-                    className="px-5 py-2.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 font-black text-xs uppercase hover:bg-rose-500 hover:text-white transition-all cursor-pointer shrink-0"
-                  >
-                    + CRÉER UNE LIGNE DE DÉPENSE
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {expenseCategories.map((cat) => (
-                    <div key={cat.id} className="p-5 rounded-2xl bg-gy-dark border border-gy-border hover:border-[#D4AF37]/50 transition-all flex flex-col justify-between space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <span className="framed-badge-gold text-[10px] font-black">{cat.code}</span>
-                          <h5 className="font-bold text-white text-base mt-2">{cat.label}</h5>
-                          {cat.description && (
-                            <p className="text-xs text-gy-textMuted mt-1 line-clamp-2">{cat.description}</p>
-                          )}
-                        </div>
-                        <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1 rounded-lg shrink-0">ACTIF</span>
-                      </div>
-
-                      <div className="pt-3 border-t border-gy-border/60 flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => handleOpenEditExpenseCategory(cat)}
-                          className="px-2.5 py-1 bg-[#181820] border border-[#2A2A38] text-white hover:border-[#D4AF37] hover:text-[#D4AF37] rounded-lg text-xs font-bold transition-all cursor-pointer"
-                        >
-                          [ MODIFIER ]
-                        </button>
-                        <button
-                          onClick={() => handleDeleteExpenseCategory(cat)}
-                          className="px-2.5 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
-                        >
-                          [ SUPPRIMER ]
-                        </button>
-                      </div>
+                    <div className="framed-card p-5 border-l-4 border-l-purple-400">
+                      <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Profils Direction & Accueil</span>
+                      <h3 className="font-serif text-3xl font-black text-purple-400 mt-2">Accès Actifs</h3>
                     </div>
-                  ))}
+                    <div className="framed-card p-5 border-l-4 border-l-emerald-400">
+                      <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Statut Sécurité ERP</span>
+                      <h3 className="font-serif text-3xl font-black text-emerald-400 mt-2">100% SÉCURISÉ</h3>
+                    </div>
+                  </div>
+
+                  <div className="framed-card p-8 space-y-6">
+                    <div className="flex justify-between items-center border-b border-gy-border pb-4">
+                      <div>
+                        <h3 className="font-serif text-2xl font-bold text-white">
+                          COMPTES AUTORISÉS AU PORTAIL MAISON GY
+                        </h3>
+                        <p className="text-xs text-gy-textMuted mt-0.5">Identifiants d&apos;accès et privilèges attribués à l&apos;équipe administrative</p>
+                      </div>
+                      <span className="px-3 py-1 bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40 rounded-xl text-xs font-black uppercase">
+                        {adminUsersList.length} ACTIFS
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      {adminUsersList.map((usr, idx) => (
+                        <div key={usr.id || idx} className="p-6 rounded-2xl bg-gy-dark border border-gy-border hover:border-[#D4AF37]/60 transition-all flex flex-col justify-between space-y-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${
+                                usr.role === "SUPER_ADMIN"
+                                  ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
+                                  : "bg-purple-500/20 text-purple-400 border-purple-500/40"
+                              }`}>
+                                {usr.roleLabel || (usr.role === "SUPER_ADMIN" ? "SUPER ADMIN (DIRECTION)" : "ASSISTANTE (ADMINISTRATION)")}
+                              </span>
+                              <h4 className="font-bold text-white text-xl mt-3">{usr.fullName}</h4>
+                              <p className="text-xs text-[#D4AF37] font-bold mt-1">{usr.email}</p>
+                            </div>
+                            <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black uppercase shrink-0">
+                              {usr.status || "ACTIF"}
+                            </span>
+                          </div>
+
+                          <div className="pt-3 border-t border-gy-border/60 flex items-center justify-between text-xs text-gy-textMuted">
+                            <span>Créé le {usr.createdAt || "01/01/2024"}</span>
+                            <button
+                              onClick={() => alert(`Informations du compte ${usr.fullName}:\nEmail: ${usr.email}\nRôle ERP: ${usr.roleLabel || usr.role}`)}
+                              className="px-3 py-1 bg-[#181820] border border-[#2A2A38] text-white hover:border-[#D4AF37] hover:text-[#D4AF37] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                            >
+                              [ DÉTAILS COMPTE ]
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* SUB-TAB 2: LIGNES DE DÉPENSES */}
+              {adminSubTab === "lignes" && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div className="framed-card p-5 border-l-4 border-l-rose-500">
+                      <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Lignes de Dépenses</span>
+                      <h3 className="font-serif text-3xl font-black text-rose-400 mt-2">{expenseCategories.length} Lignes Actives</h3>
+                    </div>
+                    <div className="framed-card p-5 border-l-4 border-l-amber-400">
+                      <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Postes d&apos;Exploitation</span>
+                      <h3 className="font-serif text-3xl font-black text-amber-400 mt-2">Atelier & Boutique</h3>
+                    </div>
+                    <div className="framed-card p-5 border-l-4 border-l-emerald-400">
+                      <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Statut Saisie Caisse</span>
+                      <h3 className="font-serif text-3xl font-black text-emerald-400 mt-2">DISPONIBLE</h3>
+                    </div>
+                  </div>
+
+                  <div className="framed-card p-8 space-y-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gy-border pb-4 gap-4">
+                      <div>
+                        <h3 className="font-serif text-2xl font-bold text-white">
+                          POSTES BUDGÉTAIRES DE DÉPENSES MAISON GY
+                        </h3>
+                        <p className="text-xs text-gy-textMuted mt-0.5">Ces lignes apparaissent automatiquement dans le formulaire de saisie des dépenses</p>
+                      </div>
+                      <button
+                        onClick={() => setNewExpenseCategoryModal(true)}
+                        className="px-5 py-2.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 font-black text-xs uppercase hover:bg-rose-500 hover:text-white transition-all cursor-pointer shrink-0"
+                      >
+                        + CRÉER UNE LIGNE DE DÉPENSE
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {expenseCategories.map((cat) => (
+                        <div key={cat.id} className="p-5 rounded-2xl bg-gy-dark border border-gy-border hover:border-[#D4AF37]/50 transition-all flex flex-col justify-between space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="framed-badge-gold text-[10px] font-black">{cat.code}</span>
+                              <h5 className="font-bold text-white text-base mt-2">{cat.label}</h5>
+                              {cat.description && (
+                                <p className="text-xs text-gy-textMuted mt-1 line-clamp-2">{cat.description}</p>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1 rounded-lg shrink-0">ACTIF</span>
+                          </div>
+
+                          <div className="pt-3 border-t border-gy-border/60 flex items-center justify-end space-x-2">
+                            <button
+                              onClick={() => handleOpenEditExpenseCategory(cat)}
+                              className="px-2.5 py-1 bg-[#181820] border border-[#2A2A38] text-white hover:border-[#D4AF37] hover:text-[#D4AF37] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                            >
+                              [ MODIFIER ]
+                            </button>
+                            <button
+                              onClick={() => handleDeleteExpenseCategory(cat)}
+                              className="px-2.5 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+                            >
+                              [ SUPPRIMER ]
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </main>
