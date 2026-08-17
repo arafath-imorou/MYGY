@@ -332,6 +332,89 @@ export default function AdminDashboard() {
     { id: "exp_cat_7", code: "LIGNE-007", label: "Maintenance Machines & Divers", category: "ENTRETIEN" },
   ];
 
+  const DEFAULT_CUSTOMERS = [
+    {
+      id: "cli_1",
+      code: "CLI/GYMC/2026/001",
+      firstName: "CHANTAL",
+      lastName: "KINDIFFO",
+      phone: "+229 97 12 34 56",
+      email: "chantal.kindiffo@gmail.com",
+      city: "COTONOU",
+      category: "VVIP",
+      profession: "AVOCATE D'AFFAIRES",
+      createdAt: "2026-08-17T10:00:00.000Z",
+    },
+    {
+      id: "cli_2",
+      code: "CLI/GYMC/2026/002",
+      firstName: "MARIE-JOSE",
+      lastName: "SOGLO",
+      phone: "+229 96 99 88 77",
+      email: "mj.soglo@yahoo.fr",
+      city: "COTONOU",
+      category: "VIP",
+      profession: "DIPLOMATE",
+      createdAt: "2026-08-17T11:15:00.000Z",
+    },
+    {
+      id: "cli_3",
+      code: "CLI/GYMC/2026/003",
+      firstName: "BRIGITTE",
+      lastName: "ADJANOHOUN",
+      phone: "+229 95 44 22 11",
+      email: "b.adjanohoun@gmail.com",
+      city: "PORTO-NOVO",
+      category: "VVIP",
+      profession: "CHEF D'ENTREPRISE",
+      createdAt: "2026-08-17T12:00:00.000Z",
+    },
+  ];
+
+  const DEFAULT_ORDERS = [
+    {
+      id: "ord_1",
+      reference: "ORD-2026-0001",
+      customerId: "cli_1",
+      orderDate: "2026-08-17T10:15:00.000Z",
+      promisedDate: "2026-08-31T10:00:00.000Z",
+      priority: "VIP",
+      status: "PRODUCTION",
+      clientStepStatus: "COUPE_SUR_MESURE",
+      totalAmount: 350000,
+      depositRequired: 200000,
+      totalPaid: 200000,
+      balanceDue: 150000,
+      customer: {
+        id: "cli_1",
+        code: "CLI/GYMC/2026/001",
+        firstName: "CHANTAL",
+        lastName: "KINDIFFO",
+        phone: "+229 97 12 34 56",
+        city: "COTONOU",
+      },
+      items: [
+        {
+          id: "item_1",
+          itemName: "Robe de Soirée Haute Couture Mikado & Perles",
+          fabricDetails: "Mikado Soie Soie Ivoire & Perles Swarovski",
+          price: 350000,
+          currentStage: "COUPE",
+        },
+      ],
+      payments: [
+        {
+          id: "pay_1",
+          receiptNumber: "REC-2026-0001",
+          amount: 200000,
+          paymentMode: "ESPECES",
+          createdAt: "2026-08-17T10:20:00.000Z",
+          receivedBy: "Fatia ADJAO MOUFTAOU",
+        },
+      ],
+    },
+  ];
+
   const [employeesList, setEmployeesList] = useState<any[]>(DEFAULT_EMPLOYEES);
   const [adminUsersList, setAdminUsersList] = useState<any[]>(DEFAULT_ADMIN_USERS);
   const [expenseCategories, setExpenseCategories] = useState<any[]>(DEFAULT_EXPENSE_CATEGORIES);
@@ -618,8 +701,18 @@ export default function AdminDashboard() {
         lowStockCount: dashData.metrics?.lowStockCount || 0,
       });
 
-      setOrders(mergedOrders);
-      setCustomers(mergedCusts);
+      let finalCusts = [...mergedCusts];
+      if (finalCusts.length === 0) {
+        finalCusts = [...DEFAULT_CUSTOMERS];
+      }
+
+      let finalOrders = [...mergedOrders];
+      if (finalOrders.length === 0) {
+        finalOrders = [...DEFAULT_ORDERS];
+      }
+
+      setOrders(finalOrders);
+      setCustomers(finalCusts);
 
       setRecettesList(finalRecettes);
       setDepensesList(mergedDepenses);
