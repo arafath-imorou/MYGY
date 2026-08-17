@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 export default function AdminDashboard() {
   const [activeMenu, setActiveMenu] = useState<
     "dashboard" | "clients" | "espace-client" | "commandes" | "atelier" | "finances" | "rh" | "administrations"
-  >("clients");
+  >("dashboard");
 
   const [financeSubTab, setFinanceSubTab] = useState<"recettes" | "depenses">("recettes");
 
@@ -3364,27 +3364,15 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Montant Total (FCFA) *</label>
-                  <input
-                    type="number"
-                    value={newOrderTotalAmount}
-                    onChange={(e) => setNewOrderTotalAmount(Number(e.target.value))}
-                    placeholder="1200000"
-                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-emerald-400 font-bold text-base focus:border-[#D4AF37] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Acompte Requis (FCFA)</label>
-                  <input
-                    type="number"
-                    value={newOrderDepositRequired}
-                    onChange={(e) => setNewOrderDepositRequired(Number(e.target.value))}
-                    placeholder="600000"
-                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-gy-gold font-bold text-base focus:border-[#D4AF37] focus:outline-none"
-                  />
-                </div>
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Montant Total de la Commande (FCFA) *</label>
+                <input
+                  type="number"
+                  value={newOrderTotalAmount}
+                  onChange={(e) => setNewOrderTotalAmount(Number(e.target.value))}
+                  placeholder="1200000"
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-emerald-400 font-bold text-base focus:border-[#D4AF37] focus:outline-none"
+                />
               </div>
 
               <div className="flex space-x-3 pt-4">
