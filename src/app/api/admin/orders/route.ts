@@ -170,6 +170,10 @@ export async function POST(req: Request) {
 
     // Save to Cloud Database so ALL devices see this order instantly
     await updateCloudData((store) => {
+      if (!orderResult.customer && body.customerId) {
+        const cloudCusts = store.customers || [];
+        orderResult.customer = cloudCusts.find((c: any) => c.id === body.customerId);
+      }
       const existing = store.orders || [];
       const updatedOrders = [orderResult, ...existing.filter((o: any) => o.id !== orderResult.id)];
       return { ...store, orders: updatedOrders };
