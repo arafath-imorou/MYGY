@@ -568,20 +568,9 @@ export default function AdminDashboard() {
       const serverRecettes = Array.isArray(finData.recettes) ? finData.recettes : [];
       const serverDepenses = Array.isArray(finData.depenses) ? finData.depenses : [];
 
-      // Always treat server Cloud DB data as authoritative on page refresh
-      const mergedCusts: any[] = serverCusts.length > 0 || localCusts.length === 0 ? serverCusts : [...serverCusts, ...localCusts.filter((l: any) => !serverCusts.some((s: any) => s.id === l.id))];
-      const mergedOrders: any[] = serverOrders.length > 0 || localOrders.length === 0 ? serverOrders : [...serverOrders, ...localOrders.filter((l: any) => !serverOrders.some((s: any) => s.id === l.id))];
-
-      // Auto-sync un-uploaded local items to Supabase PostgreSQL cloud database
-      const unsyncedCusts = localCusts.filter((l: any) => !serverCusts.some((s: any) => s.id === l.id));
-      const unsyncedOrders = localOrders.filter((l: any) => !serverOrders.some((s: any) => s.id === l.id));
-      if (unsyncedCusts.length > 0 || unsyncedOrders.length > 0) {
-        fetch("/api/admin/customers", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ syncBatch: true, customers: unsyncedCusts, orders: unsyncedOrders }),
-        }).catch(() => null);
-      }
+      // Server Cloud DB data is 100% authoritative - overwrite local storage on refresh to purge deleted data
+      const mergedCusts: any[] = serverCusts;
+      const mergedOrders: any[] = serverOrders;
 
       // Extract payments embedded inside mergedOrders
       const embeddedPayments: any[] = [];
