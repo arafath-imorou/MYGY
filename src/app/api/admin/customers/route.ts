@@ -37,6 +37,25 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
+    if (body.resetAll) {
+      try {
+        await (prisma as any).customerMeasurement?.deleteMany({}).catch(() => null);
+        await (prisma as any).fitting?.deleteMany({}).catch(() => null);
+        await (prisma as any).payment?.deleteMany({}).catch(() => null);
+        await (prisma as any).order?.deleteMany({}).catch(() => null);
+        await (prisma as any).customer?.deleteMany({}).catch(() => null);
+      } catch (e) {}
+
+      await updateCloudData((store) => ({
+        ...store,
+        customers: [],
+        orders: [],
+        recettes: [],
+        depenses: [],
+      }));
+      return NextResponse.json({ success: true, reset: true });
+    }
+
     if (body.syncBatch) {
       const { customers, orders } = body;
       const updated = await updateCloudData((store) => {

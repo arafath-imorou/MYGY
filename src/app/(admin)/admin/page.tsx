@@ -386,6 +386,34 @@ export default function AdminDashboard() {
     setNewExpCatDesc("");
   };
 
+  const handleResetPlatform = async () => {
+    if (!confirm("⚠️ ATTENTION : Voulez-vous vraiment RÉINITIALISER toute la plateforme à ZÉRO (suppression de tous les clients, commandes, reçus, chiffres) ? Cette action est irréversible.")) {
+      return;
+    }
+    try {
+      localStorage.removeItem("gy_customers");
+      localStorage.removeItem("gy_orders");
+      localStorage.removeItem("gy_recettes");
+      localStorage.removeItem("gy_depenses");
+
+      setCustomers([]);
+      setOrders([]);
+      setRecettesList([]);
+      setDepensesList([]);
+
+      await fetch("/api/admin/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resetAll: true }),
+      });
+
+      alert("La plateforme a été réinitialisée à ZÉRO avec succès !");
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleOpenEditExpenseCategory = (cat: any) => {
     setEditingExpCatId(cat.id);
     setNewExpCatLabel(cat.label || "");
@@ -2652,6 +2680,12 @@ export default function AdminDashboard() {
                   <p className="text-sm text-gy-textMuted mt-1">Gestion des comptes utilisateurs autorisés, privilèges d&apos;accès et postes de dépenses</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={handleResetPlatform}
+                    className="px-5 py-3.5 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/40 font-black text-xs uppercase tracking-wider hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-lg"
+                  >
+                    [ RÉINITIALISER LA PLATEFORME À ZÉRO ]
+                  </button>
                   {adminSubTab === "comptes" ? (
                     <button
                       onClick={() => setNewAdminModal(true)}
