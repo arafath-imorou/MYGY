@@ -24,10 +24,19 @@ export async function GET() {
 
     const cloudData = await getCloudData();
     const cloudCusts = cloudData.customers || [];
+    const cloudOrders = cloudData.orders || [];
 
     const merged = [...cloudCusts, ...dbCustomers.filter((p) => !cloudCusts.some((c: any) => c.id === p.id))];
 
-    return NextResponse.json(merged);
+    const withOrders = merged.map((c: any) => {
+      const cOrders = cloudOrders.filter((o: any) => o.customerId === c.id || o.customerId === c.code || o.customer?.id === c.id || o.customer?.code === c.code);
+      return {
+        ...c,
+        orders: cOrders.length > 0 ? cOrders : (c.orders || []),
+      };
+    });
+
+    return NextResponse.json(withOrders);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

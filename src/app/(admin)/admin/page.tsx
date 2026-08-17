@@ -579,9 +579,14 @@ export default function AdminDashboard() {
       const serverRecettes = Array.isArray(finData.recettes) ? finData.recettes : [];
       const serverDepenses = Array.isArray(finData.depenses) ? finData.depenses : [];
 
-      // Server Cloud DB data is 100% authoritative - overwrite local storage on refresh to purge deleted data
-      const mergedCusts: any[] = serverCusts;
       const mergedOrders: any[] = serverOrders;
+      const mergedCusts: any[] = serverCusts.map((c: any) => {
+        const cOrders = mergedOrders.filter((o: any) => o.customerId === c.id || o.customerId === c.code || o.customer?.id === c.id || o.customer?.code === c.code);
+        return {
+          ...c,
+          orders: cOrders.length > 0 ? cOrders : (c.orders || []),
+        };
+      });
 
       // Extract payments embedded inside mergedOrders
       const embeddedPayments: any[] = [];
@@ -1943,7 +1948,11 @@ export default function AdminDashboard() {
                             </span>
                           </td>
                           <td className="font-bold text-white">
-                            {c.orders?.length || 0} commande(s)
+                            {(() => {
+                              const custOrders = orders.filter((o) => o.customerId === c.id || o.customerId === c.code || o.customer?.id === c.id || o.customer?.code === c.code);
+                              const totalCount = Math.max(c.orders?.length || 0, custOrders.length);
+                              return `${totalCount} commande(s)`;
+                            })()}
                           </td>
                           <td>
                             <div className="flex items-center justify-center space-x-2">
@@ -4192,29 +4201,39 @@ export default function AdminDashboard() {
 
             <div className="space-y-6 pt-6 text-sm">
               <div>
-                <h4 className="font-serif text-xl font-bold text-white mb-3">
-                  HISTORIQUE & COMMANDES EN COURS ({viewCustomerModal.orders?.length || 0})
-                </h4>
-                {viewCustomerModal.orders && viewCustomerModal.orders.length > 0 ? (
-                  <div className="space-y-3">
-                    {viewCustomerModal.orders.map((o: any) => (
-                      <div key={o.id} className="bg-gy-dark p-5 rounded-2xl border border-gy-border flex justify-between items-center">
-                        <div>
-                          <span className="font-bold text-white text-base">{o.reference}</span>
-                          <div className="text-xs text-gy-gold font-bold mt-1">Statut Atelier: {o.status}</div>
+                {(() => {
+                  const custOrders = orders.filter(
+                    (o) => o.customerId === viewCustomerModal.id || o.customerId === viewCustomerModal.code || o.customer?.id === viewCustomerModal.id || o.customer?.code === viewCustomerModal.code
+                  );
+                  const displayOrders = custOrders.length > 0 ? custOrders : (viewCustomerModal.orders || []);
+                  return (
+                    <>
+                      <h4 className="font-serif text-xl font-bold text-white mb-3">
+                        HISTORIQUE & COMMANDES EN COURS ({displayOrders.length})
+                      </h4>
+                      {displayOrders.length > 0 ? (
+                        <div className="space-y-3">
+                          {displayOrders.map((o: any) => (
+                            <div key={o.id} className="bg-gy-dark p-5 rounded-2xl border border-gy-border flex justify-between items-center">
+                              <div>
+                                <span className="font-bold text-white text-base">{o.reference}</span>
+                                <div className="text-xs text-gy-gold font-bold mt-1">Statut Atelier: {o.status}</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-base font-bold text-emerald-400">{formatFcfa(o.totalAmount)}</div>
+                                <div className="text-xs text-amber-400 font-bold mt-0.5">Solde: {formatFcfa(o.balanceDue)}</div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        <div className="text-right">
-                          <div className="text-base font-bold text-emerald-400">{formatFcfa(o.totalAmount)}</div>
-                          <div className="text-xs text-amber-400 font-bold mt-0.5">Solde: {formatFcfa(o.balanceDue)}</div>
+                      ) : (
+                        <div className="text-gy-textMuted bg-gy-dark p-4 rounded-xl border border-gy-border italic">
+                          Aucune commande enregistrée.
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-gy-textMuted bg-gy-dark p-4 rounded-xl border border-gy-border italic">
-                    Aucune commande enregistrée.
-                  </div>
-                )}
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
