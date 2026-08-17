@@ -1,5 +1,5 @@
-const STORE_ID = "ff8081819ff5b11001a00bd9f7372ef8";
-const STORE_URL = `https://api.restful-api.dev/objects/${STORE_ID}`;
+import fs from "fs";
+import path from "path";
 
 export interface CloudStoreData {
   customers: any[];
@@ -7,7 +7,10 @@ export interface CloudStoreData {
   recettes: any[];
   depenses: any[];
   employees?: any[];
+  users?: any[];
 }
+
+const DATA_FILE = path.join(process.cwd(), "src", "data", "cloud_store.json");
 
 let memoryCache: CloudStoreData = {
   customers: [],
@@ -15,47 +18,59 @@ let memoryCache: CloudStoreData = {
   recettes: [],
   depenses: [],
   employees: [],
+  users: [],
 };
 
-export async function getCloudData(): Promise<CloudStoreData> {
+function readFromFile(): CloudStoreData {
   try {
-    const res = await fetch(STORE_URL, { cache: "no-store" });
-    if (!res.ok) return memoryCache;
-    const json = await res.json();
-    if (json && json.data) {
-      memoryCache = {
-        customers: json.data.customers || memoryCache.customers,
-        orders: json.data.orders || memoryCache.orders,
-        recettes: json.data.recettes || memoryCache.recettes,
-        depenses: json.data.depenses || memoryCache.depenses,
-        employees: json.data.employees || memoryCache.employees || [],
-      };
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
-    return memoryCache;
+    if (fs.existsSync(DATA_FILE)) {
+      const content = fs.readFileSync(DATA_FILE, "utf-8");
+      if (content.trim()) {
+        const parsed = JSON.parse(content);
+        return {
+          customers: parsed.customers || [],
+          orders: parsed.orders || [],
+          recettes: parsed.recettes || [],
+          depenses: parsed.depenses || [],
+          employees: parsed.employees || [],
+          users: parsed.users || [],
+        };
+      }
+    }
   } catch (e) {
-    console.error("getCloudData error:", e);
-    return memoryCache;
+    console.error("readFromFile error:", e);
   }
+  return memoryCache;
+}
+
+function writeToFile(data: CloudStoreData) {
+  try {
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
+  } catch (e) {
+    console.error("writeToFile error:", e);
+  }
+}
+
+export async function getCloudData(): Promise<CloudStoreData> {
+  const fileData = readFromFile();
+  memoryCache = fileData;
+  return memoryCache;
 }
 
 export async function updateCloudData(
   updater: (data: CloudStoreData) => CloudStoreData
 ): Promise<CloudStoreData> {
-  try {
-    const current = await getCloudData();
-    const updated = updater(current);
-    memoryCache = updated;
-    await fetch(STORE_URL, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: "MYGY_MAISON_COUTURE_PERMANENT_CLOUD_STORE_2026",
-        data: updated,
-      }),
-    });
-    return updated;
-  } catch (e) {
-    console.error("updateCloudData error:", e);
-    return memoryCache;
-  }
+  const current = await getCloudData();
+  const updated = updater(current);
+  memoryCache = updated;
+  writeToFile(updated);
+  return updated;
 }
