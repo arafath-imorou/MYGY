@@ -197,7 +197,7 @@ export default function AdminDashboard() {
   const [newOrderCustomerId, setNewOrderCustomerId] = useState("");
   const [newOrderItemName, setNewOrderItemName] = useState("");
   const [newOrderItemsList, setNewOrderItemsList] = useState<any[]>([
-    { id: "1", itemName: "", price: 0, fabricDetails: "" },
+    { id: "1", itemName: "", price: "", fabricDetails: "" },
   ]);
   const [newOrderOrderDate, setNewOrderOrderDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -207,8 +207,8 @@ export default function AdminDashboard() {
   );
   const [newOrderFabricDetails, setNewOrderFabricDetails] = useState("");
   const [newOrderCustomNotes, setNewOrderCustomNotes] = useState("");
-  const [newOrderTotalAmount, setNewOrderTotalAmount] = useState<number>(0);
-  const [newOrderDepositRequired, setNewOrderDepositRequired] = useState<number>(0);
+  const [newOrderTotalAmount, setNewOrderTotalAmount] = useState<number | "">("");
+  const [newOrderDepositRequired, setNewOrderDepositRequired] = useState<number | "">("");
   const [newOrderPriority, setNewOrderPriority] = useState("VIP");
 
   // RH & Personnel State
@@ -464,7 +464,7 @@ export default function AdminDashboard() {
   const handleAddItemToOrder = () => {
     setNewOrderItemsList((prev) => [
       ...prev,
-      { id: String(Date.now()), itemName: "", price: 0, fabricDetails: "" },
+      { id: String(Date.now()), itemName: "", price: "", fabricDetails: "" },
     ]);
   };
 
@@ -473,7 +473,7 @@ export default function AdminDashboard() {
     setNewOrderItemsList((prev) => {
       const updated = prev.filter((it) => it.id !== id);
       const total = updated.reduce((acc, it) => acc + Number(it.price || 0), 0);
-      setNewOrderTotalAmount(total);
+      setNewOrderTotalAmount(total > 0 ? total : "");
       return updated;
     });
   };
@@ -482,7 +482,7 @@ export default function AdminDashboard() {
     setNewOrderItemsList((prev) => {
       const updated = prev.map((it) => (it.id === id ? { ...it, [field]: val } : it));
       const total = updated.reduce((acc, it) => acc + Number(it.price || 0), 0);
-      setNewOrderTotalAmount(total);
+      setNewOrderTotalAmount(total > 0 ? total : "");
       return updated;
     });
   };
@@ -1073,11 +1073,11 @@ export default function AdminDashboard() {
         }
         setNewOrderModal(false);
         setNewOrderItemName("");
-        setNewOrderItemsList([{ id: "1", itemName: "", price: 0, fabricDetails: "" }]);
+        setNewOrderItemsList([{ id: "1", itemName: "", price: "", fabricDetails: "" }]);
         setNewOrderFabricDetails("");
         setNewOrderCustomNotes("");
-        setNewOrderTotalAmount(0);
-        setNewOrderDepositRequired(0);
+        setNewOrderTotalAmount("");
+        setNewOrderDepositRequired("");
         setActiveMenu("commandes");
         await fetchData();
       } else {
@@ -3316,7 +3316,7 @@ export default function AdminDashboard() {
                       <input
                         type="number"
                         value={item.price || ""}
-                        onChange={(e) => handleItemChange(item.id, "price", Number(e.target.value))}
+                        onChange={(e) => handleItemChange(item.id, "price", e.target.value === "" ? "" : Number(e.target.value))}
                         placeholder="Prix de cette tenue (FCFA)"
                         className="bg-gy-dark border border-gy-border rounded-lg p-2 text-emerald-400 font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
                       />
@@ -3368,8 +3368,8 @@ export default function AdminDashboard() {
                 <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Montant Total de la Commande (FCFA) *</label>
                 <input
                   type="number"
-                  value={newOrderTotalAmount}
-                  onChange={(e) => setNewOrderTotalAmount(Number(e.target.value))}
+                  value={newOrderTotalAmount || ""}
+                  onChange={(e) => setNewOrderTotalAmount(e.target.value === "" ? "" : Number(e.target.value))}
                   placeholder="1200000"
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-emerald-400 font-bold text-base focus:border-[#D4AF37] focus:outline-none"
                 />
