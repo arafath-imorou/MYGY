@@ -336,3 +336,40 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    let id = searchParams.get("id");
+
+    if (!id) {
+      const body = await req.json().catch(() => ({}));
+      id = body.id;
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: "ID commande manquant." }, { status: 400 });
+    }
+
+    try {
+      await (prisma as any).fitting?.deleteMany({ where: { orderId: id } }).catch(() => null);
+      await (prisma as any).payment?.deleteMany({ where: { orderId: id } }).catch(() => null);
+      await (prisma as any).orderItem?.deleteMany({ where: { orderId: id } }).catch(() => null);
+      await (prisma as any).order?.delete({ where: { id } }).catch(() => null);
+    } catch (e) {}
+
+    await updateCloudData((store) => {
+      const existingOrders = store.orders || [];
+      const existingRecettes = store.recettes || [];
+      return {
+        ...store,
+        orders: existingOrders.filter((o: any) => o.id !== id && o.reference !== id),
+        recettes: existingRecettes.filter((r: any) => r.orderId !== id),
+      };
+    });
+
+    return NextResponse.json({ success: true, deletedId: id });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

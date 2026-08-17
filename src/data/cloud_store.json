@@ -1,6 +1,85 @@
 {
-  "customers": [],
-  "orders": [],
+  "customers": [
+    {
+      "id": "cli_1",
+      "city": "COTONOU",
+      "code": "CLI/GYMC/2026/001",
+      "email": "chantal.kindiffo@gmail.com",
+      "phone": "+229 97 12 34 56",
+      "category": "VVIP",
+      "lastName": "KINDIFFO",
+      "createdAt": "2026-08-17T10:00:00.000Z",
+      "firstName": "CHANTAL",
+      "profession": "AVOCATE D'AFFAIRES"
+    },
+    {
+      "id": "cli_2",
+      "city": "COTONOU",
+      "code": "CLI/GYMC/2026/002",
+      "email": "mj.soglo@yahoo.fr",
+      "phone": "+229 96 99 88 77",
+      "category": "VIP",
+      "lastName": "SOGLO",
+      "createdAt": "2026-08-17T11:15:00.000Z",
+      "firstName": "MARIE-JOSE",
+      "profession": "DIPLOMATE"
+    },
+    {
+      "id": "cli_3",
+      "city": "PORTO-NOVO",
+      "code": "CLI/GYMC/2026/003",
+      "email": "b.adjanohoun@gmail.com",
+      "phone": "+229 95 44 22 11",
+      "category": "VVIP",
+      "lastName": "ADJANOHOUN",
+      "createdAt": "2026-08-17T12:00:00.000Z",
+      "firstName": "BRIGITTE",
+      "profession": "CHEF D'ENTREPRISE"
+    }
+  ],
+  "orders": [
+    {
+      "id": "ord_1",
+      "items": [
+        {
+          "id": "item_1",
+          "price": 350000,
+          "itemName": "Robe de Soirée Haute Couture Mikado & Perles",
+          "currentStage": "COUPE",
+          "fabricDetails": "Mikado Soie Soie Ivoire & Perles Swarovski"
+        }
+      ],
+      "status": "PRODUCTION",
+      "customer": {
+        "id": "cli_1",
+        "city": "COTONOU",
+        "code": "CLI/GYMC/2026/001",
+        "phone": "+229 97 12 34 56",
+        "lastName": "KINDIFFO",
+        "firstName": "CHANTAL"
+      },
+      "payments": [
+        {
+          "id": "pay_1",
+          "amount": 200000,
+          "createdAt": "2026-08-17T10:20:00.000Z",
+          "receivedBy": "Fatia ADJAO MOUFTAOU",
+          "paymentMode": "ESPECES",
+          "receiptNumber": "REC-2026-0001"
+        }
+      ],
+      "priority": "VIP",
+      "orderDate": "2026-08-17T10:15:00.000Z",
+      "reference": "ORD-2026-0001",
+      "totalPaid": 200000,
+      "balanceDue": 150000,
+      "customerId": "cli_1",
+      "totalAmount": 350000,
+      "promisedDate": "2026-08-31T10:00:00.000Z",
+      "depositRequired": 200000,
+      "clientStepStatus": "COUPE_SUR_MESURE"
+    }
+  ],
   "recettes": [],
   "depenses": [],
   "employees": [],
