@@ -354,6 +354,9 @@ export default function AdminDashboard() {
   const [empSalary, setEmpSalary] = useState<number>(150000);
   const [empHireDate, setEmpHireDate] = useState(new Date().toISOString().split("T")[0]);
 
+  const [editExpenseCategoryModal, setEditExpenseCategoryModal] = useState(false);
+  const [editingExpCatId, setEditingExpCatId] = useState("");
+
   const handleCreateExpenseCategory = () => {
     if (!newExpCatLabel) {
       alert("Veuillez entrer le libellé de la ligne de dépense.");
@@ -377,6 +380,53 @@ export default function AdminDashboard() {
     setNewExpCatLabel("");
     setNewExpCatCode("");
     setNewExpCatDesc("");
+  };
+
+  const handleOpenEditExpenseCategory = (cat: any) => {
+    setEditingExpCatId(cat.id);
+    setNewExpCatLabel(cat.label || "");
+    setNewExpCatCode(cat.code || "");
+    setNewExpCatDesc(cat.description || "");
+    setEditExpenseCategoryModal(true);
+  };
+
+  const handleSaveEditExpenseCategory = () => {
+    if (!newExpCatLabel || !editingExpCatId) {
+      alert("Veuillez entrer le libellé de la ligne de dépense.");
+      return;
+    }
+    setExpenseCategories((prev) => {
+      const updated = prev.map((cat) => {
+        if (cat.id === editingExpCatId) {
+          return {
+            ...cat,
+            label: newExpCatLabel.toUpperCase(),
+            code: newExpCatCode ? newExpCatCode.toUpperCase() : cat.code,
+            description: newExpCatDesc || cat.description,
+          };
+        }
+        return cat;
+      });
+      setStoredLocal("gy_expense_categories", updated);
+      return updated;
+    });
+
+    setEditExpenseCategoryModal(false);
+    setEditingExpCatId("");
+    setNewExpCatLabel("");
+    setNewExpCatCode("");
+    setNewExpCatDesc("");
+  };
+
+  const handleDeleteExpenseCategory = (cat: any) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer la ligne de dépense "${cat.label}" ?`)) {
+      return;
+    }
+    setExpenseCategories((prev) => {
+      const updated = prev.filter((c) => c.id !== cat.id);
+      setStoredLocal("gy_expense_categories", updated);
+      return updated;
+    });
   };
 
   const handleAddItemToOrder = () => {
@@ -2698,12 +2748,32 @@ export default function AdminDashboard() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {expenseCategories.map((cat) => (
-                    <div key={cat.id} className="p-4 rounded-xl bg-gy-dark border border-gy-border flex items-center justify-between">
-                      <div>
-                        <span className="framed-badge-gold text-[10px] font-black">{cat.code}</span>
-                        <h5 className="font-bold text-white text-sm mt-1.5">{cat.label}</h5>
+                    <div key={cat.id} className="p-5 rounded-2xl bg-gy-dark border border-gy-border hover:border-[#D4AF37]/50 transition-all flex flex-col justify-between space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="framed-badge-gold text-[10px] font-black">{cat.code}</span>
+                          <h5 className="font-bold text-white text-base mt-2">{cat.label}</h5>
+                          {cat.description && (
+                            <p className="text-xs text-gy-textMuted mt-1 line-clamp-2">{cat.description}</p>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1 rounded-lg shrink-0">ACTIF</span>
                       </div>
-                      <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1 rounded-lg">ACTIF</span>
+
+                      <div className="pt-3 border-t border-gy-border/60 flex items-center justify-end space-x-2">
+                        <button
+                          onClick={() => handleOpenEditExpenseCategory(cat)}
+                          className="px-2.5 py-1 bg-[#181820] border border-[#2A2A38] text-white hover:border-[#D4AF37] hover:text-[#D4AF37] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                        >
+                          [ MODIFIER ]
+                        </button>
+                        <button
+                          onClick={() => handleDeleteExpenseCategory(cat)}
+                          className="px-2.5 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+                        >
+                          [ SUPPRIMER ]
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -3630,6 +3700,70 @@ export default function AdminDashboard() {
                   className="w-1/2 py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-600 text-white font-black text-xs uppercase shadow-lg hover:opacity-95"
                 >
                   ENREGISTRER LIGNE
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL MODIFIER LIGNE DE DÉPENSE */}
+      {editExpenseCategoryModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 font-aptos">
+          <div className="glass-panel max-w-lg w-full p-8 rounded-3xl border border-rose-500/50 shadow-2xl">
+            <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
+              <h3 className="font-serif text-2xl font-bold text-white">MODIFIER LA LIGNE DE DÉPENSE</h3>
+              <button onClick={() => setEditExpenseCategoryModal(false)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
+                [ FERMER ]
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Libellé / Intitulé de la Ligne *</label>
+                <input
+                  type="text"
+                  value={newExpCatLabel}
+                  onChange={(e) => setNewExpCatLabel(e.target.value)}
+                  placeholder="ex: FRAIS DE TRANSIT & DOUANE"
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Code Ligne (Optionnel)</label>
+                <input
+                  type="text"
+                  value={newExpCatCode}
+                  onChange={(e) => setNewExpCatCode(e.target.value)}
+                  placeholder="ex: LIGNE-008"
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Description & Usage</label>
+                <textarea
+                  value={newExpCatDesc}
+                  onChange={(e) => setNewExpCatDesc(e.target.value)}
+                  placeholder="ex: Postes de charges liées au dédouanement des tissus VIP"
+                  rows={3}
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => setEditExpenseCategoryModal(false)}
+                  className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase"
+                >
+                  ANNULER
+                </button>
+                <button
+                  onClick={handleSaveEditExpenseCategory}
+                  className="w-1/2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs uppercase shadow-lg hover:opacity-95"
+                >
+                  ENREGISTRER MODIFICATIONS
                 </button>
               </div>
             </div>
