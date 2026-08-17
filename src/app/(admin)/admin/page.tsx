@@ -701,18 +701,8 @@ export default function AdminDashboard() {
         lowStockCount: dashData.metrics?.lowStockCount || 0,
       });
 
-      let finalCusts = [...mergedCusts];
-      if (finalCusts.length === 0) {
-        finalCusts = [...DEFAULT_CUSTOMERS];
-      }
-
-      let finalOrders = [...mergedOrders];
-      if (finalOrders.length === 0) {
-        finalOrders = [...DEFAULT_ORDERS];
-      }
-
-      setOrders(finalOrders);
-      setCustomers(finalCusts);
+      setOrders(mergedOrders);
+      setCustomers(mergedCusts);
 
       setRecettesList(finalRecettes);
       setDepensesList(mergedDepenses);
@@ -1023,16 +1013,22 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteCustomer = async (customerId: string, customerName: string) => {
-    if (!confirm(`Voulez-vous vraiment supprimer définitivement le client "${customerName}" ?`)) {
+    if (!confirm(`Voulez-vous vraiment supprimer définitivement le client "${customerName}" et toutes ses commandes ?`)) {
       return;
     }
     try {
       setCustomers((prev) => {
-        const updated = prev.filter((c) => c.id !== customerId);
+        const updated = prev.filter((c) => c.id !== customerId && c.code !== customerId);
         setStoredLocal("gy_customers", updated);
         return updated;
       });
-      fetch(`/api/admin/customers?id=${customerId}`, { method: "DELETE" });
+      setOrders((prev) => {
+        const updated = prev.filter((o) => o.customerId !== customerId);
+        setStoredLocal("gy_orders", updated);
+        return updated;
+      });
+      await fetch(`/api/admin/customers?id=${customerId}`, { method: "DELETE" });
+      await fetchData();
     } catch (e) {
       console.error("Error deleting customer:", e);
     }

@@ -193,17 +193,34 @@ export async function DELETE(req: Request) {
     }
 
     try {
-      await prisma.customer.delete({
-        where: { id },
-      });
+      // Delete child records first if Prisma exists
+      await (prisma as any).customerMeasurement?.deleteMany({ where: { customerId: id } }).catch(() => null);
+      await (prisma as any).fitting?.deleteMany({ where: { order: { customerId: id } } }).catch(() => null);
+      await (prisma as any).payment?.deleteMany({ where: { customerId: id } }).catch(() => null);
+      await (prisma as any).order?.deleteMany({ where: { customerId: id } }).catch(() => null);
+      await (prisma as any).customer?.delete({ where: { id } }).catch(() => null);
     } catch (delErr) {
       console.warn("Prisma Customer Delete fallback:", delErr);
     }
 
     await updateCloudData((store) => {
-      const existing = store.customers || [];
-      const updatedCusts = existing.filter((c: any) => c.id !== id);
-      return { ...store, customers: updatedCusts };
+      const existingCusts = store.customers || [];
+      const existingOrders = store.orders || [];
+      const existingRecettes = store.recettes || [];
+
+      const targetCust = existingCusts.find((c: any) => c.id === id || c.code === id);
+      const targetId = targetCust ? targetCust.id : id;
+
+      const updatedCusts = existingCusts.filter((c: any) => c.id !== targetId && c.code !== id);
+      const updatedOrders = existingOrders.filter((o: any) => o.customerId !== targetId);
+      const updatedRecettes = existingRecettes.filter((r: any) => r.customerId !== targetId);
+
+      return {
+        ...store,
+        customers: updatedCusts,
+        orders: updatedOrders,
+        recettes: updatedRecettes,
+      };
     });
 
     return NextResponse.json({ success: true, deletedId: id });
