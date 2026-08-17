@@ -1294,7 +1294,7 @@ export default function AdminDashboard() {
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
                 placeholder="gymaisoncouture@gmail.com"
-                className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl p-3.5 text-white font-bold text-sm focus:border-[#D4AF37] focus:outline-none"
+                className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl p-3.5 text-white font-bold text-sm focus:border-[#D4AF37] focus:outline-none normal-case"
                 required
               />
             </div>
@@ -1307,7 +1307,7 @@ export default function AdminDashboard() {
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl p-3.5 pr-24 text-white font-bold text-sm focus:border-[#D4AF37] focus:outline-none"
+                  className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl p-3.5 pr-24 text-white font-bold text-sm focus:border-[#D4AF37] focus:outline-none normal-case"
                   required
                 />
                 <button

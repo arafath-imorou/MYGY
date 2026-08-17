@@ -24,12 +24,22 @@
     font-weight: 700;
   }
 
-  input, textarea, select {
+  input:not([type="email"]):not([type="password"]):not(.normal-case),
+  textarea:not(.normal-case),
+  select:not(.normal-case) {
     text-transform: uppercase !important;
   }
 
-  input::placeholder, textarea::placeholder {
+  input:not([type="email"]):not([type="password"]):not(.normal-case)::placeholder,
+  textarea:not(.normal-case)::placeholder {
     text-transform: uppercase !important;
+  }
+
+  input[type="email"],
+  input[type="password"],
+  .normal-case,
+  .lowercase {
+    text-transform: none !important;
   }
 }
 
