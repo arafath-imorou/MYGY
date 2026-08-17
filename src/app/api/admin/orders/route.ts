@@ -187,7 +187,8 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
-    const { orderId, newStatus, currentStage, newPayment } = await req.json();
+    const body = await req.json();
+    const { orderId, newStatus, currentStage, newPayment, totalAmount, promisedDate, fabricDetails, customNotes, priority, items } = body;
 
     if (!orderId) {
       return NextResponse.json({ error: "ID de commande manquant." }, { status: 400 });
@@ -234,6 +235,28 @@ export async function PUT(req: Request) {
     if (newStatus) {
       updatedData.status = newStatus;
       updatedData.clientStepStatus = mapOrderStatusToClientStep(newStatus);
+    }
+
+    if (totalAmount !== undefined) {
+      const newTotal = Number(totalAmount);
+      updatedData.totalAmount = newTotal;
+      const paid = Number(baseOrder.totalPaid || 0);
+      updatedData.balanceDue = Math.max(0, newTotal - paid);
+    }
+    if (promisedDate) {
+      updatedData.promisedDate = promisedDate;
+    }
+    if (fabricDetails !== undefined) {
+      updatedData.fabricDetails = fabricDetails;
+    }
+    if (customNotes !== undefined) {
+      updatedData.customNotes = customNotes;
+    }
+    if (priority) {
+      updatedData.priority = priority;
+    }
+    if (items && Array.isArray(items)) {
+      updatedData.items = items;
     }
 
     let newReceiptObj: any = null;

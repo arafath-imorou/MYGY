@@ -211,6 +211,17 @@ export default function AdminDashboard() {
   const [newOrderDepositRequired, setNewOrderDepositRequired] = useState<number | "">("");
   const [newOrderPriority, setNewOrderPriority] = useState("VIP");
 
+  // Edit Order State
+  const [editOrderModal, setEditOrderModal] = useState(false);
+  const [editOrderObj, setEditOrderObj] = useState<any>(null);
+  const [editOrderTotalAmount, setEditOrderTotalAmount] = useState<number | "">("");
+  const [editOrderPromisedDate, setEditOrderPromisedDate] = useState("");
+  const [editOrderFabricDetails, setEditOrderFabricDetails] = useState("");
+  const [editOrderCustomNotes, setEditOrderCustomNotes] = useState("");
+  const [editOrderPriority, setEditOrderPriority] = useState("VIP");
+  const [editOrderStatus, setEditOrderStatus] = useState("PRODUCTION");
+  const [editOrderItemsList, setEditOrderItemsList] = useState<any[]>([]);
+
   // RH & Personnel State
   const DEFAULT_EMPLOYEES = [
     {
@@ -1083,6 +1094,92 @@ export default function AdminDashboard() {
       } else {
         const err = await res.json();
         alert(err.error || "Erreur lors de la création de la commande");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleOpenEditOrder = (o: any) => {
+    setEditOrderObj(o);
+    setEditOrderTotalAmount(o.totalAmount || "");
+    setEditOrderPromisedDate(o.promisedDate ? new Date(o.promisedDate).toISOString().split("T")[0] : "");
+    setEditOrderFabricDetails(o.fabricDetails || "");
+    setEditOrderCustomNotes(o.customNotes || "");
+    setEditOrderPriority(o.priority || "VIP");
+    setEditOrderStatus(o.status || "PRODUCTION");
+    setEditOrderItemsList(
+      o.items && o.items.length > 0
+        ? o.items.map((it: any, idx: number) => ({ id: it.id || String(idx + 1), itemName: it.itemName || "", price: it.price || "", fabricDetails: it.fabricDetails || "" }))
+        : [{ id: "1", itemName: o.itemName || "Tenue Sur-Mesure", price: o.totalAmount || "", fabricDetails: o.fabricDetails || "" }]
+    );
+    setEditOrderModal(true);
+  };
+
+  const handleEditAddItem = () => {
+    setEditOrderItemsList((prev) => [
+      ...prev,
+      { id: String(Date.now()), itemName: "", price: "", fabricDetails: "" },
+    ]);
+  };
+
+  const handleEditRemoveItem = (id: string) => {
+    if (editOrderItemsList.length <= 1) return;
+    setEditOrderItemsList((prev) => {
+      const updated = prev.filter((it) => it.id !== id);
+      const total = updated.reduce((acc, it) => acc + Number(it.price || 0), 0);
+      setEditOrderTotalAmount(total > 0 ? total : "");
+      return updated;
+    });
+  };
+
+  const handleEditItemChange = (id: string, field: string, val: any) => {
+    setEditOrderItemsList((prev) => {
+      const updated = prev.map((it) => (it.id === id ? { ...it, [field]: val } : it));
+      const total = updated.reduce((acc, it) => acc + Number(it.price || 0), 0);
+      setEditOrderTotalAmount(total > 0 ? total : "");
+      return updated;
+    });
+  };
+
+  const handleSaveEditedOrder = async () => {
+    if (!editOrderObj) return;
+    const validItems = editOrderItemsList.filter((it) => it.itemName && it.itemName.trim().length > 0);
+    const computedTotal = validItems.length > 0
+      ? validItems.reduce((acc, it) => acc + Number(it.price || 0), 0)
+      : Number(editOrderTotalAmount || 0);
+
+    if (computedTotal <= 0) {
+      alert("Veuillez saisir un montant total valide pour la commande.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/admin/orders", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: editOrderObj.id,
+          newStatus: editOrderStatus,
+          totalAmount: computedTotal,
+          promisedDate: editOrderPromisedDate,
+          fabricDetails: editOrderFabricDetails,
+          customNotes: editOrderCustomNotes,
+          priority: editOrderPriority,
+          items: validItems,
+        }),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setOrders((prev) =>
+          prev.map((o) => (o.id === editOrderObj.id || o.reference === editOrderObj.reference ? { ...o, ...updated } : o))
+        );
+        setEditOrderModal(false);
+        await fetchData();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Erreur lors de la modification de la commande");
       }
     } catch (e) {
       console.error(e);
@@ -1976,6 +2073,12 @@ export default function AdminDashboard() {
                                 className="px-3 py-2 rounded-xl bg-sky-500/20 text-sky-300 hover:bg-sky-500 hover:text-white border border-sky-500/40 text-xs font-black uppercase tracking-wider"
                               >
                                 FICHE
+                              </button>
+                              <button
+                                onClick={() => handleOpenEditOrder(o)}
+                                className="px-3 py-2 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-xs font-black uppercase tracking-wider"
+                              >
+                                MODIFIER
                               </button>
                               <button
                                 onClick={() => handleOpenPaymentWizard(o.customer, o)}
@@ -3387,6 +3490,172 @@ export default function AdminDashboard() {
                   className="w-1/2 py-3.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase shadow-gold hover:opacity-95"
                 >
                   ENREGISTRER LA COMMANDE
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: MODIFIER LA COMMANDE                               */}
+      {/* ========================================================= */}
+      {editOrderModal && editOrderObj && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-panel max-w-xl w-full p-8 rounded-3xl border border-amber-500/50 shadow-2xl font-aptos my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
+              <div>
+                <h3 className="font-serif text-2xl font-bold text-white">MODIFIER LA COMMANDE</h3>
+                <p className="text-xs text-amber-400 font-bold tracking-widest uppercase mt-1">
+                  RÉF : {editOrderObj.reference}
+                </p>
+              </div>
+              <button
+                onClick={() => setEditOrderModal(false)}
+                className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold"
+              >
+                [ FERMER ]
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Statut de la Commande</label>
+                  <select
+                    value={editOrderStatus}
+                    onChange={(e) => setEditOrderStatus(e.target.value)}
+                    className="w-full bg-gy-dark border border-gy-gold/50 rounded-xl p-3 text-gy-gold font-bold focus:outline-none"
+                  >
+                    <option value="ACOMPTE_ATTENDU">ACOMPTE ATTENDU</option>
+                    <option value="PRODUCTION">PRODUCTION EN ATELIER</option>
+                    <option value="ESSAYAGE">ESSAYAGE CLIENT</option>
+                    <option value="RETOUCHE">RETOUCHE</option>
+                    <option value="CONTROLE_QUALITE">CONTRÔLE QUALITÉ</option>
+                    <option value="SOLDE_A_PAYER">SOLDE À PAYER</option>
+                    <option value="PRET">PRÊT À LIVRER</option>
+                    <option value="CLOTURE">CLÔTURÉ</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Priorité</label>
+                  <select
+                    value={editOrderPriority}
+                    onChange={(e) => setEditOrderPriority(e.target.value)}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-[#D4AF37] focus:outline-none"
+                  >
+                    <option value="STANDARD">STANDARD</option>
+                    <option value="HAUTE">HAUTE</option>
+                    <option value="URGENTE">URGENTE</option>
+                    <option value="VIP">VIP</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Dynamic Tenues List for Edit */}
+              <div className="space-y-3 p-4 bg-[#14141a] rounded-2xl border border-gy-border">
+                <div className="flex justify-between items-center">
+                  <label className="block text-[#D4AF37] font-bold text-xs uppercase tracking-wider">
+                    TENUES & ARTICLES ({editOrderItemsList.length})
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleEditAddItem}
+                    className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-lg text-xs font-black uppercase hover:bg-emerald-500 hover:text-white transition-all cursor-pointer"
+                  >
+                    + AJOUTER UNE TENUE
+                  </button>
+                </div>
+
+                {editOrderItemsList.map((item, idx) => (
+                  <div key={item.id || idx} className="p-3 bg-[#181820] border border-[#2A2A38] rounded-xl space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-gy-textMuted">Tenue N° {idx + 1}</span>
+                      {editOrderItemsList.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleEditRemoveItem(item.id)}
+                          className="text-rose-400 text-xs font-bold hover:underline"
+                        >
+                          [ SUPPRIMER ]
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">Nom de la Tenue *</label>
+                        <input
+                          type="text"
+                          value={item.itemName}
+                          onChange={(e) => handleEditItemChange(item.id, "itemName", e.target.value)}
+                          className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-white font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">Prix de cette Tenue (FCFA)</label>
+                        <input
+                          type="number"
+                          value={item.price || ""}
+                          onChange={(e) => handleEditItemChange(item.id, "price", e.target.value === "" ? "" : Number(e.target.value))}
+                          className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-emerald-400 font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">Détails & Tissu Spécifique</label>
+                      <input
+                        type="text"
+                        value={item.fabricDetails}
+                        onChange={(e) => handleEditItemChange(item.id, "fabricDetails", e.target.value)}
+                        className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-gy-textMuted text-xs focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <label className="block text-[#D4AF37] mb-1 font-bold text-xs">Date de Retrait Souhaité *</label>
+                <input
+                  type="date"
+                  value={editOrderPromisedDate}
+                  onChange={(e) => setEditOrderPromisedDate(e.target.value)}
+                  className="w-full bg-gy-dark border border-[#D4AF37] rounded-xl p-3 text-[#D4AF37] font-bold focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Informations sur le Tissu Voulu</label>
+                <textarea
+                  value={editOrderFabricDetails}
+                  onChange={(e) => setEditOrderFabricDetails(e.target.value)}
+                  rows={2}
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Montant Total de la Commande (FCFA) *</label>
+                <input
+                  type="number"
+                  value={editOrderTotalAmount || ""}
+                  onChange={(e) => setEditOrderTotalAmount(e.target.value === "" ? "" : Number(e.target.value))}
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-emerald-400 font-bold text-base focus:border-[#D4AF37] focus:outline-none"
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => setEditOrderModal(false)}
+                  className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase"
+                >
+                  ANNULER
+                </button>
+                <button
+                  onClick={handleSaveEditedOrder}
+                  className="w-1/2 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase shadow-lg transition-all"
+                >
+                  ENREGISTRER MODIFICATIONS
                 </button>
               </div>
             </div>
