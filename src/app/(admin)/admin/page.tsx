@@ -187,7 +187,7 @@ export default function AdminDashboard() {
   const [newCustLastName, setNewCustLastName] = useState("");
   const [newCustPhone, setNewCustPhone] = useState("");
   const [newCustEmail, setNewCustEmail] = useState("");
-  const [newCustCity, setNewCustCity] = useState("Cotonou");
+  const [newCustCity, setNewCustCity] = useState("");
   const [newCustCategory, setNewCustCategory] = useState("Standard");
   const [newCustProfession, setNewCustProfession] = useState("");
   const [newCustNotes, setNewCustNotes] = useState("");
@@ -3172,7 +3172,6 @@ export default function AdminDashboard() {
                     type="text"
                     value={newCustFirstName}
                     onChange={(e) => setNewCustFirstName(e.target.value)}
-                    placeholder="Grace"
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
                   />
                 </div>
@@ -3182,7 +3181,6 @@ export default function AdminDashboard() {
                     type="text"
                     value={newCustLastName}
                     onChange={(e) => setNewCustLastName(e.target.value)}
-                    placeholder="Adanlete"
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
                   />
                 </div>
@@ -3195,7 +3193,6 @@ export default function AdminDashboard() {
                     type="text"
                     value={newCustPhone}
                     onChange={(e) => setNewCustPhone(e.target.value)}
-                    placeholder="+229 97 00 00 00"
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
                   />
                 </div>
@@ -3205,7 +3202,6 @@ export default function AdminDashboard() {
                     type="text"
                     value={newCustCity}
                     onChange={(e) => setNewCustCity(e.target.value)}
-                    placeholder="Cotonou"
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none"
                   />
                 </div>
