@@ -176,6 +176,107 @@ export default function AdminDashboard() {
   const [newOrderDepositRequired, setNewOrderDepositRequired] = useState<number>(0);
   const [newOrderPriority, setNewOrderPriority] = useState("VIP");
 
+  // RH & Personnel State
+  const DEFAULT_EMPLOYEES = [
+    {
+      id: "emp_1",
+      code: "EMP-001",
+      firstName: "Ghislaine",
+      lastName: "LOKO DJIDJOHO",
+      role: "Directrice Générale",
+      department: "Direction Générale",
+      phone: "+229 97 00 00 01",
+      email: "gymaisoncouture@gmail.com",
+      contractType: "CDI",
+      salary: 800000,
+      hireDate: "2024-01-15",
+      status: "ACTIF",
+    },
+    {
+      id: "emp_2",
+      code: "EMP-002",
+      firstName: "Bernice",
+      lastName: "HOUNNOU",
+      role: "Assistante",
+      department: "Administration & Accueil",
+      phone: "+229 96 12 34 56",
+      email: "assistante@mygy.com",
+      contractType: "CDI",
+      salary: 200000,
+      hireDate: "2024-03-01",
+      status: "ACTIF",
+    },
+    {
+      id: "emp_3",
+      code: "EMP-003",
+      firstName: "Dossou",
+      lastName: "KPADONOU",
+      role: "Tailleur",
+      department: "Atelier Confection & Coupe",
+      phone: "+229 95 44 33 22",
+      email: "tailleur.coupe@mygy.com",
+      contractType: "CDI",
+      salary: 250000,
+      hireDate: "2024-02-10",
+      status: "ACTIF",
+    },
+    {
+      id: "emp_4",
+      code: "EMP-004",
+      firstName: "Mathieu",
+      lastName: "SOGLO",
+      role: "Tailleur",
+      department: "Atelier Confection & Broderie",
+      phone: "+229 67 88 99 00",
+      email: "tailleur.broderie@mygy.com",
+      contractType: "CDI",
+      salary: 220000,
+      hireDate: "2024-04-15",
+      status: "ACTIF",
+    },
+    {
+      id: "emp_5",
+      code: "EMP-005",
+      firstName: "Koffi",
+      lastName: "AGBOSSA",
+      role: "Agent d'entretien",
+      department: "Entretien Atelier & Showroom",
+      phone: "+229 94 11 22 33",
+      email: "entretien@mygy.com",
+      contractType: "CDI",
+      salary: 100000,
+      hireDate: "2024-05-01",
+      status: "ACTIF",
+    },
+    {
+      id: "emp_6",
+      code: "EMP-006",
+      firstName: "Rodrigue",
+      lastName: "ADANHO",
+      role: "Agent de liaison",
+      department: "Logistique & Livraisons VIP",
+      phone: "+229 66 55 44 33",
+      email: "liaison@mygy.com",
+      contractType: "CDI",
+      salary: 130000,
+      hireDate: "2024-06-01",
+      status: "ACTIF",
+    },
+  ];
+
+  const [employeesList, setEmployeesList] = useState<any[]>(DEFAULT_EMPLOYEES);
+  const [rhRoleFilter, setRhRoleFilter] = useState("TOUS");
+  const [newEmployeeModal, setNewEmployeeModal] = useState(false);
+  const [empFirstName, setEmpFirstName] = useState("");
+  const [empLastName, setEmpLastName] = useState("");
+  const [empRole, setEmpRole] = useState("Tailleur");
+  const [empDepartment, setEmpDepartment] = useState("Atelier Confection");
+  const [empPhone, setEmpPhone] = useState("");
+  const [empEmail, setEmpEmail] = useState("");
+  const [empContractType, setEmpContractType] = useState("CDI");
+  const [empSalary, setEmpSalary] = useState<number>(150000);
+  const [empHireDate, setEmpHireDate] = useState(new Date().toISOString().split("T")[0]);
+
   const handleAddItemToOrder = () => {
     setNewOrderItemsList((prev) => [
       ...prev,
@@ -225,17 +326,28 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const noCacheOpts: RequestInit = { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate" } };
-      const [dashRes, ordersRes, custRes, finRes] = await Promise.all([
+      const [dashRes, ordersRes, custRes, finRes, empRes] = await Promise.all([
         fetch("/api/admin/dashboard", noCacheOpts),
         fetch("/api/admin/orders", noCacheOpts),
         fetch("/api/admin/customers", noCacheOpts),
         fetch("/api/admin/finances", noCacheOpts),
+        fetch("/api/admin/employees", noCacheOpts).catch(() => null),
       ]);
 
       const dashData = dashRes.ok ? await dashRes.json() : {};
       const ordersData = ordersRes.ok ? await ordersRes.json() : [];
       const custData = custRes.ok ? await custRes.json() : [];
       const finData = finRes.ok ? await finRes.json() : {};
+      const empData = empRes && empRes.ok ? await empRes.json() : [];
+
+      const serverEmps = Array.isArray(empData) ? empData : [];
+      const localEmps = getStoredLocal("gy_employees");
+      const mergedEmps = serverEmps.length > 0
+        ? [...serverEmps, ...localEmps.filter((l: any) => !serverEmps.some((s: any) => s.id === l.id))]
+        : (localEmps.length > 0 ? localEmps : DEFAULT_EMPLOYEES);
+
+      setEmployeesList(mergedEmps);
+      setStoredLocal("gy_employees", mergedEmps);
 
       const localCusts = getStoredLocal("gy_customers");
       const localOrders = getStoredLocal("gy_orders");
@@ -760,6 +872,50 @@ export default function AdminDashboard() {
       } else {
         const err = await res.json();
         alert(err.error || "Erreur lors de la création de la commande");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleCreateEmployee = async () => {
+    if (!empFirstName || !empLastName || !empRole) {
+      alert("Veuillez remplir le prénom, le nom et le rôle du membre du personnel.");
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin/employees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: empFirstName,
+          lastName: empLastName,
+          role: empRole,
+          department: empDepartment,
+          phone: empPhone,
+          email: empEmail,
+          contractType: empContractType,
+          salary: Number(empSalary || 150000),
+          hireDate: empHireDate,
+        }),
+      });
+
+      if (res.ok) {
+        const createdEmp = await res.json();
+        setEmployeesList((prev) => {
+          const updated = [createdEmp, ...prev.filter((e) => e.id !== createdEmp.id)];
+          setStoredLocal("gy_employees", updated);
+          return updated;
+        });
+        setNewEmployeeModal(false);
+        setEmpFirstName("");
+        setEmpLastName("");
+        setEmpPhone("");
+        setEmpEmail("");
+        setEmpSalary(150000);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Erreur lors de la création du membre du personnel.");
       }
     } catch (e) {
       console.error(e);
@@ -2074,8 +2230,138 @@ export default function AdminDashboard() {
           )}
 
           {activeMenu === "rh" && (
-            <div className="framed-card p-8">
-              <h2 className="font-serif text-3xl font-bold text-white mb-4">RH & COMMISSIONS</h2>
+            <div className="space-y-8 font-aptos">
+              {/* Header Header */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h2 className="font-serif text-4xl font-bold text-white">RH & MANAGEMENT DU PERSONNEL</h2>
+                  <p className="text-sm text-gy-textMuted mt-1">Gestion des effectifs, rôles, contrats, masse salariale et affectations atelier</p>
+                </div>
+                <button
+                  onClick={() => setNewEmployeeModal(true)}
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95 transition-all cursor-pointer"
+                >
+                  + AJOUTER UN MEMBRE DU PERSONNEL
+                </button>
+              </div>
+
+              {/* Stat Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div className="framed-card p-5 border-l-4 border-l-[#D4AF37]">
+                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Effectif Total</span>
+                  <h3 className="font-serif text-3xl font-black text-white mt-2">{employeesList.length} Employés</h3>
+                </div>
+                <div className="framed-card p-5 border-l-4 border-l-sky-400">
+                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Tailleurs & Artisans</span>
+                  <h3 className="font-serif text-3xl font-black text-sky-400 mt-2">
+                    {employeesList.filter((e) => e.role === "Tailleur" || e.department?.includes("Atelier")).length} Membres
+                  </h3>
+                </div>
+                <div className="framed-card p-5 border-l-4 border-l-emerald-400">
+                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Masse Salariale Mensuelle</span>
+                  <h3 className="font-serif text-2xl font-black text-emerald-400 mt-2">
+                    {formatFcfa(employeesList.reduce((acc, e) => acc + Number(e.salary || 0), 0))}
+                  </h3>
+                </div>
+                <div className="framed-card p-5 border-l-4 border-l-purple-400">
+                  <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Statut Présence</span>
+                  <h3 className="font-serif text-3xl font-black text-purple-400 mt-2">100% ACTIFS</h3>
+                </div>
+              </div>
+
+              {/* Role Filters */}
+              <div className="flex flex-wrap gap-2 border-b border-[#2A2A38] pb-4">
+                {[
+                  { key: "TOUS", label: "TOUT LE PERSONNEL" },
+                  { key: "Directrice Générale", label: "DIRECTION" },
+                  { key: "Assistante", label: "ADMINISTRATION & ACCUEIL" },
+                  { key: "Tailleur", label: "TAILLEURS & ARTISANS" },
+                  { key: "Agent d'entretien", label: "ENTRETIEN" },
+                  { key: "Agent de liaison", label: "LIAISON & LIVRAISON" },
+                ].map((f) => (
+                  <button
+                    key={f.key}
+                    onClick={() => setRhRoleFilter(f.key)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                      rhRoleFilter === f.key
+                        ? "bg-[#D4AF37] text-black font-black shadow-md"
+                        : "bg-gy-dark border border-gy-border text-gy-textMuted hover:text-white"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Staff Table */}
+              <div className="framed-card p-2 overflow-hidden border-2 border-gy-border">
+                <div className="overflow-x-auto">
+                  <table className="framed-table text-left text-sm text-gy-text font-aptos">
+                    <thead>
+                      <tr>
+                        <th className="min-w-[110px]">CODE EMP</th>
+                        <th className="min-w-[200px]">NOM & PRÉNOM</th>
+                        <th className="min-w-[180px]">POSTE / RÔLE OFFICIEL</th>
+                        <th className="min-w-[200px]">DÉPARTEMENT</th>
+                        <th className="min-w-[160px]">CONTACTS (TÉL / EMAIL)</th>
+                        <th className="min-w-[120px]">CONTRAT</th>
+                        <th className="min-w-[150px]">SALAIRE MENSUEL</th>
+                        <th className="min-w-[110px]">STATUT</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {employeesList
+                        .filter((e) => rhRoleFilter === "TOUS" || e.role === rhRoleFilter)
+                        .map((emp) => (
+                          <tr key={emp.id}>
+                            <td className="font-bold text-white">
+                              <span className="framed-badge-gold text-xs font-black">{emp.code || "EMP-000"}</span>
+                            </td>
+                            <td>
+                              <div className="font-bold text-white text-base">
+                                {emp.firstName} {emp.lastName}
+                              </div>
+                              <span className="text-[11px] text-gy-textMuted font-semibold">Embauché le {emp.hireDate || "01/01/2024"}</span>
+                            </td>
+                            <td>
+                              <span className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase inline-block ${
+                                emp.role === "Directrice Générale"
+                                  ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                                  : emp.role === "Assistante"
+                                  ? "bg-purple-500/20 text-purple-400 border border-purple-500/40"
+                                  : emp.role === "Tailleur"
+                                  ? "bg-sky-500/20 text-sky-400 border border-sky-500/40"
+                                  : emp.role === "Agent d'entretien"
+                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                                  : "bg-teal-500/20 text-teal-400 border border-teal-500/40"
+                              }`}>
+                                {emp.role}
+                              </span>
+                            </td>
+                            <td className="font-semibold text-gy-textMuted text-xs">{emp.department}</td>
+                            <td className="text-xs">
+                              <div className="font-bold text-white">{emp.phone}</div>
+                              <div className="text-gy-textMuted truncate max-w-[180px]">{emp.email}</div>
+                            </td>
+                            <td>
+                              <span className="px-2.5 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold text-gy-gold uppercase">
+                                {emp.contractType || "CDI"}
+                              </span>
+                            </td>
+                            <td className="font-black text-emerald-400 text-base">
+                              {formatFcfa(emp.salary || 150000)}
+                            </td>
+                            <td>
+                              <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black uppercase">
+                                {emp.status || "ACTIF"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
 
@@ -2115,6 +2401,145 @@ export default function AdminDashboard() {
           )}
         </main>
       </div>
+
+      {/* ========================================================= */}
+      {/* 0. MODAL: NOUVEAU MEMBRE DU PERSONNEL RH                   */}
+      {/* ========================================================= */}
+      {newEmployeeModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-panel max-w-lg w-full p-8 rounded-3xl border border-[#D4AF37]/50 shadow-2xl font-aptos my-8">
+            <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
+              <h3 className="font-serif text-2xl font-bold text-white">AJOUTER UN MEMBRE DU PERSONNEL</h3>
+              <button onClick={() => setNewEmployeeModal(false)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
+                [ FERMER ]
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Prénom *</label>
+                  <input
+                    type="text"
+                    value={empFirstName}
+                    onChange={(e) => setEmpFirstName(e.target.value)}
+                    placeholder="ex: Bernice"
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Nom *</label>
+                  <input
+                    type="text"
+                    value={empLastName}
+                    onChange={(e) => setEmpLastName(e.target.value)}
+                    placeholder="ex: HOUNNOU"
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Poste / Rôle Officiel *</label>
+                  <select
+                    value={empRole}
+                    onChange={(e) => {
+                      setEmpRole(e.target.value);
+                      if (e.target.value === "Directrice Générale") setEmpDepartment("Direction Générale");
+                      else if (e.target.value === "Assistante") setEmpDepartment("Administration & Accueil");
+                      else if (e.target.value === "Tailleur") setEmpDepartment("Atelier Confection & Coupe");
+                      else if (e.target.value === "Agent d'entretien") setEmpDepartment("Entretien Atelier & Showroom");
+                      else if (e.target.value === "Agent de liaison") setEmpDepartment("Logistique & Livraisons VIP");
+                    }}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-[#D4AF37] focus:outline-none"
+                  >
+                    <option value="Directrice Générale">Directrice Générale</option>
+                    <option value="Assistante">Assistante</option>
+                    <option value="Tailleur">Tailleur / Couturier</option>
+                    <option value="Agent d'entretien">Agent d'entretien</option>
+                    <option value="Agent de liaison">Agent de liaison</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Département *</label>
+                  <input
+                    type="text"
+                    value={empDepartment}
+                    onChange={(e) => setEmpDepartment(e.target.value)}
+                    placeholder="ex: Atelier Confection"
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Téléphone</label>
+                  <input
+                    type="text"
+                    value={empPhone}
+                    onChange={(e) => setEmpPhone(e.target.value)}
+                    placeholder="+229 97 00 00 00"
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Email</label>
+                  <input
+                    type="email"
+                    value={empEmail}
+                    onChange={(e) => setEmpEmail(e.target.value)}
+                    placeholder="employe@mygy.com"
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Type de Contrat</label>
+                  <select
+                    value={empContractType}
+                    onChange={(e) => setEmpContractType(e.target.value)}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-[#D4AF37] focus:outline-none"
+                  >
+                    <option value="CDI">CDI</option>
+                    <option value="CDD">CDD</option>
+                    <option value="Prestataire">Prestataire</option>
+                    <option value="Stagiaire">Stagiaire</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Salaire Mensuel (FCFA) *</label>
+                  <input
+                    type="number"
+                    value={empSalary}
+                    onChange={(e) => setEmpSalary(Number(e.target.value))}
+                    placeholder="150000"
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-emerald-400 font-bold text-base focus:border-[#D4AF37] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => setNewEmployeeModal(false)}
+                  className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase"
+                >
+                  ANNULER
+                </button>
+                <button
+                  onClick={handleCreateEmployee}
+                  className="w-1/2 py-3.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase shadow-gold hover:opacity-95"
+                >
+                  ENREGISTRER EMPLOYÉ
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================= */}
       {/* 1. MODAL: NOUVEAU CLIENT FORM                             */}

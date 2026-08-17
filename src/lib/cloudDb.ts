@@ -6,6 +6,7 @@ export interface CloudStoreData {
   orders: any[];
   recettes: any[];
   depenses: any[];
+  employees?: any[];
 }
 
 let memoryCache: CloudStoreData = {
@@ -13,6 +14,7 @@ let memoryCache: CloudStoreData = {
   orders: [],
   recettes: [],
   depenses: [],
+  employees: [],
 };
 
 export async function getCloudData(): Promise<CloudStoreData> {
@@ -26,6 +28,7 @@ export async function getCloudData(): Promise<CloudStoreData> {
         orders: json.data.orders || memoryCache.orders,
         recettes: json.data.recettes || memoryCache.recettes,
         depenses: json.data.depenses || memoryCache.depenses,
+        employees: json.data.employees || memoryCache.employees || [],
       };
     }
     return memoryCache;
