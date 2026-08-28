@@ -552,7 +552,7 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const noCacheOpts: RequestInit = { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate" } };
-      const [dashRes, ordersRes, custRes, finRes, empRes, usersRes, stockRes] = await Promise.all([
+      const [dashRes, ordersRes, custRes, finRes, empRes, usersRes, stockRes, clientAccRes] = await Promise.all([
         fetch("/api/admin/dashboard", noCacheOpts),
         fetch("/api/admin/orders", noCacheOpts),
         fetch("/api/admin/customers", noCacheOpts),
@@ -560,6 +560,7 @@ export default function AdminDashboard() {
         fetch("/api/admin/employees", noCacheOpts).catch(() => null),
         fetch("/api/admin/users", noCacheOpts).catch(() => null),
         fetch("/api/admin/stock", noCacheOpts).catch(() => null),
+        fetch("/api/admin/client-accounts", noCacheOpts).catch(() => null),
       ]);
 
       const dashData = dashRes.ok ? await dashRes.json() : {};
@@ -569,7 +570,9 @@ export default function AdminDashboard() {
       const empData = empRes && empRes.ok ? await empRes.json() : [];
       const usersData = usersRes && usersRes.ok ? await usersRes.json() : [];
       const stockData = stockRes && stockRes.ok ? await stockRes.json() : [];
+      const clientAccData = clientAccRes && clientAccRes.ok ? await clientAccRes.json() : [];
       if (Array.isArray(stockData)) setStockList(stockData);
+      if (Array.isArray(clientAccData)) setClientAccountsList(clientAccData);
 
       const serverEmps = Array.isArray(empData) ? empData : [];
       const localEmps = getStoredLocal("gy_employees");

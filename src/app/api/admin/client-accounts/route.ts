@@ -165,8 +165,60 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     const cloudData = await getCloudData();
-    const users = ((cloudData as any).users || []).filter((u: any) => u.role === "CLIENT");
-    return NextResponse.json(users);
+    const existingUsers = (cloudData as any).users || [];
+    const customers = (cloudData as any).customers || [];
+
+    let updatedUsers = [...existingUsers];
+    let hasNew = false;
+
+    for (const cust of customers) {
+      const alreadyHas = updatedUsers.some(
+        (u: any) => u.customerId === cust.id || (cust.email && u.email?.toLowerCase() === cust.email.toLowerCase())
+      );
+
+      if (!alreadyHas) {
+        const rawFirstName = cust.firstName || cust.name || cust.lastName || "client";
+        let baseUsername = cleanIdentifier(rawFirstName);
+        let username = baseUsername;
+        let counter = 2;
+        while (updatedUsers.some((u: any) => u.username === username || u.email === username)) {
+          username = `${baseUsername}${counter}`;
+          counter++;
+        }
+
+        const tempPassword = generateSimplePassword();
+        const email = cust.email && cust.email.includes("@") ? cust.email : `${username}@mygy.com`;
+        const fullName = `${cust.firstName || ""} ${cust.lastName || ""}`.trim() || cust.name || "Cliente GY";
+
+        const newUser = {
+          id: `usr_client_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          email,
+          username,
+          fullName,
+          role: "CLIENT",
+          customerId: cust.id,
+          customerCode: cust.code || "",
+          phone: cust.phone || "",
+          passwordHash: hashPassword(tempPassword),
+          tempPassword,
+          mustChangePassword: true,
+          createdAt: cust.createdAt || new Date().toISOString(),
+        };
+
+        updatedUsers.push(newUser);
+        hasNew = true;
+      }
+    }
+
+    if (hasNew) {
+      await updateCloudData((store) => ({
+        ...store,
+        users: updatedUsers,
+      } as any));
+    }
+
+    const clientUsers = updatedUsers.filter((u: any) => u.role === "CLIENT");
+    return NextResponse.json(clientUsers);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
