@@ -2178,9 +2178,7 @@ export default function AdminDashboard() {
                     <thead>
                       <tr>
                         <th className="min-w-[110px]">CODE</th>
-                        <th className="min-w-[180px]">NOM & PRÉNOM</th>
-                        <th className="min-w-[160px]">TÉLÉPHONE</th>
-                        <th className="min-w-[130px]">VILLE</th>
+                        <th className="min-w-[220px]">NOM & PRÉNOM</th>
                         <th className="min-w-[140px]">CATÉGORIE</th>
                         <th className="min-w-[140px]">COMMANDES</th>
                         <th className="min-w-[180px] text-center">ACTIONS</th>
@@ -2193,8 +2191,6 @@ export default function AdminDashboard() {
                           <td className="font-bold text-white text-base">
                             {c.firstName} {c.lastName}
                           </td>
-                          <td className="font-semibold text-gy-text">{c.phone}</td>
-                          <td className="text-gy-textMuted">{c.city}</td>
                           <td>
                             <span className="framed-badge-gold text-xs font-black">
                               {c.category}
@@ -4631,9 +4627,9 @@ export default function AdminDashboard() {
                 <h3 className="font-serif text-3xl font-bold text-white mt-1">
                   {viewCustomerModal.firstName} {viewCustomerModal.lastName}
                 </h3>
-                <p className="text-sm text-gy-textMuted mt-1">
-                  {viewCustomerModal.profession || "Client Privé"} • Tel : {viewCustomerModal.phone} • {viewCustomerModal.city}
-                </p>
+                <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-gy-gold/20 text-gy-gold text-xs font-black">
+                  {viewCustomerModal.category || "VIP Standard"}
+                </span>
               </div>
               <div className="flex flex-col gap-2 items-end">
                 <button onClick={() => setViewCustomerModal(null)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
@@ -4654,6 +4650,33 @@ export default function AdminDashboard() {
             </div>
 
             <div className="space-y-6 pt-6 text-sm">
+              {/* Informations Client & Coordonnées */}
+              <div className="bg-gy-dark p-5 rounded-2xl border border-gy-border space-y-3">
+                <h4 className="text-xs font-black text-gy-gold uppercase tracking-wider">Coordonnées & Informations</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div>
+                    <span className="text-xs text-gy-textMuted block">Téléphone</span>
+                    <strong className="text-white text-sm">{viewCustomerModal.phone || "Non renseigné"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gy-textMuted block">Ville</span>
+                    <strong className="text-white text-sm">{viewCustomerModal.city || "Cotonou"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gy-textMuted block">Profession</span>
+                    <strong className="text-white text-sm">{viewCustomerModal.profession || "Client Privé"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gy-textMuted block">Email</span>
+                    <strong className="text-white text-sm">{viewCustomerModal.email || "Non renseigné"}</strong>
+                  </div>
+                </div>
+                {viewCustomerModal.notes && (
+                  <div className="pt-2 border-t border-gy-border/40 text-xs text-gy-textMuted">
+                    <span className="font-bold text-white">Notes : </span>{viewCustomerModal.notes}
+                  </div>
+                )}
+              </div>
               <div>
                 {(() => {
                   const custOrders = orders.filter(
