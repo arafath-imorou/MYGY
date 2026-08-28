@@ -3065,12 +3065,29 @@ export default function AdminDashboard() {
                   <h2 className="font-serif text-4xl font-bold text-white">STOCK & MATIÈRES PREMIÈRES</h2>
                   <p className="text-sm text-gy-textMuted mt-1">Catalogue des matériels, tissus, fils et équipements — mouvements d&apos;entrée, de sortie et mises à disposition</p>
                 </div>
-                <button
-                  onClick={() => setNewStockModal(true)}
-                  className="px-5 py-3.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-black text-xs uppercase tracking-wider hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-lg"
-                >
-                  + NOUVEL ARTICLE
-                </button>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => {
+                      if (stockList.length === 0) {
+                        alert("Veuillez d'abord créer au moins un article dans le catalogue.");
+                        return;
+                      }
+                      setStockMvtModal(stockList[0]);
+                      setMvtType("ENTREE");
+                      setMvtQty("");
+                      setMvtReason("");
+                    }}
+                    className="px-5 py-3.5 rounded-2xl bg-gy-gold/20 text-gy-gold border border-gy-gold/40 font-black text-xs uppercase tracking-wider hover:bg-gy-gold hover:text-black transition-all cursor-pointer shadow-lg"
+                  >
+                    🔄 + NOUVEAU MOUVEMENT
+                  </button>
+                  <button
+                    onClick={() => setNewStockModal(true)}
+                    className="px-5 py-3.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-black text-xs uppercase tracking-wider hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-lg"
+                  >
+                    📦 + NOUVEL ARTICLE
+                  </button>
+                </div>
               </div>
 
               {/* Sub tabs */}
@@ -5071,38 +5088,121 @@ export default function AdminDashboard() {
       {/* ================================================================= */}
       {/* MODAL: MOUVEMENT DE STOCK                                          */}
       {/* ================================================================= */}
+      {/* ================================================================= */}
+      {/* MODAL: MOUVEMENT DE STOCK                                          */}
+      {/* ================================================================= */}
       {stockMvtModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="glass-panel max-w-md w-full p-8 rounded-3xl border border-gy-gold/50 shadow-2xl font-aptos">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-panel max-w-lg w-full p-8 rounded-3xl border border-gy-gold/50 shadow-2xl font-aptos my-8">
             <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
               <div>
-                <h3 className="font-serif text-xl font-bold text-white">MOUVEMENT DE STOCK</h3>
-                <p className="text-xs text-gy-gold font-bold mt-1">{stockMvtModal.name} — Stock actuel : <strong>{stockMvtModal.quantity} {stockMvtModal.unit}</strong></p>
+                <h3 className="font-serif text-2xl font-bold text-white">ENREGISTRER UN MOUVEMENT</h3>
+                <p className="text-xs text-gy-gold font-bold mt-1">
+                  {stockMvtModal.name ? `${stockMvtModal.name} — Stock actuel : ${stockMvtModal.quantity} ${stockMvtModal.unit}` : "Sélectionnez un article"}
+                </p>
               </div>
               <button onClick={() => setStockMvtModal(null)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">[ FERMER ]</button>
             </div>
-            <div className="space-y-4 text-sm">
+            <div className="space-y-5 text-sm">
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Article concerné *</label>
+                <select
+                  value={stockMvtModal?.id || ""}
+                  onChange={(e) => {
+                    const sel = stockList.find((s) => s.id === e.target.value);
+                    if (sel) setStockMvtModal(sel);
+                  }}
+                  className="w-full bg-gy-dark border border-gy-gold/50 rounded-xl p-3 text-white font-bold text-sm focus:outline-none"
+                >
+                  {stockList.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.reference} — {item.name} ({item.category}) | Stock: {item.quantity} {item.unit}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Type de mouvement</label>
-                <div className="flex gap-2">
-                  {["ENTREE", "SORTIE", stockMvtModal.type === "EQUIPEMENT" ? "MISE_A_DISPO" : null, "RETOUR"].filter(Boolean).map((t) => (
-                    <button key={t} onClick={() => setMvtType(t!)} className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase transition-all ${mvtType === t ? (t === "ENTREE" || t === "RETOUR" ? "bg-emerald-500 text-black" : t === "SORTIE" ? "bg-rose-500 text-white" : "bg-blue-500 text-white") : "bg-gy-dark border border-gy-border text-gy-textMuted"}`}>
-                      {t === "ENTREE" ? "ENTRÉE" : t === "SORTIE" ? "SORTIE" : t === "MISE_A_DISPO" ? "MISE À DISPO" : "RETOUR"}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {(["ENTREE", "SORTIE", "MISE_A_DISPO", "RETOUR"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setMvtType(t)}
+                      className={`py-2.5 px-2 rounded-xl text-xs font-black uppercase transition-all text-center ${
+                        mvtType === t
+                          ? t === "ENTREE" || t === "RETOUR"
+                            ? "bg-emerald-500 text-black shadow-lg"
+                            : t === "SORTIE"
+                            ? "bg-rose-500 text-white shadow-lg"
+                            : "bg-blue-500 text-white shadow-lg"
+                          : "bg-gy-dark border border-gy-border text-gy-textMuted hover:border-gy-gold/50"
+                      }`}
+                    >
+                      {t === "ENTREE" ? "📥 ENTRÉE" : t === "SORTIE" ? "📤 SORTIE" : t === "MISE_A_DISPO" ? "🔧 DISPO" : "🔄 RETOUR"}
                     </button>
                   ))}
                 </div>
+                <p className="text-[11px] text-gy-textMuted mt-1.5 italic">
+                  {mvtType === "ENTREE" && "Ajoute de la quantité au stock (réception, achat fournisseur)."}
+                  {mvtType === "SORTIE" && "Déduit de la quantité du stock (consommation commande, confection)."}
+                  {mvtType === "MISE_A_DISPO" && "Trace la mise à disposition d'un équipement ou matériel sans le consommer."}
+                  {mvtType === "RETOUR" && "Réintègre un article ou surplus dans le stock disponible."}
+                </p>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Quantité ({stockMvtModal.unit || "unité"}) *</label>
+                  <input
+                    type="number"
+                    value={mvtQty}
+                    onChange={(e) => setMvtQty(e.target.value === "" ? "" : Number(e.target.value))}
+                    placeholder="0"
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-black text-xl focus:border-gy-gold focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Stock résultant</label>
+                  <div className="p-3 bg-gy-dark/70 rounded-xl border border-gy-border/60 text-lg font-black">
+                    {(() => {
+                      const cur = Number(stockMvtModal.quantity || 0);
+                      const q = Number(mvtQty || 0);
+                      let res = cur;
+                      if (mvtType === "ENTREE" || mvtType === "RETOUR") res = cur + q;
+                      if (mvtType === "SORTIE") res = Math.max(0, cur - q);
+                      return (
+                        <span className={res <= Number(stockMvtModal.minQuantity || 0) ? "text-rose-400" : "text-emerald-400"}>
+                          {res} {stockMvtModal.unit}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Quantité ({stockMvtModal.unit})</label>
-                <input type="number" value={mvtQty} onChange={(e) => setMvtQty(e.target.value === "" ? "" : Number(e.target.value))} className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-black text-lg focus:border-gy-gold focus:outline-none" />
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Motif / Justification</label>
+                <input
+                  type="text"
+                  value={mvtReason}
+                  onChange={(e) => setMvtReason(e.target.value)}
+                  placeholder="ex: Confection commande ORD-2026-7158, Achat marché Dantokpa..."
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-gy-gold focus:outline-none"
+                />
               </div>
-              <div>
-                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Motif / Raison</label>
-                <input type="text" value={mvtReason} onChange={(e) => setMvtReason(e.target.value)} className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-gy-gold focus:outline-none" />
-              </div>
+
               <div className="flex space-x-3 pt-2">
-                <button onClick={() => setStockMvtModal(null)} className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase">ANNULER</button>
-                <button onClick={handleStockMovement} className="w-1/2 py-3.5 rounded-xl bg-gy-gold text-black font-black text-xs uppercase shadow-gold hover:opacity-90">VALIDER</button>
+                <button onClick={() => setStockMvtModal(null)} className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase">
+                  ANNULER
+                </button>
+                <button
+                  onClick={handleStockMovement}
+                  className="w-1/2 py-3.5 rounded-xl bg-gy-gold text-black font-black text-xs uppercase shadow-gold hover:opacity-90 transition-all"
+                >
+                  VALIDER LE MOUVEMENT
+                </button>
               </div>
             </div>
           </div>
