@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function ClientPortal() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -204,10 +205,15 @@ export default function ClientPortal() {
     return (
       <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="text-center mb-10">
-            <div className="text-[#D4AF37] font-serif text-5xl font-black tracking-tight mb-2">GY</div>
-            <div className="text-white text-xl font-light tracking-[0.4em] uppercase">Maison Couture</div>
-            <p className="text-[#A3A3B3] text-sm mt-3">Votre espace client personnel</p>
+          <div className="text-center mb-8 space-y-3">
+            <Link href="/" className="inline-block group">
+              <img
+                src="/logogy.png"
+                alt="GY MAISON COUTURE"
+                className="h-20 w-auto object-contain mx-auto drop-shadow-[0_0_25px_rgba(212,175,55,0.5)] group-hover:scale-105 transition-all"
+              />
+            </Link>
+            <p className="text-[#D4AF37] text-xs uppercase tracking-widest font-black">Espace Personnel Client VIP</p>
           </div>
 
           <div className="bg-[#12121A] border border-[#2A2A38] rounded-3xl p-8 shadow-2xl">
@@ -262,10 +268,13 @@ export default function ClientPortal() {
       {/* Header */}
       <header className="border-b border-[#2A2A38] bg-[#0E0E14] px-6 py-4 flex flex-wrap justify-between items-center sticky top-0 z-30 gap-4">
         <div className="flex items-center space-x-6">
-          <div>
-            <span className="text-[#D4AF37] font-serif text-2xl font-black">GY</span>
-            <span className="text-white text-sm font-light tracking-[0.3em] ml-2 uppercase hidden sm:inline">Maison Couture</span>
-          </div>
+          <Link href="/client" className="flex items-center group">
+            <img
+              src="/logogy.png"
+              alt="GY MAISON COUTURE"
+              className="h-10 sm:h-12 w-auto object-contain drop-shadow-[0_0_15px_rgba(212,175,55,0.4)] group-hover:scale-105 transition-all"
+            />
+          </Link>
 
           {/* Module Navigation Tabs */}
           <nav className="flex space-x-2 bg-[#14141C] p-1 rounded-2xl border border-[#2A2A38]">
