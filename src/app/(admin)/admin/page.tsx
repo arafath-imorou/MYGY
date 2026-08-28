@@ -2767,7 +2767,7 @@ export default function AdminDashboard() {
                     CATALOGUE DE CRÉATIONS & LOOKBOOK VIP
                   </h2>
                   <p className="text-xs sm:text-sm text-gy-textMuted mt-1 max-w-2xl leading-relaxed">
-                    Gérez les créations exclusives de la Maison GY visibles par les clientes sur leur portail VIP pour commander sur-mesure.
+                    Gérez les créations exclusives de GY Maison Couture visibles par les clientes sur leur portail VIP pour commander sur-mesure.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -3771,7 +3771,7 @@ export default function AdminDashboard() {
                     <div className="flex justify-between items-center border-b border-gy-border pb-4">
                       <div>
                         <h3 className="font-serif text-2xl font-bold text-white">
-                          COMPTES AUTORISÉS AU PORTAIL MAISON GY
+                          COMPTES AUTORISÉS AU PORTAIL GY MAISON COUTURE
                         </h3>
                         <p className="text-xs text-gy-textMuted mt-0.5">Identifiants d&apos;accès et privilèges attribués à l&apos;équipe administrative</p>
                       </div>
@@ -4009,7 +4009,7 @@ export default function AdminDashboard() {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gy-border pb-4 gap-4">
                       <div>
                         <h3 className="font-serif text-2xl font-bold text-white">
-                          POSTES BUDGÉTAIRES DE DÉPENSES MAISON GY
+                          POSTES BUDGÉTAIRES DE DÉPENSES GY MAISON COUTURE
                         </h3>
                         <p className="text-xs text-gy-textMuted mt-0.5">Ces lignes apparaissent automatiquement dans le formulaire de saisie des dépenses</p>
                       </div>
@@ -4903,7 +4903,7 @@ export default function AdminDashboard() {
                 <div className="bg-[#141419] p-6 rounded-2xl border-2 border-emerald-500/60 shadow-2xl space-y-4">
                   <div className="flex justify-between items-start border-b border-gy-border pb-4">
                     <div>
-                      <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider">Maison GY Haute Couture</span>
+                      <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider">GY Maison Couture</span>
                       <h4 className="font-serif text-2xl font-bold text-white mt-0.5">REÇU D&apos;ENCAISSEMENT PROVISOIRE</h4>
                     </div>
                     <span className="framed-badge-emerald text-xs font-bold">STATUT: VALIDE</span>
@@ -5001,7 +5001,7 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="glass-panel max-w-lg w-full p-8 rounded-3xl border border-rose-500/50 shadow-2xl font-aptos">
             <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
-              <h3 className="font-serif text-2xl font-bold text-white">ENREGISTRER UNE DÉPENSE MAISON GY</h3>
+              <h3 className="font-serif text-2xl font-bold text-white">ENREGISTRER UNE DÉPENSE GY MAISON COUTURE</h3>
               <button onClick={() => setNewExpenseModal(false)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
                 [ FERMER ]
               </button>

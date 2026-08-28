@@ -322,7 +322,7 @@ export default function ClientPortal() {
             <div className="flex flex-wrap gap-2">
               <a
                 href={`https://wa.me/2290166743493?text=${encodeURIComponent(
-                  `Bonjour Maison GY, je suis ${clientUser?.fullName || "une cliente"} (Identifiant : ${clientUser?.username || ""}). J'ai une question concernant mes confections.`
+                  `Bonjour GY Maison Couture, je suis ${clientUser?.fullName || "une cliente"} (Identifiant : ${clientUser?.username || ""}). J'ai une question concernant mes confections.`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -530,7 +530,7 @@ export default function ClientPortal() {
                     </button>
                     <a
                       href={`https://wa.me/2290166743493?text=${encodeURIComponent(
-                        `Bonjour Maison GY, je suis ${clientUser?.fullName || "une cliente"} et je suis très intéressée par la confection du modèle "${cr.title}" (${cr.category}). Pouvons-nous planifier un échange / rendez-vous ?`
+                        `Bonjour GY Maison Couture, je suis ${clientUser?.fullName || "une cliente"} et je suis très intéressée par la confection du modèle "${cr.title}" (${cr.category}). Pouvons-nous planifier un échange / rendez-vous ?`
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -587,7 +587,7 @@ export default function ClientPortal() {
                 </button>
                 <a
                   href={`https://wa.me/2290166743493?text=${encodeURIComponent(
-                    `Bonjour Maison GY, je souhaite commander ou avoir un devis pour le modèle "${selectedCreationModal.title}" (${selectedCreationModal.category}).`
+                    `Bonjour GY Maison Couture, je souhaite commander ou avoir un devis pour le modèle "${selectedCreationModal.title}" (${selectedCreationModal.category}).`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
