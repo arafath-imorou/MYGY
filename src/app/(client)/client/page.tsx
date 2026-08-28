@@ -18,8 +18,88 @@ export default function ClientPortal() {
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
 
+  const [activeClientTab, setActiveClientTab] = useState<"espace" | "creations">("espace");
+  const [selectedCategory, setSelectedCategory] = useState<string>("TOUS");
+  const [selectedCreationModal, setSelectedCreationModal] = useState<any>(null);
+
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
+
+  const CREATIONS_CATALOG = [
+    {
+      id: "cr_1",
+      title: "Robe Sirène Soie Sauvage & Perles Swarovski",
+      category: "ROBES DE SOIRÉE & GALA",
+      description: "Coupe sirène sculptante en soie sauvage avec incrustations manuelles de perles et cristaux Swarovski. Fente latérale discrète et traîne impériale.",
+      fabric: "Soie Sauvage, Dentelle Perlée, Cristaux Swarovski",
+      badge: "COLLECTION 2026",
+      priceEstimate: "Sur mesure",
+      image: "https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      id: "cr_2",
+      title: "Boubou Royal Grand Duc Brodé Fil d'Or",
+      category: "BOUBOUS VIP & CAFTANS",
+      description: "Boubou d'apparat en Bazin Riche Getzner teinté artisanalement, orné de broderies fines au fil d'or 24 carats au col et aux manches.",
+      fabric: "Bazin Riche Getzner 1ère Qualité, Broderie Fil d'Or",
+      badge: "BEST-SELLER VIP",
+      priceEstimate: "Sur mesure",
+      image: "https://images.unsplash.com/photo-1590736969955-71cc94801759?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      id: "cr_3",
+      title: "Ensemble Tailleur Prestige Crêpe & Satin Duchesse",
+      category: "ENSEMBLES TAILLEURS",
+      description: "Veste cintrée à revers en satin duchesse brillant, pantalon palazzo taille haute à pinces parfaites. Idéal pour réceptions officielles et événements d'affaires.",
+      fabric: "Crêpe Lourd Haute Couture & Satin Duchesse",
+      badge: "ÉLÉGANCE BUSINESS",
+      priceEstimate: "Sur mesure",
+      image: "https://images.unsplash.com/photo-1584273143981-41c073dfe8f8?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      id: "cr_4",
+      title: "Robe de Mariée Princesse Organza & Dentelle de Calais",
+      category: "CRÉATIONS MARIAGE",
+      description: "Bustier cœur brodé main en dentelle de Calais avec jupon voluptueux en organza de soie multicouches et traîne royale cathédrale.",
+      fabric: "Organza de Soie, Dentelle de Calais, Tulle Illusion",
+      badge: "MARIAGE VIP",
+      priceEstimate: "Sur mesure",
+      image: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      id: "cr_5",
+      title: "Caftan Majestueux Velours de Soie & Pierreries",
+      category: "BOUBOUS VIP & CAFTANS",
+      description: "Caftan moderne ceinturé en velours de soie pourpre, orné d'améthystes brodées à la main et sfifa dorée traditionnelle revisitée.",
+      fabric: "Velours de Soie Pourpre, Sfifa Dorée, Pierres Fines",
+      badge: "HAUTE COUTURE",
+      priceEstimate: "Sur mesure",
+      image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      id: "cr_6",
+      title: "Ensemble Cérémonie Pagne Tissé & Soie Mikado",
+      category: "HAUTE COUTURE SUR-MESURE",
+      description: "Alliance unique entre le noble pagne tissé traditionnel béninois et la rigidité sculpturale du Mikado de soie pour une silhouette intemporelle.",
+      fabric: "Kanvo / Pagne Tissé Main & Mikado de Soie",
+      badge: "SIGNATURE GY",
+      priceEstimate: "Sur mesure",
+      image: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80",
+    },
+  ];
+
+  const CATEGORIES = [
+    "TOUS",
+    "ROBES DE SOIRÉE & GALA",
+    "BOUBOUS VIP & CAFTANS",
+    "ENSEMBLES TAILLEURS",
+    "CRÉATIONS MARIAGE",
+    "HAUTE COUTURE SUR-MESURE",
+  ];
+
+  const filteredCreations = selectedCategory === "TOUS"
+    ? CREATIONS_CATALOG
+    : CREATIONS_CATALOG.filter((c) => c.category === selectedCategory);
 
   useEffect(() => {
     const saved = localStorage.getItem("gy_client_user");
@@ -27,17 +107,18 @@ export default function ClientPortal() {
       const u = JSON.parse(saved);
       setClientUser(u);
       setIsAuthenticated(true);
-      fetchClientOrders(u.customerId);
+      fetchClientOrders(u.customerId, u.username, u.email);
     }
   }, []);
 
-  const fetchClientOrders = async (customerId: string) => {
+  const fetchClientOrders = async (customerId: string, clientUsername?: string, clientEmail?: string) => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/orders", { cache: "no-store" });
       const allOrders = res.ok ? await res.json() : [];
       const myOrders = allOrders.filter((o: any) =>
-        o.customerId === customerId || o.customer?.id === customerId || o.customer?.code === customerId
+        (customerId && (o.customerId === customerId || o.customer?.id === customerId || o.customer?.code === customerId)) ||
+        (clientEmail && o.customer?.email?.toLowerCase() === clientEmail.toLowerCase())
       );
       setClientOrders(myOrders);
     } catch (e) {}
@@ -59,7 +140,7 @@ export default function ClientPortal() {
         localStorage.setItem("gy_client_user", JSON.stringify(data.user));
         setClientUser(data.user);
         setIsAuthenticated(true);
-        if (data.user.customerId) fetchClientOrders(data.user.customerId);
+        if (data.user.customerId) fetchClientOrders(data.user.customerId, data.user.username, data.user.email);
       } else {
         setLoginError(data.error || "Identifiants invalides");
       }
@@ -155,13 +236,40 @@ export default function ClientPortal() {
   return (
     <div className="min-h-screen bg-[#0A0A0F] text-white font-sans">
       {/* Header */}
-      <header className="border-b border-[#2A2A38] bg-[#0E0E14] px-6 py-4 flex justify-between items-center sticky top-0 z-30">
-        <div>
-          <span className="text-[#D4AF37] font-serif text-2xl font-black">GY</span>
-          <span className="text-white text-sm font-light tracking-[0.3em] ml-2 uppercase">Maison Couture</span>
+      <header className="border-b border-[#2A2A38] bg-[#0E0E14] px-6 py-4 flex flex-wrap justify-between items-center sticky top-0 z-30 gap-4">
+        <div className="flex items-center space-x-6">
+          <div>
+            <span className="text-[#D4AF37] font-serif text-2xl font-black">GY</span>
+            <span className="text-white text-sm font-light tracking-[0.3em] ml-2 uppercase hidden sm:inline">Maison Couture</span>
+          </div>
+
+          {/* Module Navigation Tabs */}
+          <nav className="flex space-x-2 bg-[#14141C] p-1 rounded-2xl border border-[#2A2A38]">
+            <button
+              onClick={() => setActiveClientTab("espace")}
+              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                activeClientTab === "espace"
+                  ? "bg-[#D4AF37] text-black shadow-gold"
+                  : "text-[#A3A3B3] hover:text-white"
+              }`}
+            >
+              ESPACE CLIENT
+            </button>
+            <button
+              onClick={() => setActiveClientTab("creations")}
+              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                activeClientTab === "creations"
+                  ? "bg-[#D4AF37] text-black shadow-gold"
+                  : "text-[#A3A3B3] hover:text-white"
+              }`}
+            >
+              NOS CRÉATIONS
+            </button>
+          </nav>
         </div>
+
         <div className="flex items-center gap-4">
-          <span className="text-sm text-[#A3A3B3] hidden sm:inline">Bonjour, <strong className="text-white">{clientUser?.fullName?.split(" ")[0]}</strong></span>
+          <span className="text-sm text-[#A3A3B3] hidden md:inline">Bonjour, <strong className="text-white">{clientUser?.fullName?.split(" ")[0]}</strong></span>
           <button
             onClick={() => setChangePwdModal(true)}
             className="px-3 py-1.5 bg-[#1A1A24] border border-[#2A2A38] rounded-lg text-xs font-bold text-[#A3A3B3] hover:text-white transition-all"
@@ -177,135 +285,285 @@ export default function ClientPortal() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-white">Mon Espace Client VIP</h1>
-            <p className="text-[#A3A3B3] text-sm mt-1">Suivi en direct de l&apos;état d&apos;avancement de vos créations sur-mesure</p>
-          </div>
-          <button
-            onClick={() => fetchClientOrders(clientUser.customerId)}
-            className="px-4 py-2 bg-[#1A1A24] border border-[#2A2A38] text-white rounded-xl text-xs font-bold hover:border-[#D4AF37] transition-all"
-          >
-            ACTUALISER
-          </button>
-        </div>
-
-        {/* Financial Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-[#12121A] border border-[#2A2A38] p-5 rounded-2xl">
-            <span className="text-[11px] font-bold text-[#A3A3B3] uppercase tracking-wider block">Commandes</span>
-            <strong className="text-2xl font-black text-white mt-1 block">{clientOrders.length}</strong>
-          </div>
-          <div className="bg-[#12121A] border border-[#2A2A38] p-5 rounded-2xl">
-            <span className="text-[11px] font-bold text-[#A3A3B3] uppercase tracking-wider block">Montant Total</span>
-            <strong className="text-xl font-black text-white mt-1 block">{formatFcfa(totalAmountSum)}</strong>
-          </div>
-          <div className="bg-[#12121A] border border-[#2A2A38] p-5 rounded-2xl">
-            <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">Total Versé</span>
-            <strong className="text-xl font-black text-emerald-400 mt-1 block">{formatFcfa(totalPaidSum)}</strong>
-          </div>
-          <div className="bg-[#12121A] border border-[#2A2A38] p-5 rounded-2xl">
-            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">Solde Restant</span>
-            <strong className="text-xl font-black text-amber-400 mt-1 block">{formatFcfa(totalBalanceDueSum)}</strong>
-          </div>
-        </div>
-
-        {loading && (
-          <div className="text-center text-[#A3A3B3] py-12 bg-[#12121A] rounded-3xl border border-[#2A2A38]">
-            Chargement de vos commandes...
-          </div>
-        )}
-
-        {!loading && clientOrders.length === 0 && (
-          <div className="text-center py-16 bg-[#12121A] rounded-3xl border border-[#2A2A38]">
-            <div className="text-5xl mb-4 text-[#D4AF37] font-serif font-black">GY</div>
-            <h3 className="font-serif text-xl font-bold text-white mb-2">Aucune commande en cours</h3>
-            <p className="text-[#A3A3B3] text-sm">Vos commandes apparaîtront ici dès qu&apos;elles seront enregistrées.</p>
-          </div>
-        )}
-
-        {/* Structured Orders Table */}
-        {!loading && clientOrders.length > 0 && (
-          <div className="bg-[#12121A] border border-[#2A2A38] rounded-3xl overflow-hidden shadow-2xl">
-            <div className="p-5 border-b border-[#2A2A38] flex justify-between items-center">
-              <h3 className="font-serif text-xl font-bold text-white">LISTE DE MES COMMANDES & CRÉATIONS</h3>
-              <span className="text-xs text-[#D4AF37] font-bold">{clientOrders.length} création(s)</span>
+      {/* ========================================================= */}
+      {/* 1. TAB: MON ESPACE CLIENT PERSONNEL                      */}
+      {/* ========================================================= */}
+      {activeClientTab === "espace" && (
+        <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="font-serif text-3xl sm:text-4xl font-bold text-white">Mon Espace Personnel</h1>
+              <p className="text-[#A3A3B3] text-sm mt-1">Suivi en direct de l&apos;état d&apos;avancement de vos créations sur-mesure</p>
             </div>
+            <button
+              onClick={() => fetchClientOrders(clientUser.customerId, clientUser.username, clientUser.email)}
+              className="px-4 py-2 bg-[#1A1A24] border border-[#2A2A38] text-white rounded-xl text-xs font-bold hover:border-[#D4AF37] transition-all"
+            >
+              ACTUALISER
+            </button>
+          </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-[#E1E1E6]">
-                <thead>
-                  <tr className="border-b border-[#2A2A38] bg-[#0E0E14] text-xs font-bold text-[#D4AF37] uppercase tracking-wider">
-                    <th className="p-4 min-w-[130px]">RÉFÉRENCE</th>
-                    <th className="p-4 min-w-[220px]">TENUE SUR-MESURE</th>
-                    <th className="p-4 min-w-[140px]">COMMANDE DU</th>
-                    <th className="p-4 min-w-[150px]">RETRAIT SOUHAITÉ</th>
-                    <th className="p-4 min-w-[130px]">MONTANT</th>
-                    <th className="p-4 min-w-[130px]">SOLDE DÛ</th>
-                    <th className="p-4 min-w-[170px]">STATUT ATELIER</th>
-                    <th className="p-4 min-w-[120px] text-center">PHOTOS & SUIVI</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {clientOrders.map((order) => {
-                    const statusInfo = STATUS_LABELS[order.status] || { label: order.status, color: "text-white", bg: "bg-gray-500/10 border-gray-500/30" };
-                    const hasPhotos = (order.images && order.images.length > 0) || order.deliveryImage;
-                    return (
-                      <tr key={order.id} className="border-b border-[#2A2A38]/50 hover:bg-[#181822] transition-colors">
-                        <td className="p-4 font-bold text-white">
-                          <span className="px-2.5 py-1 bg-[#D4AF37]/10 border border-[#D4AF37]/40 rounded-lg text-xs font-black text-[#D4AF37]">
-                            {order.reference}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <strong className="text-white block font-bold text-sm">
-                            {order.items?.[0]?.itemName || "Création Sur-Mesure"}
-                          </strong>
-                          <span className="text-xs text-[#A3A3B3] block mt-0.5">
-                            Tissu : {order.items?.[0]?.fabricDetails || "Tissu sélectionné"}
-                          </span>
-                        </td>
-                        <td className="p-4 text-[#A3A3B3] text-xs font-medium">
-                          {formatDate(order.orderDate || order.createdAt)}
-                        </td>
-                        <td className="p-4">
-                          <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
-                            {formatDate(order.promisedDate)}
-                          </span>
-                        </td>
-                        <td className="p-4 font-bold text-white text-sm">
-                          {formatFcfa(order.totalAmount)}
-                        </td>
-                        <td className="p-4 font-bold text-sm">
-                          {Number(order.balanceDue) > 0 ? (
-                            <span className="text-rose-400">{formatFcfa(order.balanceDue)}</span>
-                          ) : (
-                            <span className="text-emerald-400 text-xs font-bold">Soldé</span>
-                          )}
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-3 py-1 rounded-xl text-xs font-black border uppercase block text-center ${statusInfo.bg} ${statusInfo.color}`}>
-                            {statusInfo.label}
-                          </span>
-                        </td>
-                        <td className="p-4 text-center">
-                          <button
-                            onClick={() => setSelectedOrderDetails(order)}
-                            className="px-3 py-1.5 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black border border-[#D4AF37]/40 text-xs font-black uppercase transition-all shadow-sm"
-                          >
-                            {hasPhotos ? "PHOTOS (" + ((order.images?.length || 0) + (order.deliveryImage ? 1 : 0)) + ")" : "DÉTAILS"}
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {/* Financial Summary Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-[#12121A] border border-[#2A2A38] p-5 rounded-2xl">
+              <span className="text-[11px] font-bold text-[#A3A3B3] uppercase tracking-wider block">Commandes</span>
+              <strong className="text-2xl font-black text-white mt-1 block">{clientOrders.length}</strong>
+            </div>
+            <div className="bg-[#12121A] border border-[#2A2A38] p-5 rounded-2xl">
+              <span className="text-[11px] font-bold text-[#A3A3B3] uppercase tracking-wider block">Montant Total</span>
+              <strong className="text-xl font-black text-white mt-1 block">{formatFcfa(totalAmountSum)}</strong>
+            </div>
+            <div className="bg-[#12121A] border border-[#2A2A38] p-5 rounded-2xl">
+              <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">Total Versé</span>
+              <strong className="text-xl font-black text-emerald-400 mt-1 block">{formatFcfa(totalPaidSum)}</strong>
+            </div>
+            <div className="bg-[#12121A] border border-[#2A2A38] p-5 rounded-2xl">
+              <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">Solde Restant</span>
+              <strong className="text-xl font-black text-amber-400 mt-1 block">{formatFcfa(totalBalanceDueSum)}</strong>
             </div>
           </div>
-        )}
-      </main>
+
+          {loading && (
+            <div className="text-center text-[#A3A3B3] py-12 bg-[#12121A] rounded-3xl border border-[#2A2A38]">
+              Chargement de vos commandes...
+            </div>
+          )}
+
+          {!loading && clientOrders.length === 0 && (
+            <div className="text-center py-16 bg-[#12121A] rounded-3xl border border-[#2A2A38]">
+              <div className="text-5xl mb-4 text-[#D4AF37] font-serif font-black">GY</div>
+              <h3 className="font-serif text-xl font-bold text-white mb-2">Aucune commande en cours</h3>
+              <p className="text-[#A3A3B3] text-sm">Vos commandes apparaîtront ici dès qu&apos;elles seront enregistrées.</p>
+            </div>
+          )}
+
+          {/* Structured Orders Table */}
+          {!loading && clientOrders.length > 0 && (
+            <div className="bg-[#12121A] border border-[#2A2A38] rounded-3xl overflow-hidden shadow-2xl">
+              <div className="p-5 border-b border-[#2A2A38] flex justify-between items-center">
+                <h3 className="font-serif text-xl font-bold text-white">LISTE DE MES COMMANDES & CRÉATIONS</h3>
+                <span className="text-xs text-[#D4AF37] font-bold">{clientOrders.length} création(s)</span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-[#E1E1E6]">
+                  <thead>
+                    <tr className="border-b border-[#2A2A38] bg-[#0E0E14] text-xs font-bold text-[#D4AF37] uppercase tracking-wider">
+                      <th className="p-4 min-w-[130px]">RÉFÉRENCE</th>
+                      <th className="p-4 min-w-[220px]">TENUE SUR-MESURE</th>
+                      <th className="p-4 min-w-[140px]">COMMANDE DU</th>
+                      <th className="p-4 min-w-[150px]">RETRAIT SOUHAITÉ</th>
+                      <th className="p-4 min-w-[130px]">MONTANT</th>
+                      <th className="p-4 min-w-[130px]">SOLDE DÛ</th>
+                      <th className="p-4 min-w-[170px]">STATUT ATELIER</th>
+                      <th className="p-4 min-w-[120px] text-center">PHOTOS & SUIVI</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clientOrders.map((order) => {
+                      const statusInfo = STATUS_LABELS[order.status] || { label: order.status, color: "text-white", bg: "bg-gray-500/10 border-gray-500/30" };
+                      const hasPhotos = (order.images && order.images.length > 0) || order.deliveryImage;
+                      return (
+                        <tr key={order.id} className="border-b border-[#2A2A38]/50 hover:bg-[#181822] transition-colors">
+                          <td className="p-4 font-bold text-white">
+                            <span className="px-2.5 py-1 bg-[#D4AF37]/10 border border-[#D4AF37]/40 rounded-lg text-xs font-black text-[#D4AF37]">
+                              {order.reference}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <strong className="text-white block font-bold text-sm">
+                              {order.items?.[0]?.itemName || "Création Sur-Mesure"}
+                            </strong>
+                            <span className="text-xs text-[#A3A3B3] block mt-0.5">
+                              Tissu : {order.items?.[0]?.fabricDetails || "Tissu sélectionné"}
+                            </span>
+                          </td>
+                          <td className="p-4 text-[#A3A3B3] text-xs font-medium">
+                            {formatDate(order.orderDate || order.createdAt)}
+                          </td>
+                          <td className="p-4">
+                            <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
+                              {formatDate(order.promisedDate)}
+                            </span>
+                          </td>
+                          <td className="p-4 font-bold text-white text-sm">
+                            {formatFcfa(order.totalAmount)}
+                          </td>
+                          <td className="p-4 font-bold text-sm">
+                            {Number(order.balanceDue) > 0 ? (
+                              <span className="text-rose-400">{formatFcfa(order.balanceDue)}</span>
+                            ) : (
+                              <span className="text-emerald-400 text-xs font-bold">Soldé</span>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-3 py-1 rounded-xl text-xs font-black border uppercase block text-center ${statusInfo.bg} ${statusInfo.color}`}>
+                              {statusInfo.label}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center">
+                            <button
+                              onClick={() => setSelectedOrderDetails(order)}
+                              className="px-3 py-1.5 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black border border-[#D4AF37]/40 text-xs font-black uppercase transition-all shadow-sm"
+                            >
+                              {hasPhotos ? "PHOTOS (" + ((order.images?.length || 0) + (order.deliveryImage ? 1 : 0)) + ")" : "DÉTAILS"}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </main>
+      )}
+
+      {/* ========================================================= */}
+      {/* 2. TAB: NOS CRÉATIONS & LOOKBOOK GY COUTURE               */}
+      {/* ========================================================= */}
+      {activeClientTab === "creations" && (
+        <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <span className="px-3 py-1 bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40 rounded-full text-xs font-black tracking-widest uppercase">
+              COLLECTION HAUTE COUTURE
+            </span>
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-white">Nos Créations & Modèles</h1>
+            <p className="text-[#A3A3B3] text-sm">
+              Découvrez les modèles exclusifs signés GY Maison Couture. Choisissez une création et contactez-nous directement pour la confectionner à vos mesures exactes.
+            </p>
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap gap-2 justify-center">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
+                  selectedCategory === cat
+                    ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-gold"
+                    : "bg-[#14141C] text-[#A3A3B3] border-[#2A2A38] hover:text-white hover:border-[#D4AF37]/50"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Creations Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCreations.map((cr) => (
+              <div
+                key={cr.id}
+                className="bg-[#12121A] border border-[#2A2A38] hover:border-[#D4AF37]/60 rounded-3xl overflow-hidden transition-all flex flex-col justify-between group shadow-xl"
+              >
+                <div className="relative overflow-hidden aspect-[4/5] cursor-pointer" onClick={() => setSelectedCreationModal(cr)}>
+                  <img
+                    src={cr.image}
+                    alt={cr.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+                  <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#D4AF37] text-black text-[10px] font-black tracking-wider uppercase shadow-md">
+                    {cr.badge}
+                  </span>
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider block">{cr.category}</span>
+                    <h3 className="font-serif text-lg font-bold text-white leading-tight mt-0.5">{cr.title}</h3>
+                  </div>
+                </div>
+
+                <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <p className="text-xs text-[#A3A3B3] line-clamp-2 leading-relaxed">
+                      {cr.description}
+                    </p>
+                    <div className="text-[11px] text-[#D4AF37] font-semibold">
+                      Matières : <span className="text-white">{cr.fabric}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-[#2A2A38] flex items-center justify-between gap-3">
+                    <button
+                      onClick={() => setSelectedCreationModal(cr)}
+                      className="px-3 py-2 bg-[#1A1A24] border border-[#2A2A38] hover:border-[#D4AF37] text-white rounded-xl text-xs font-bold transition-all"
+                    >
+                      DÉTAILS
+                    </button>
+                    <a
+                      href={`https://wa.me/2290167004910?text=${encodeURIComponent(
+                        `Bonjour Maison GY, je suis ${clientUser?.fullName || "une cliente"} et je suis très intéressée par la confection du modèle "${cr.title}" (${cr.category}). Pouvons-nous planifier un échange / rendez-vous ?`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-white rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5"
+                    >
+                      DEMANDER CE MODÈLE
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+      )}
+
+      {/* Creation Detail Modal */}
+      {selectedCreationModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#12121A] border border-[#D4AF37]/50 rounded-3xl p-8 max-w-2xl w-full my-8 max-h-[90vh] overflow-y-auto shadow-2xl space-y-6">
+            <div className="flex justify-between items-start border-b border-[#2A2A38] pb-4">
+              <div>
+                <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider">{selectedCreationModal.category}</span>
+                <h3 className="font-serif text-2xl font-bold text-white mt-1">{selectedCreationModal.title}</h3>
+              </div>
+              <button
+                onClick={() => setSelectedCreationModal(null)}
+                className="text-[#A3A3B3] hover:text-white px-3 py-1 bg-[#1A1A24] border border-[#2A2A38] rounded-lg text-xs font-bold"
+              >
+                [ FERMER ]
+              </button>
+            </div>
+
+            <div className="rounded-2xl overflow-hidden aspect-[16/10] relative">
+              <img src={selectedCreationModal.image} alt={selectedCreationModal.title} className="w-full h-full object-cover" />
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div>
+                <h4 className="font-serif text-base font-bold text-white mb-1">Description & Style</h4>
+                <p className="text-[#A3A3B3] leading-relaxed text-xs">{selectedCreationModal.description}</p>
+              </div>
+
+              <div className="p-4 bg-[#1A1A24] rounded-xl border border-[#2A2A38] space-y-1">
+                <span className="text-xs font-bold text-[#D4AF37] uppercase block">Matières & Finitions Recommandées</span>
+                <p className="text-white text-xs">{selectedCreationModal.fabric}</p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <button
+                  onClick={() => setSelectedCreationModal(null)}
+                  className="w-full sm:w-1/2 py-3 rounded-xl bg-[#1A1A24] border border-[#2A2A38] text-[#A3A3B3] font-black text-xs uppercase"
+                >
+                  FERMER
+                </button>
+                <a
+                  href={`https://wa.me/2290167004910?text=${encodeURIComponent(
+                    `Bonjour Maison GY, je souhaite commander ou avoir un devis pour le modèle "${selectedCreationModal.title}" (${selectedCreationModal.category}).`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-1/2 py-3 rounded-xl bg-emerald-500 text-black font-black text-xs uppercase text-center hover:bg-emerald-400 transition-all shadow-md"
+                >
+                  COMMANDER SUR WHATSAPP
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Order Details & Photo Gallery Modal */}
       {selectedOrderDetails && (
