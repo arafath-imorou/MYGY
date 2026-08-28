@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
@@ -19,8 +19,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Fichier et orderId requis." }, { status: 400 });
     }
 
-    const ext = file.name.split(".").pop() || "jpg";
-    const fileName = `orders/${orderId}/${imageType || "fabric"}_${Date.now()}.${ext}`;
+    // Le client envoie toujours du WebP après conversion Canvas — on force l'extension
+    const baseName = file.name.replace(/\.[^.]+$/, "");
+    const fileName = `orders/${orderId}/${imageType || "fabric"}_${Date.now()}_${baseName}.webp`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
     const { data, error } = await supabase.storage
       .from("gy-orders")
       .upload(fileName, buffer, {
-        contentType: file.type || "image/jpeg",
+        contentType: "image/webp",
         upsert: false,
       });
 
