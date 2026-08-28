@@ -2010,6 +2010,17 @@ export default function AdminDashboard() {
             </button>
 
             <button
+              onClick={() => setActiveMenu("stock" as any)}
+              className={`w-full flex items-center justify-start px-4 py-3 rounded-xl text-xs sm:text-sm transition-all tracking-wider font-extrabold ${
+                activeMenu === ("stock" as any)
+                  ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
+                  : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
+              }`}
+            >
+              <span>STOCK & MATIÈRES</span>
+            </button>
+
+            <button
               onClick={() => setActiveMenu("administrations")}
               className={`w-full flex items-center justify-start px-4 py-3 rounded-xl text-xs sm:text-sm transition-all tracking-wider font-extrabold ${
                 activeMenu === "administrations"
@@ -2324,6 +2335,12 @@ export default function AdminDashboard() {
                                 className="px-3 py-2 rounded-xl bg-sky-500/20 text-sky-300 hover:bg-sky-500 hover:text-white border border-sky-500/40 text-xs font-black uppercase tracking-wider"
                               >
                                 FICHE
+                              </button>
+                              <button
+                                onClick={() => setOrderImagesModal(o)}
+                                className="px-3 py-2 rounded-xl bg-violet-500/20 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/40 text-xs font-black uppercase tracking-wider"
+                              >
+                                📸 PHOTOS
                               </button>
                               <button
                                 onClick={() => handleOpenEditOrder(o)}
@@ -4634,14 +4651,30 @@ export default function AdminDashboard() {
                       {displayOrders.length > 0 ? (
                         <div className="space-y-3">
                           {displayOrders.map((o: any) => (
-                            <div key={o.id} className="bg-gy-dark p-5 rounded-2xl border border-gy-border flex justify-between items-center">
+                            <div key={o.id} className="bg-gy-dark p-5 rounded-2xl border border-gy-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                               <div>
                                 <span className="font-bold text-white text-base">{o.reference}</span>
                                 <div className="text-xs text-gy-gold font-bold mt-1">Statut Atelier: {o.status}</div>
                               </div>
-                              <div className="text-right">
-                                <div className="text-base font-bold text-emerald-400">{formatFcfa(o.totalAmount)}</div>
-                                <div className="text-xs text-amber-400 font-bold mt-0.5">Solde: {formatFcfa(o.balanceDue)}</div>
+                              <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                                <div className="text-right">
+                                  <div className="text-base font-bold text-emerald-400">{formatFcfa(o.totalAmount)}</div>
+                                  <div className="text-xs text-amber-400 font-bold mt-0.5">Solde: {formatFcfa(o.balanceDue)}</div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => { setViewOrderModal(o); setViewCustomerModal(null); }}
+                                    className="px-3 py-1.5 rounded-xl bg-sky-500/20 text-sky-300 hover:bg-sky-500 hover:text-white border border-sky-500/40 text-xs font-black uppercase"
+                                  >
+                                    FICHE
+                                  </button>
+                                  <button
+                                    onClick={() => { setOrderImagesModal(o); setViewCustomerModal(null); }}
+                                    className="px-3 py-1.5 rounded-xl bg-violet-500/20 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/40 text-xs font-black uppercase"
+                                  >
+                                    📸 PHOTOS
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ))}
