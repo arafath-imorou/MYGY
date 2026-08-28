@@ -123,6 +123,7 @@ export default function AdminDashboard() {
   const [payRef, setPayRef] = useState("");
   const [payAgent, setPayAgent] = useState("Ghislaine LOKO DJIDJOHO (Direction)");
   const [successReceiptModal, setSuccessReceiptModal] = useState<any>(null);
+  const [selectedVipCustomerId, setSelectedVipCustomerId] = useState<string>("");
 
   // Expense Modal State
   const [newExpenseModal, setNewExpenseModal] = useState(false);
@@ -695,7 +696,19 @@ export default function AdminDashboard() {
 
       if (mergedCusts.length > 0 && !newOrderCustomerId) {
         setNewOrderCustomerId(mergedCusts[0].id);
+      }
+      if (mergedCusts.length > 0 && !payCustomerId) {
         setPayCustomerId(mergedCusts[0].id);
+      }
+      if (mergedCusts.length > 0) {
+        setSelectedVipCustomerId((prev) => {
+          if (prev && mergedCusts.some((c: any) => c.id === prev)) return prev;
+          try {
+            const saved = localStorage.getItem("gy_vip_selected_customer");
+            if (saved && mergedCusts.some((c: any) => c.id === saved)) return saved;
+          } catch {}
+          return mergedCusts[0].id;
+        });
       }
       if (mergedOrders.length > 0 && !payOrderId) {
         setPayOrderId(mergedOrders[0].id);
@@ -2592,8 +2605,14 @@ export default function AdminDashboard() {
                     <div className="flex items-center space-x-3 bg-gy-card p-2 rounded-2xl border border-gy-gold/40">
                       <span className="text-xs font-bold text-gy-gold uppercase px-2">SELECTIONNER CLIENT :</span>
                       <select
-                        value={payCustomerId}
-                        onChange={(e) => setPayCustomerId(e.target.value)}
+                        value={selectedVipCustomerId || customers[0]?.id}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSelectedVipCustomerId(val);
+                          try {
+                            localStorage.setItem("gy_vip_selected_customer", val);
+                          } catch {}
+                        }}
                         className="bg-gy-dark border border-gy-border rounded-xl p-2.5 text-xs text-white font-bold focus:outline-none focus:border-gy-gold"
                       >
                         {customers.map((c) => (
@@ -2607,7 +2626,7 @@ export default function AdminDashboard() {
 
                   {/* VIP Client Hero Card */}
                   {(() => {
-                    const selectedCust = customers.find((c) => c.id === payCustomerId) || customers[0];
+                    const selectedCust = customers.find((c) => c.id === selectedVipCustomerId) || customers[0];
                     const custOrders = orders.filter((o) => o.customerId === selectedCust?.id);
                     const totalPaid = custOrders.reduce((sum, o) => sum + (o.totalPaid || 0), 0);
                     const totalDue = custOrders.reduce((sum, o) => sum + (o.balanceDue || 0), 0);
