@@ -2207,23 +2207,26 @@ export default function AdminDashboard() {
                             <div className="flex items-center justify-center space-x-2">
                               <button
                                 onClick={() => setViewCustomerModal(c)}
-                                className="px-4 py-2 rounded-xl bg-sky-500/20 text-sky-300 hover:bg-sky-500 hover:text-white border border-sky-500/40 transition-colors text-xs font-black uppercase tracking-wider"
+                                className="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-300 hover:bg-sky-500 hover:text-white border border-sky-500/40 transition-all text-sm font-bold flex items-center justify-center shadow-sm"
+                                title="Voir la fiche client"
                               >
-                                VOIR
+                                👁️
                               </button>
 
                               <button
                                 onClick={() => handleOpenEditCustomer(c)}
-                                className="px-4 py-2 rounded-xl bg-gy-gold/20 text-gy-gold hover:bg-gy-gold hover:text-black border border-gy-gold/50 transition-colors text-xs font-black uppercase tracking-wider"
+                                className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-black border border-amber-500/40 transition-all text-sm font-bold flex items-center justify-center shadow-sm"
+                                title="Modifier (Crayon)"
                               >
-                                MODIFIER
+                                ✏️
                               </button>
 
                               <button
                                 onClick={() => handleDeleteCustomer(c.id, `${c.firstName} ${c.lastName}`)}
-                                className="px-4 py-2 rounded-xl bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/40 transition-colors text-xs font-black uppercase tracking-wider"
+                                className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/40 transition-all text-sm font-bold flex items-center justify-center shadow-sm"
+                                title="Supprimer (Panier)"
                               >
-                                SUPPRIMER
+                                🗑️
                               </button>
                             </div>
                           </td>
@@ -2325,36 +2328,41 @@ export default function AdminDashboard() {
                             </select>
                           </td>
                           <td>
-                            <div className="flex items-center justify-center space-x-2">
+                            <div className="flex items-center justify-center space-x-1.5">
                               <button
                                 onClick={() => setViewOrderModal(o)}
-                                className="px-3 py-2 rounded-xl bg-sky-500/20 text-sky-300 hover:bg-sky-500 hover:text-white border border-sky-500/40 text-xs font-black uppercase tracking-wider"
+                                className="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-300 hover:bg-sky-500 hover:text-white border border-sky-500/40 text-xs font-black flex items-center justify-center transition-all shadow-sm"
+                                title="Voir la fiche commande"
                               >
-                                FICHE
+                                👁️
                               </button>
                               <button
                                 onClick={() => setOrderImagesModal(o)}
-                                className="px-3 py-2 rounded-xl bg-violet-500/20 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/40 text-xs font-black uppercase tracking-wider"
+                                className="w-8 h-8 rounded-xl bg-violet-500/20 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/40 text-xs font-black flex items-center justify-center transition-all shadow-sm"
+                                title="Photos tissus et produit fini"
                               >
-                                📸 PHOTOS
+                                📸
                               </button>
                               <button
                                 onClick={() => handleOpenEditOrder(o)}
-                                className="px-3 py-2 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-xs font-black uppercase tracking-wider"
+                                className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-xs font-black flex items-center justify-center transition-all shadow-sm"
+                                title="Modifier la commande (Crayon)"
                               >
-                                MODIFIER
+                                ✏️
                               </button>
                               <button
                                 onClick={() => handleOpenPaymentWizard(o.customer, o)}
-                                className="px-3 py-2 bg-gy-gold/20 text-gy-gold hover:bg-gy-gold hover:text-black border border-gy-gold/40 rounded-xl text-xs font-black uppercase tracking-wider"
+                                className="px-2.5 py-1.5 bg-gy-gold/20 text-gy-gold hover:bg-gy-gold hover:text-black border border-gy-gold/40 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all"
+                                title="Ajouter un paiement / reçu"
                               >
                                 + REÇU
                               </button>
                               <button
                                 onClick={() => handleDeleteOrder(o)}
-                                className="px-3 py-2 rounded-xl bg-rose-500/20 text-rose-300 hover:bg-rose-600 hover:text-white border border-rose-500/40 text-xs font-black uppercase tracking-wider"
+                                className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 hover:bg-rose-600 hover:text-white border border-rose-500/40 text-xs font-black flex items-center justify-center transition-all shadow-sm"
+                                title="Supprimer la commande (Panier)"
                               >
-                                SUPPRIMER
+                                🗑️
                               </button>
                             </div>
                           </td>
@@ -3033,15 +3041,17 @@ export default function AdminDashboard() {
                               <div className="flex items-center justify-center space-x-2">
                                 <button
                                   onClick={() => handleOpenEditEmployee(emp)}
-                                  className="px-2.5 py-1 bg-[#181820] border border-[#2A2A38] text-white hover:border-[#D4AF37] hover:text-[#D4AF37] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                  className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-xs font-black flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                                  title="Modifier l'employé (Crayon)"
                                 >
-                                  [ MODIFIER ]
+                                  ✏️
                                 </button>
                                 <button
                                   onClick={() => handleDeleteEmployee(emp)}
-                                  className="px-2.5 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                  className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/40 text-xs font-black flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                                  title="Supprimer l'employé (Panier)"
                                 >
-                                  [ SUPPRIMER ]
+                                  🗑️
                                 </button>
                               </div>
                             </td>
