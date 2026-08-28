@@ -53,8 +53,8 @@ export default function AdminDashboard() {
       role: "Directrice Générale",
     };
   });
-  const [loginEmail, setLoginEmail] = useState("gymaisoncouture@gmail.com");
-  const [loginPassword, setLoginPassword] = useState("gymc2026");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
@@ -1680,11 +1680,11 @@ export default function AdminDashboard() {
             <div>
               <label className="block text-gy-textMuted mb-1 font-semibold text-xs uppercase tracking-wider">Identifiant / Email *</label>
               <input
-                type="email"
+                type="text"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="gymaisoncouture@gmail.com"
-                className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl p-3.5 text-white font-bold text-sm focus:border-[#D4AF37] focus:outline-none normal-case"
+                placeholder="Votre identifiant ou email"
+                className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl p-3.5 text-white font-bold text-sm focus:border-[#D4AF37] focus:outline-none normal-case placeholder-[#555]"
                 required
               />
             </div>
@@ -1696,8 +1696,8 @@ export default function AdminDashboard() {
                   type={showPassword ? "text" : "password"}
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl p-3.5 pr-24 text-white font-bold text-sm focus:border-[#D4AF37] focus:outline-none normal-case"
+                  placeholder="Votre mot de passe"
+                  className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl p-3.5 pr-24 text-white font-bold text-sm focus:border-[#D4AF37] focus:outline-none normal-case placeholder-[#555]"
                   required
                 />
                 <button
@@ -1715,14 +1715,11 @@ export default function AdminDashboard() {
               disabled={loginLoading}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:opacity-95 transition-opacity"
             >
-              {loginLoading ? "CONNEXION EN COURS..." : "SE CONNECTER AU PORTAIL ADMIN"}
+              {loginLoading ? "CONNEXION EN COURS..." : "SE CONNECTER"}
             </button>
           </form>
 
-          <div className="text-center pt-3 border-t border-[#2A2A38] space-y-1.5">
-            <span className="text-[11px] text-gy-textMuted block">
-              Compte administrateur : <strong className="text-[#D4AF37]">gymaisoncouture@gmail.com</strong>
-            </span>
+          <div className="text-center pt-3 border-t border-[#2A2A38]">
             <a
               href="https://www.saninovagc.com"
               target="_blank"
