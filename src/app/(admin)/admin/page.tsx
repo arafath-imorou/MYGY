@@ -445,9 +445,9 @@ export default function AdminDashboard() {
     setCreationDescription("");
     setCreationFabric("");
     setCreationBadge("COLLECTION 2026");
-    setCreationPrice("Sur mesure");
-    setCreationDelay("7 à 10 jours");
-    setCreationImageUrl("https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=800&q=80");
+    setCreationPrice("");
+    setCreationDelay("");
+    setCreationImageUrl("");
     setNewCreationModal(true);
   };
 
@@ -4129,7 +4129,6 @@ export default function AdminDashboard() {
                     type="text"
                     value={empFirstName}
                     onChange={(e) => setEmpFirstName(e.target.value)}
-                    placeholder="ex: Bernice"
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
                   />
                 </div>
@@ -4139,7 +4138,6 @@ export default function AdminDashboard() {
                     type="text"
                     value={empLastName}
                     onChange={(e) => setEmpLastName(e.target.value)}
-                    placeholder="ex: HOUNNOU"
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
                   />
                 </div>
@@ -4173,7 +4171,6 @@ export default function AdminDashboard() {
                     type="text"
                     value={empDepartment}
                     onChange={(e) => setEmpDepartment(e.target.value)}
-                    placeholder="ex: Atelier Confection"
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
                   />
                 </div>
@@ -5061,7 +5058,6 @@ export default function AdminDashboard() {
                   type="text"
                   value={expDescription}
                   onChange={(e) => setExpDescription(e.target.value)}
-                  placeholder="ex: Achat 20m Mikado de Soie Ivoire"
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
                 />
               </div>
@@ -5073,7 +5069,6 @@ export default function AdminDashboard() {
                     type="number"
                     value={expAmount}
                     onChange={(e) => setExpAmount(Number(e.target.value))}
-                    placeholder="150000"
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-rose-400 font-bold text-base focus:border-rose-500 focus:outline-none"
                   />
                 </div>
@@ -5098,7 +5093,6 @@ export default function AdminDashboard() {
                   type="text"
                   value={expSupplier}
                   onChange={(e) => setExpSupplier(e.target.value)}
-                  placeholder="ex: Textiles d'Orient Cotonou / SBEE"
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-rose-500 focus:outline-none"
                 />
               </div>
@@ -5140,7 +5134,6 @@ export default function AdminDashboard() {
                   type="text"
                   value={newExpCatLabel}
                   onChange={(e) => setNewExpCatLabel(e.target.value)}
-                  placeholder="ex: FRAIS DE TRANSIT & DOUANE"
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
                 />
               </div>
@@ -5151,7 +5144,6 @@ export default function AdminDashboard() {
                   type="text"
                   value={newExpCatCode}
                   onChange={(e) => setNewExpCatCode(e.target.value)}
-                  placeholder="ex: LIGNE-008"
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
                 />
               </div>
@@ -5161,7 +5153,6 @@ export default function AdminDashboard() {
                 <textarea
                   value={newExpCatDesc}
                   onChange={(e) => setNewExpCatDesc(e.target.value)}
-                  placeholder="ex: Postes de charges liées au dédouanement des tissus VIP"
                   rows={3}
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
                 />
@@ -5204,7 +5195,6 @@ export default function AdminDashboard() {
                   type="text"
                   value={newExpCatLabel}
                   onChange={(e) => setNewExpCatLabel(e.target.value)}
-                  placeholder="ex: FRAIS DE TRANSIT & DOUANE"
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
                 />
               </div>
@@ -5215,7 +5205,6 @@ export default function AdminDashboard() {
                   type="text"
                   value={newExpCatCode}
                   onChange={(e) => setNewExpCatCode(e.target.value)}
-                  placeholder="ex: LIGNE-008"
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
                 />
               </div>
@@ -5225,7 +5214,6 @@ export default function AdminDashboard() {
                 <textarea
                   value={newExpCatDesc}
                   onChange={(e) => setNewExpCatDesc(e.target.value)}
-                  placeholder="ex: Postes de charges liées au dédouanement des tissus VIP"
                   rows={3}
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-rose-500 focus:outline-none"
                 />
@@ -5966,7 +5954,6 @@ export default function AdminDashboard() {
                     type="text"
                     value={creationTitle}
                     onChange={(e) => setCreationTitle(e.target.value)}
-                    placeholder="ex: Robe Sirène Soie Sauvage"
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
                     required
                   />
@@ -5994,7 +5981,6 @@ export default function AdminDashboard() {
                   value={creationDescription}
                   onChange={(e) => setCreationDescription(e.target.value)}
                   rows={2}
-                  placeholder="ex: Coupe sculptante avec incrustations de perles, fente latérale et traîne royale..."
                   className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none text-xs"
                 />
               </div>
@@ -6006,7 +5992,6 @@ export default function AdminDashboard() {
                     type="text"
                     value={creationFabric}
                     onChange={(e) => setCreationFabric(e.target.value)}
-                    placeholder="ex: Soie Sauvage, Dentelle, Bazin Getzner..."
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none"
                   />
                 </div>
@@ -6035,7 +6020,6 @@ export default function AdminDashboard() {
                     type="text"
                     value={creationDelay}
                     onChange={(e) => setCreationDelay(e.target.value)}
-                    placeholder="ex: 7 à 10 jours"
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-amber-300 font-bold focus:border-[#D4AF37] focus:outline-none"
                   />
                 </div>
@@ -6045,7 +6029,6 @@ export default function AdminDashboard() {
                     type="text"
                     value={creationPrice}
                     onChange={(e) => setCreationPrice(e.target.value)}
-                    placeholder="ex: Sur mesure ou 150 000 FCFA"
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-emerald-400 font-bold focus:border-[#D4AF37] focus:outline-none"
                   />
                 </div>
@@ -6079,7 +6062,6 @@ export default function AdminDashboard() {
                       type="text"
                       value={creationImageUrl}
                       onChange={(e) => setCreationImageUrl(e.target.value)}
-                      placeholder="Ou collez une URL d'image directe"
                       className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-xs text-gy-textMuted focus:outline-none"
                     />
                   </div>
