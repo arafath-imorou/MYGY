@@ -355,6 +355,35 @@ export default function AdminDashboard() {
   const [newExpCatCode, setNewExpCatCode] = useState("");
   const [newExpCatDesc, setNewExpCatDesc] = useState("");
 
+  // CLIENT ACCOUNT CREATION STATE
+  const [clientAccountModal, setClientAccountModal] = useState<any>(null); // holds the customer
+  const [clientAccountEmail, setClientAccountEmail] = useState("");
+  const [clientAccountLoading, setClientAccountLoading] = useState(false);
+  const [clientAccountCredentials, setClientAccountCredentials] = useState<any>(null);
+
+  // ORDER IMAGE GALLERY STATE
+  const [orderImagesModal, setOrderImagesModal] = useState<any>(null); // holds the order
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // STOCK MODULE STATE
+  const [stockList, setStockList] = useState<any[]>([]);
+  const [stockSubTab, setStockSubTab] = useState<"catalogue" | "mouvements">("catalogue");
+  const [newStockModal, setNewStockModal] = useState(false);
+  const [stockMvtModal, setStockMvtModal] = useState<any>(null);
+  const [stockSearch, setStockSearch] = useState("");
+  // New stock article form
+  const [stkName, setStkName] = useState("");
+  const [stkCategory, setStkCategory] = useState("TISSU");
+  const [stkType, setStkType] = useState("CONSOMMABLE");
+  const [stkUnit, setStkUnit] = useState("m");
+  const [stkQuantity, setStkQuantity] = useState<number | "">("");
+  const [stkMinQty, setStkMinQty] = useState<number | "">("");
+  const [stkSupplier, setStkSupplier] = useState("");
+  // New movement form
+  const [mvtType, setMvtType] = useState("ENTREE");
+  const [mvtQty, setMvtQty] = useState<number | "">("");
+  const [mvtReason, setMvtReason] = useState("");
+
   const [rhRoleFilter, setRhRoleFilter] = useState("TOUS");
   const [newEmployeeModal, setNewEmployeeModal] = useState(false);
   const [editEmployeeModal, setEditEmployeeModal] = useState(false);
@@ -521,13 +550,14 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const noCacheOpts: RequestInit = { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate" } };
-      const [dashRes, ordersRes, custRes, finRes, empRes, usersRes] = await Promise.all([
+      const [dashRes, ordersRes, custRes, finRes, empRes, usersRes, stockRes] = await Promise.all([
         fetch("/api/admin/dashboard", noCacheOpts),
         fetch("/api/admin/orders", noCacheOpts),
         fetch("/api/admin/customers", noCacheOpts),
         fetch("/api/admin/finances", noCacheOpts),
         fetch("/api/admin/employees", noCacheOpts).catch(() => null),
         fetch("/api/admin/users", noCacheOpts).catch(() => null),
+        fetch("/api/admin/stock", noCacheOpts).catch(() => null),
       ]);
 
       const dashData = dashRes.ok ? await dashRes.json() : {};
@@ -536,6 +566,8 @@ export default function AdminDashboard() {
       const finData = finRes.ok ? await finRes.json() : {};
       const empData = empRes && empRes.ok ? await empRes.json() : [];
       const usersData = usersRes && usersRes.ok ? await usersRes.json() : [];
+      const stockData = stockRes && stockRes.ok ? await stockRes.json() : [];
+      if (Array.isArray(stockData)) setStockList(stockData);
 
       const serverEmps = Array.isArray(empData) ? empData : [];
       const localEmps = getStoredLocal("gy_employees");
@@ -1121,6 +1153,169 @@ export default function AdminDashboard() {
     setEditOrderModal(true);
   };
 
+  const handleDeleteOrder = async (o: any) => {
+    if (!window.confirm(`Supprimer la commande ${o.reference} ? Cette action est irréversible.`)) return;
+    try {
+      const res = await fetch(`/api/admin/orders?id=${o.id}`, { method: "DELETE" });
+      if (res.ok) {
+        await fetchData();
+        alert(`Commande ${o.reference} supprimée.`);
+      } else {
+        const err = await res.json();
+        alert("Erreur : " + (err.error || "Suppression impossible"));
+      }
+    } catch (e) {
+      alert("Erreur réseau lors de la suppression.");
+    }
+  };
+
+  // ============================================================
+  // CLIENT ACCOUNT HANDLERS
+  // ============================================================
+  const handleCreateClientAccount = async () => {
+    if (!clientAccountModal || !clientAccountEmail) {
+      alert("Veuillez saisir un email pour la cliente.");
+      return;
+    }
+    setClientAccountLoading(true);
+    try {
+      const res = await fetch("/api/admin/client-accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId: clientAccountModal.id,
+          email: clientAccountEmail,
+          fullName: `${clientAccountModal.firstName} ${clientAccountModal.lastName}`,
+          phone: clientAccountModal.phone || "",
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setClientAccountCredentials(data.credentials);
+      } else if (res.status === 409) {
+        alert("Un compte existe déjà pour cette cliente : " + (data.existingEmail || data.error));
+      } else {
+        alert("Erreur : " + (data.error || "Impossible de créer le compte."));
+      }
+    } catch (e) {
+      alert("Erreur réseau.");
+    } finally {
+      setClientAccountLoading(false);
+    }
+  };
+
+  // ============================================================
+  // IMAGE UPLOAD HANDLERS
+  // ============================================================
+  const handleUploadOrderImage = async (file: File, imageType: "fabric" | "delivery") => {
+    if (!orderImagesModal) return;
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("orderId", orderImagesModal.id);
+      formData.append("imageType", imageType);
+
+      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+      const data = await res.json();
+
+      if (res.ok && data.url) {
+        // Update order in cloud with new image URL
+        const currentImages: string[] = orderImagesModal.images || [];
+        const updateBody: any = { orderId: orderImagesModal.id };
+        if (imageType === "delivery") {
+          updateBody.deliveryImage = data.url;
+        } else {
+          updateBody.images = [...currentImages, data.url];
+        }
+        const updateRes = await fetch("/api/admin/orders", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateBody),
+        });
+        if (updateRes.ok) {
+          const updated = await updateRes.json();
+          setOrderImagesModal(updated);
+          await fetchData();
+        }
+      } else {
+        alert("Erreur upload : " + (data.error || "inconnu"));
+      }
+    } catch (e) {
+      alert("Erreur réseau lors de l'upload.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveOrderImage = async (imageUrl: string) => {
+    if (!orderImagesModal) return;
+    const updatedImages = (orderImagesModal.images || []).filter((img: string) => img !== imageUrl);
+    const res = await fetch("/api/admin/orders", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId: orderImagesModal.id, images: updatedImages }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setOrderImagesModal(updated);
+      await fetchData();
+    }
+  };
+
+  // ============================================================
+  // STOCK HANDLERS
+  // ============================================================
+  const handleCreateStockItem = async () => {
+    if (!stkName) { alert("Veuillez saisir le nom de l'article."); return; }
+    try {
+      const res = await fetch("/api/admin/stock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: stkName, category: stkCategory, type: stkType,
+          unit: stkUnit, quantity: stkQuantity, minQuantity: stkMinQty,
+          supplierInfo: stkSupplier,
+        }),
+      });
+      if (res.ok) {
+        const item = await res.json();
+        setStockList((prev) => [item, ...prev]);
+        setNewStockModal(false);
+        setStkName(""); setStkCategory("TISSU"); setStkType("CONSOMMABLE");
+        setStkUnit("m"); setStkQuantity(""); setStkMinQty(""); setStkSupplier("");
+      }
+    } catch (e) { alert("Erreur réseau."); }
+  };
+
+  const handleStockMovement = async () => {
+    if (!stockMvtModal || !mvtQty) { alert("Quantité requise."); return; }
+    try {
+      const res = await fetch("/api/admin/stock", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: stockMvtModal.id,
+          movement: { type: mvtType, quantity: mvtQty, reason: mvtReason, by: currentUser?.fullName || "Admin" },
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setStockList((prev) => prev.map((s) => s.id === updated.id ? updated : s));
+        setStockMvtModal(null);
+        setMvtType("ENTREE"); setMvtQty(""); setMvtReason("");
+      }
+    } catch (e) { alert("Erreur réseau."); }
+  };
+
+  const handleDeleteStockItem = async (id: string, name: string) => {
+    if (!window.confirm(`Supprimer l'article "${name}" du stock ?`)) return;
+    try {
+      const res = await fetch(`/api/admin/stock?id=${id}`, { method: "DELETE" });
+      if (res.ok) setStockList((prev) => prev.filter((s) => s.id !== id));
+    } catch (e) { alert("Erreur réseau."); }
+  };
+
   const handleEditAddItem = () => {
     setEditOrderItemsList((prev) => [
       ...prev,
@@ -1619,6 +1814,17 @@ export default function AdminDashboard() {
                 </button>
 
                 <button
+                  onClick={() => { setActiveMenu("stock" as any); setMobileMenuOpen(false); }}
+                  className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+                    activeMenu === ("stock" as any)
+                      ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
+                      : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
+                  }`}
+                >
+                  <span>STOCK & MATIÈRES</span>
+                </button>
+
+                <button
                   onClick={() => { setActiveMenu("administrations"); setMobileMenuOpen(false); }}
                   className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
                     activeMenu === "administrations"
@@ -2094,6 +2300,12 @@ export default function AdminDashboard() {
                                 className="px-3 py-2 bg-gy-gold/20 text-gy-gold hover:bg-gy-gold hover:text-black border border-gy-gold/40 rounded-xl text-xs font-black uppercase tracking-wider"
                               >
                                 + REÇU
+                              </button>
+                              <button
+                                onClick={() => handleDeleteOrder(o)}
+                                className="px-3 py-2 rounded-xl bg-rose-500/20 text-rose-300 hover:bg-rose-600 hover:text-white border border-rose-500/40 text-xs font-black uppercase tracking-wider"
+                              >
+                                SUPPRIMER
                               </button>
                             </div>
                           </td>
@@ -2790,6 +3002,139 @@ export default function AdminDashboard() {
                   </table>
                 </div>
               </div>
+            </div>
+          )}
+
+          {(activeMenu as any) === "stock" && (
+            <div className="space-y-8 font-aptos">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h2 className="font-serif text-4xl font-bold text-white">STOCK & MATIÈRES PREMIÈRES</h2>
+                  <p className="text-sm text-gy-textMuted mt-1">Catalogue des matériels, tissus, fils et équipements — mouvements d&apos;entrée, de sortie et mises à disposition</p>
+                </div>
+                <button
+                  onClick={() => setNewStockModal(true)}
+                  className="px-5 py-3.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-black text-xs uppercase tracking-wider hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-lg"
+                >
+                  + NOUVEL ARTICLE
+                </button>
+              </div>
+
+              {/* Sub tabs */}
+              <div className="flex gap-3">
+                {(["catalogue", "mouvements"] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setStockSubTab(tab)}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                      stockSubTab === tab
+                        ? "bg-gy-gold text-black shadow-gold"
+                        : "bg-gy-dark text-gy-textMuted border border-gy-border hover:border-gy-gold/50"
+                    }`}
+                  >
+                    {tab === "catalogue" ? "📦 CATALOGUE" : "🔄 MOUVEMENTS"}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search */}
+              <input
+                type="text"
+                value={stockSearch}
+                onChange={(e) => setStockSearch(e.target.value)}
+                placeholder="Rechercher un article..."
+                className="w-full max-w-md bg-gy-dark border border-gy-border rounded-xl px-4 py-2.5 text-white text-sm focus:border-gy-gold focus:outline-none"
+              />
+
+              {stockSubTab === "catalogue" && (
+                <div className="glass-panel rounded-3xl border border-gy-border overflow-hidden">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-gy-border bg-gy-dark/50">
+                        <th className="p-4 text-gy-gold font-bold uppercase tracking-wider text-xs">Référence</th>
+                        <th className="p-4 text-gy-gold font-bold uppercase tracking-wider text-xs">Article</th>
+                        <th className="p-4 text-gy-gold font-bold uppercase tracking-wider text-xs">Catégorie</th>
+                        <th className="p-4 text-gy-gold font-bold uppercase tracking-wider text-xs">Type</th>
+                        <th className="p-4 text-gy-gold font-bold uppercase tracking-wider text-xs">Quantité</th>
+                        <th className="p-4 text-gy-gold font-bold uppercase tracking-wider text-xs">Unité</th>
+                        <th className="p-4 text-gy-gold font-bold uppercase tracking-wider text-xs">Seuil Min.</th>
+                        <th className="p-4 text-gy-gold font-bold uppercase tracking-wider text-xs">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stockList.filter((s) => !stockSearch || s.name?.toLowerCase().includes(stockSearch.toLowerCase()) || s.category?.toLowerCase().includes(stockSearch.toLowerCase())).map((item) => (
+                        <tr key={item.id} className="border-b border-gy-border/30 hover:bg-gy-dark/40">
+                          <td className="p-4 text-gy-gold font-bold text-xs">{item.reference}</td>
+                          <td className="p-4 font-bold text-white">{item.name}</td>
+                          <td className="p-4 text-gy-textMuted text-xs">{item.category}</td>
+                          <td className="p-4">
+                            <span className={`px-2 py-1 rounded-lg text-xs font-black ${item.type === "EQUIPEMENT" ? "bg-blue-500/20 text-blue-400" : "bg-amber-500/20 text-amber-400"}`}>
+                              {item.type}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className={`font-black text-base ${Number(item.quantity) <= Number(item.minQuantity || 0) ? "text-rose-400" : "text-emerald-400"}`}>
+                              {item.quantity}
+                            </span>
+                          </td>
+                          <td className="p-4 text-gy-textMuted text-xs">{item.unit}</td>
+                          <td className="p-4 text-gy-textMuted text-xs">{item.minQuantity || 0}</td>
+                          <td className="p-4">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => { setStockMvtModal(item); setMvtType("ENTREE"); setMvtQty(""); setMvtReason(""); }}
+                                className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-lg text-xs font-black hover:bg-emerald-500 hover:text-black transition-all"
+                              >
+                                MOUVEMENT
+                              </button>
+                              <button
+                                onClick={() => handleDeleteStockItem(item.id, item.name)}
+                                className="px-3 py-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/40 rounded-lg text-xs font-black hover:bg-rose-500 hover:text-white transition-all"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {stockList.length === 0 && (
+                        <tr>
+                          <td colSpan={8} className="p-8 text-center text-gy-textMuted italic">
+                            Aucun article en stock. Cliquez sur &quot;+ NOUVEL ARTICLE&quot; pour commencer.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {stockSubTab === "mouvements" && (
+                <div className="space-y-4">
+                  {stockList.flatMap((item) =>
+                    (item.movements || []).map((mv: any) => ({ ...mv, itemName: item.name, itemRef: item.reference, unit: item.unit }))
+                  ).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 50).map((mv: any) => (
+                    <div key={mv.id} className="glass-panel p-4 rounded-2xl border border-gy-border flex justify-between items-center">
+                      <div>
+                        <span className={`px-2 py-1 rounded-lg text-xs font-black mr-3 ${
+                          mv.type === "ENTREE" ? "bg-emerald-500/20 text-emerald-400" :
+                          mv.type === "SORTIE" ? "bg-rose-500/20 text-rose-400" :
+                          "bg-blue-500/20 text-blue-400"
+                        }`}>{mv.type}</span>
+                        <span className="font-bold text-white">{mv.itemName}</span>
+                        {mv.reason && <span className="text-gy-textMuted text-xs ml-2">— {mv.reason}</span>}
+                      </div>
+                      <div className="text-right">
+                        <div className="font-black text-lg text-white">{mv.quantity} {mv.unit}</div>
+                        <div className="text-xs text-gy-textMuted">{new Date(mv.date).toLocaleDateString("fr-FR")} • {mv.by}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {stockList.every((s) => !s.movements || s.movements.length === 0) && (
+                    <div className="text-center text-gy-textMuted italic p-8">Aucun mouvement enregistré.</div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -4135,21 +4480,29 @@ export default function AdminDashboard() {
 
       {/* VIEW ORDER MODAL */}
       {viewOrderModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="glass-panel max-w-2xl w-full p-8 rounded-3xl border border-gy-gold/50 shadow-2xl font-aptos">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-panel max-w-2xl w-full p-8 rounded-3xl border border-gy-gold/50 shadow-2xl font-aptos my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start border-b border-gy-border pb-4">
               <div>
                 <span className="text-xs font-bold text-gy-gold uppercase tracking-wider">{viewOrderModal.reference}</span>
                 <h3 className="font-serif text-3xl font-bold text-white mt-1">
-                  {viewOrderModal.items[0]?.itemName || "Commande Sur-Mesure"}
+                  {viewOrderModal.items?.[0]?.itemName || "Commande Sur-Mesure"}
                 </h3>
                 <p className="text-sm text-gy-textMuted mt-1">
                   Client : <strong className="text-white">{viewOrderModal.customer?.firstName} {viewOrderModal.customer?.lastName}</strong> ({viewOrderModal.customer?.phone})
                 </p>
               </div>
-              <button onClick={() => setViewOrderModal(null)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
-                [ FERMER ]
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setOrderImagesModal(viewOrderModal); setViewOrderModal(null); }}
+                  className="px-3 py-1.5 bg-violet-500/20 text-violet-300 border border-violet-500/40 rounded-lg text-xs font-black hover:bg-violet-500 hover:text-white transition-all"
+                >
+                  📸 PHOTOS
+                </button>
+                <button onClick={() => setViewOrderModal(null)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
+                  [ FERMER ]
+                </button>
+              </div>
             </div>
 
             <div className="space-y-6 pt-6 text-sm">
@@ -4167,9 +4520,27 @@ export default function AdminDashboard() {
               <div>
                 <h4 className="font-serif text-lg font-bold text-white mb-2">Informations sur le Tissu Voulu :</h4>
                 <div className="bg-gy-dark p-4 rounded-xl border border-gy-border text-gy-text leading-relaxed font-semibold">
-                  {viewOrderModal.items[0]?.fabricDetails || "Tissu fourni par la cliente."}
+                  {viewOrderModal.items?.[0]?.fabricDetails || "Tissu fourni par la cliente."}
                 </div>
               </div>
+
+              {/* Image gallery preview */}
+              {((viewOrderModal.images && viewOrderModal.images.length > 0) || viewOrderModal.deliveryImage) && (
+                <div>
+                  <h4 className="font-serif text-lg font-bold text-white mb-3">📸 Photos de la Commande</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {(viewOrderModal.images || []).map((img: string, idx: number) => (
+                      <img key={idx} src={img} alt={`Tissu ${idx + 1}`} className="w-24 h-24 object-cover rounded-xl border border-gy-border" />
+                    ))}
+                    {viewOrderModal.deliveryImage && (
+                      <div className="relative">
+                        <img src={viewOrderModal.deliveryImage} alt="Produit fini" className="w-24 h-24 object-cover rounded-xl border-2 border-gy-gold" />
+                        <span className="absolute -top-2 -right-2 bg-gy-gold text-black text-xs font-black px-1 rounded">FINI</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-between items-center border-t border-gy-border pt-4 text-base">
                 <div><span>Montant Total :</span> <strong className="text-white text-lg font-bold ml-2">{formatFcfa(viewOrderModal.totalAmount)}</strong></div>
@@ -4194,9 +4565,22 @@ export default function AdminDashboard() {
                   {viewCustomerModal.profession || "Client Privé"} • Tel : {viewCustomerModal.phone} • {viewCustomerModal.city}
                 </p>
               </div>
-              <button onClick={() => setViewCustomerModal(null)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
-                [ FERMER ]
-              </button>
+              <div className="flex flex-col gap-2 items-end">
+                <button onClick={() => setViewCustomerModal(null)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
+                  [ FERMER ]
+                </button>
+                <button
+                  onClick={() => {
+                    setClientAccountModal(viewCustomerModal);
+                    setClientAccountEmail(viewCustomerModal.email || "");
+                    setClientAccountCredentials(null);
+                    setViewCustomerModal(null);
+                  }}
+                  className="px-3 py-1.5 bg-violet-500/20 text-violet-300 border border-violet-500/40 rounded-lg text-xs font-black hover:bg-violet-500 hover:text-white transition-all"
+                >
+                  🔑 CRÉER ACCÈS CLIENT
+                </button>
+              </div>
             </div>
 
             <div className="space-y-6 pt-6 text-sm">
@@ -4409,6 +4793,247 @@ export default function AdminDashboard() {
                 >
                   CRÉER COMPTE ADMIN
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* MODAL: CRÉER ACCÈS CLIENT                                         */}
+      {/* ================================================================= */}
+      {clientAccountModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="glass-panel max-w-md w-full p-8 rounded-3xl border border-violet-500/50 shadow-2xl font-aptos">
+            <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
+              <div>
+                <h3 className="font-serif text-2xl font-bold text-white">ACCÈS ESPACE CLIENT</h3>
+                <p className="text-xs text-violet-400 font-bold mt-1">{clientAccountModal.firstName} {clientAccountModal.lastName}</p>
+              </div>
+              <button onClick={() => { setClientAccountModal(null); setClientAccountCredentials(null); }} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">[ FERMER ]</button>
+            </div>
+
+            {!clientAccountCredentials ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gy-textMuted">Créer un compte pour que cette cliente puisse accéder à son espace en ligne et suivre ses commandes.</p>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Email de connexion *</label>
+                  <input
+                    type="email"
+                    value={clientAccountEmail}
+                    onChange={(e) => setClientAccountEmail(e.target.value)}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-violet-500 focus:outline-none"
+                  />
+                </div>
+                <div className="flex space-x-3 pt-2">
+                  <button onClick={() => { setClientAccountModal(null); }} className="w-1/2 py-3 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase">ANNULER</button>
+                  <button
+                    onClick={handleCreateClientAccount}
+                    disabled={clientAccountLoading}
+                    className="w-1/2 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-black text-xs uppercase shadow-lg transition-all disabled:opacity-50"
+                  >
+                    {clientAccountLoading ? "CRÉATION..." : "CRÉER LE COMPTE"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/40 rounded-2xl">
+                  <p className="text-emerald-400 font-black text-sm mb-3">✅ COMPTE CRÉÉ AVEC SUCCÈS</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gy-textMuted">Email :</span>
+                      <span className="font-bold text-white">{clientAccountCredentials.email}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gy-textMuted">Mot de passe temporaire :</span>
+                      <span className="font-black text-gy-gold text-lg tracking-widest">{clientAccountCredentials.tempPassword}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-400">
+                  ⚠️ Transmettez ces identifiants par WhatsApp ou email à la cliente. Elle pourra changer son mot de passe depuis son espace.
+                </div>
+                <button
+                  onClick={() => {
+                    const text = `Bonjour ${clientAccountCredentials.fullName},\n\nVoici vos accès à votre espace client GY Maison Couture :\n\n🌐 Lien : ${window.location.origin}/client\n📧 Email : ${clientAccountCredentials.email}\n🔑 Mot de passe : ${clientAccountCredentials.tempPassword}\n\nMerci de changer votre mot de passe lors de votre première connexion.`;
+                    navigator.clipboard.writeText(text).then(() => alert("Message copié dans le presse-papiers !"));
+                  }}
+                  className="w-full py-3 rounded-xl bg-gy-gold/20 text-gy-gold border border-gy-gold/40 font-black text-xs uppercase hover:bg-gy-gold hover:text-black transition-all"
+                >
+                  📋 COPIER LE MESSAGE À ENVOYER
+                </button>
+                <button onClick={() => { setClientAccountModal(null); setClientAccountCredentials(null); }} className="w-full py-2 rounded-xl bg-gy-dark border border-gy-border text-gy-textMuted font-black text-xs uppercase">FERMER</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* MODAL: GALERIE D'IMAGES DE LA COMMANDE                            */}
+      {/* ================================================================= */}
+      {orderImagesModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-panel max-w-2xl w-full p-8 rounded-3xl border border-violet-500/50 shadow-2xl font-aptos my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
+              <div>
+                <h3 className="font-serif text-2xl font-bold text-white">📸 PHOTOS — COMMANDE</h3>
+                <p className="text-xs text-violet-400 font-bold mt-1">{orderImagesModal.reference}</p>
+              </div>
+              <button onClick={() => setOrderImagesModal(null)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">[ FERMER ]</button>
+            </div>
+
+            <div className="space-y-6 text-sm">
+              {/* Fabric images */}
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-bold text-white">🧵 Photos des Tissus ({(orderImagesModal.images || []).length})</h4>
+                  <label className={`px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-black uppercase cursor-pointer hover:bg-emerald-500 hover:text-black transition-all ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
+                    {uploadingImage ? "CHARGEMENT..." : "+ AJOUTER TISSU"}
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleUploadOrderImage(e.target.files[0], "fabric"); }} />
+                  </label>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {(orderImagesModal.images || []).map((img: string, idx: number) => (
+                    <div key={idx} className="relative group">
+                      <img src={img} alt={`Tissu ${idx + 1}`} className="w-32 h-32 object-cover rounded-xl border border-gy-border" />
+                      <button
+                        onClick={() => handleRemoveOrderImage(img)}
+                        className="absolute top-1 right-1 bg-rose-600 text-white rounded-full w-5 h-5 text-xs font-black opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
+                      >✕</button>
+                    </div>
+                  ))}
+                  {(!orderImagesModal.images || orderImagesModal.images.length === 0) && (
+                    <p className="text-gy-textMuted italic text-xs">Aucune photo de tissu. Ajoutez-en avec le bouton ci-dessus.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Delivery / finished product image */}
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-bold text-white">✨ Photo du Produit Fini (Livraison)</h4>
+                  <label className={`px-4 py-2 rounded-xl bg-gy-gold/20 text-gy-gold border border-gy-gold/40 text-xs font-black uppercase cursor-pointer hover:bg-gy-gold hover:text-black transition-all ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
+                    {uploadingImage ? "CHARGEMENT..." : (orderImagesModal.deliveryImage ? "🔄 CHANGER" : "+ PHOTO LIVRAISON")}
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleUploadOrderImage(e.target.files[0], "delivery"); }} />
+                  </label>
+                </div>
+                {orderImagesModal.deliveryImage ? (
+                  <img src={orderImagesModal.deliveryImage} alt="Produit fini" className="w-48 h-48 object-cover rounded-2xl border-2 border-gy-gold shadow-gold" />
+                ) : (
+                  <p className="text-gy-textMuted italic text-xs">Aucune photo du produit fini. Ajoutez-la à la livraison.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* MODAL: NOUVEL ARTICLE EN STOCK                                     */}
+      {/* ================================================================= */}
+      {newStockModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-panel max-w-lg w-full p-8 rounded-3xl border border-emerald-500/50 shadow-2xl font-aptos my-8">
+            <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
+              <h3 className="font-serif text-2xl font-bold text-white">NOUVEL ARTICLE EN STOCK</h3>
+              <button onClick={() => setNewStockModal(false)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">[ FERMER ]</button>
+            </div>
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Catégorie</label>
+                  <select value={stkCategory} onChange={(e) => setStkCategory(e.target.value)} className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:outline-none">
+                    <option value="TISSU">TISSU</option>
+                    <option value="FIL">FIL</option>
+                    <option value="AIGUILLE">AIGUILLE</option>
+                    <option value="ACCESSOIRE">ACCESSOIRE</option>
+                    <option value="EQUIPEMENT">ÉQUIPEMENT</option>
+                    <option value="AUTRE">AUTRE</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Type</label>
+                  <select value={stkType} onChange={(e) => setStkType(e.target.value)} className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:outline-none">
+                    <option value="CONSOMMABLE">CONSOMMABLE</option>
+                    <option value="EQUIPEMENT">ÉQUIPEMENT</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Nom de l&apos;article *</label>
+                <input type="text" value={stkName} onChange={(e) => setStkName(e.target.value)} className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-emerald-500 focus:outline-none" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Quantité initiale</label>
+                  <input type="number" value={stkQuantity} onChange={(e) => setStkQuantity(e.target.value === "" ? "" : Number(e.target.value))} className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-emerald-400 font-bold focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Unité</label>
+                  <select value={stkUnit} onChange={(e) => setStkUnit(e.target.value)} className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:outline-none">
+                    <option value="m">mètre (m)</option>
+                    <option value="kg">kg</option>
+                    <option value="pce">pièce</option>
+                    <option value="bobine">bobine</option>
+                    <option value="paquet">paquet</option>
+                    <option value="unité">unité</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Seuil min.</label>
+                  <input type="number" value={stkMinQty} onChange={(e) => setStkMinQty(e.target.value === "" ? "" : Number(e.target.value))} className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-amber-400 font-bold focus:outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Fournisseur / Informations</label>
+                <input type="text" value={stkSupplier} onChange={(e) => setStkSupplier(e.target.value)} className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:outline-none" />
+              </div>
+              <div className="flex space-x-3 pt-2">
+                <button onClick={() => setNewStockModal(false)} className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase">ANNULER</button>
+                <button onClick={handleCreateStockItem} className="w-1/2 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase shadow-lg transition-all">ENREGISTRER</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* MODAL: MOUVEMENT DE STOCK                                          */}
+      {/* ================================================================= */}
+      {stockMvtModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="glass-panel max-w-md w-full p-8 rounded-3xl border border-gy-gold/50 shadow-2xl font-aptos">
+            <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
+              <div>
+                <h3 className="font-serif text-xl font-bold text-white">MOUVEMENT DE STOCK</h3>
+                <p className="text-xs text-gy-gold font-bold mt-1">{stockMvtModal.name} — Stock actuel : <strong>{stockMvtModal.quantity} {stockMvtModal.unit}</strong></p>
+              </div>
+              <button onClick={() => setStockMvtModal(null)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">[ FERMER ]</button>
+            </div>
+            <div className="space-y-4 text-sm">
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Type de mouvement</label>
+                <div className="flex gap-2">
+                  {["ENTREE", "SORTIE", stockMvtModal.type === "EQUIPEMENT" ? "MISE_A_DISPO" : null, "RETOUR"].filter(Boolean).map((t) => (
+                    <button key={t} onClick={() => setMvtType(t!)} className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase transition-all ${mvtType === t ? (t === "ENTREE" || t === "RETOUR" ? "bg-emerald-500 text-black" : t === "SORTIE" ? "bg-rose-500 text-white" : "bg-blue-500 text-white") : "bg-gy-dark border border-gy-border text-gy-textMuted"}`}>
+                      {t === "ENTREE" ? "ENTRÉE" : t === "SORTIE" ? "SORTIE" : t === "MISE_A_DISPO" ? "MISE À DISPO" : "RETOUR"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Quantité ({stockMvtModal.unit})</label>
+                <input type="number" value={mvtQty} onChange={(e) => setMvtQty(e.target.value === "" ? "" : Number(e.target.value))} className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-black text-lg focus:border-gy-gold focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Motif / Raison</label>
+                <input type="text" value={mvtReason} onChange={(e) => setMvtReason(e.target.value)} className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-gy-gold focus:outline-none" />
+              </div>
+              <div className="flex space-x-3 pt-2">
+                <button onClick={() => setStockMvtModal(null)} className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase">ANNULER</button>
+                <button onClick={handleStockMovement} className="w-1/2 py-3.5 rounded-xl bg-gy-gold text-black font-black text-xs uppercase shadow-gold hover:opacity-90">VALIDER</button>
               </div>
             </div>
           </div>

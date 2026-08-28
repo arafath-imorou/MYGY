@@ -188,7 +188,7 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
-    const { orderId, newStatus, currentStage, newPayment, totalAmount, promisedDate, fabricDetails, customNotes, priority, items } = body;
+    const { orderId, newStatus, currentStage, newPayment, totalAmount, promisedDate, fabricDetails, customNotes, priority, items, images, deliveryImage } = body;
 
     if (!orderId) {
       return NextResponse.json({ error: "ID de commande manquant." }, { status: 400 });
@@ -257,6 +257,12 @@ export async function PUT(req: Request) {
     }
     if (items && Array.isArray(items)) {
       updatedData.items = items;
+    }
+    if (images !== undefined) {
+      updatedData.images = images;
+    }
+    if (deliveryImage !== undefined) {
+      updatedData.deliveryImage = deliveryImage;
     }
 
     let newReceiptObj: any = null;
