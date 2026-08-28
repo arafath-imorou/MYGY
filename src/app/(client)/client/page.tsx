@@ -319,12 +319,24 @@ export default function ClientPortal() {
               <h1 className="font-serif text-3xl sm:text-4xl font-bold text-white">Mon Espace Personnel</h1>
               <p className="text-[#A3A3B3] text-sm mt-1">Suivi en direct de l&apos;état d&apos;avancement de vos créations sur-mesure</p>
             </div>
-            <button
-              onClick={() => fetchClientOrders(clientUser.customerId, clientUser.username, clientUser.email)}
-              className="px-4 py-2 bg-[#1A1A24] border border-[#2A2A38] text-white rounded-xl text-xs font-bold hover:border-[#D4AF37] transition-all"
-            >
-              ACTUALISER
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={`https://wa.me/2290166743493?text=${encodeURIComponent(
+                  `Bonjour Maison GY, je suis ${clientUser?.fullName || "une cliente"} (Identifiant : ${clientUser?.username || ""}). J'ai une question concernant mes confections.`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+              >
+                💬 CONTACTER LA MAISON (+229 01 66 74 34 93)
+              </a>
+              <button
+                onClick={() => fetchClientOrders(clientUser.customerId, clientUser.username, clientUser.email)}
+                className="px-4 py-2 bg-[#1A1A24] border border-[#2A2A38] text-white rounded-xl text-xs font-bold hover:border-[#D4AF37] transition-all"
+              >
+                ACTUALISER
+              </button>
+            </div>
           </div>
 
           {/* Financial Summary Cards */}
@@ -517,7 +529,7 @@ export default function ClientPortal() {
                       DÉTAILS
                     </button>
                     <a
-                      href={`https://wa.me/2290167004910?text=${encodeURIComponent(
+                      href={`https://wa.me/2290166743493?text=${encodeURIComponent(
                         `Bonjour Maison GY, je suis ${clientUser?.fullName || "une cliente"} et je suis très intéressée par la confection du modèle "${cr.title}" (${cr.category}). Pouvons-nous planifier un échange / rendez-vous ?`
                       )}`}
                       target="_blank"
@@ -574,7 +586,7 @@ export default function ClientPortal() {
                   FERMER
                 </button>
                 <a
-                  href={`https://wa.me/2290167004910?text=${encodeURIComponent(
+                  href={`https://wa.me/2290166743493?text=${encodeURIComponent(
                     `Bonjour Maison GY, je souhaite commander ou avoir un devis pour le modèle "${selectedCreationModal.title}" (${selectedCreationModal.category}).`
                   )}`}
                   target="_blank"
