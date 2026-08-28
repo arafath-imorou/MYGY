@@ -3085,13 +3085,13 @@ export default function AdminDashboard() {
                     }}
                     className="px-5 py-3.5 rounded-2xl bg-gy-gold/20 text-gy-gold border border-gy-gold/40 font-black text-xs uppercase tracking-wider hover:bg-gy-gold hover:text-black transition-all cursor-pointer shadow-lg"
                   >
-                    🔄 + NOUVEAU MOUVEMENT
+                    + NOUVEAU MOUVEMENT
                   </button>
                   <button
                     onClick={() => setNewStockModal(true)}
                     className="px-5 py-3.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-black text-xs uppercase tracking-wider hover:bg-emerald-500 hover:text-black transition-all cursor-pointer shadow-lg"
                   >
-                    📦 + NOUVEL ARTICLE
+                    + NOUVEL ARTICLE
                   </button>
                 </div>
               </div>
@@ -3108,7 +3108,7 @@ export default function AdminDashboard() {
                         : "bg-gy-dark text-gy-textMuted border border-gy-border hover:border-gy-gold/50"
                     }`}
                   >
-                    {tab === "catalogue" ? "📦 CATALOGUE" : "🔄 MOUVEMENTS"}
+                    {tab === "catalogue" ? "CATALOGUE" : "MOUVEMENTS"}
                   </button>
                 ))}
               </div>
@@ -5173,7 +5173,7 @@ export default function AdminDashboard() {
                           : "bg-gy-dark border border-gy-border text-gy-textMuted hover:border-gy-gold/50"
                       }`}
                     >
-                      {t === "ENTREE" ? "📥 ENTRÉE" : t === "SORTIE" ? "📤 SORTIE" : t === "MISE_A_DISPO" ? "🔧 DISPO" : "🔄 RETOUR"}
+                      {t === "ENTREE" ? "ENTRÉE" : t === "SORTIE" ? "SORTIE" : t === "MISE_A_DISPO" ? "MISE À DISPO" : "RETOUR"}
                     </button>
                   ))}
                 </div>
