@@ -367,11 +367,42 @@ export default function AdminDashboard() {
   const [adminUsersList, setAdminUsersList] = useState<any[]>(DEFAULT_ADMIN_USERS);
   const [clientAccountsList, setClientAccountsList] = useState<any[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<any[]>(DEFAULT_EXPENSE_CATEGORIES);
-  const [adminSubTab, setAdminSubTab] = useState<"comptes" | "clients" | "lignes">("comptes");
+  const [adminSubTab, setAdminSubTab] = useState<"comptes" | "clients" | "lignes" | "catalogue">("comptes");
   const [newExpenseCategoryModal, setNewExpenseCategoryModal] = useState(false);
   const [newExpCatLabel, setNewExpCatLabel] = useState("");
   const [newExpCatCode, setNewExpCatCode] = useState("");
   const [newExpCatDesc, setNewExpCatDesc] = useState("");
+
+  // CREATION CATEGORIES & BADGES MANAGEMENT STATE
+  const [creationCategoriesList, setCreationCategoriesList] = useState<string[]>([
+    "ROBES DE SOIRÉE & GALA",
+    "BOUBOUS VIP & CAFTANS",
+    "ENSEMBLES TAILLEURS & COMBINAISONS",
+    "CRÉATIONS MARIAGE & CÉRÉMONIE",
+    "HAUTE COUTURE TRADITIONNELLE",
+    "CHEMISES & COSTUMES HOMMES VIP",
+  ]);
+  const [creationBadgesList, setCreationBadgesList] = useState<string[]>([
+    "COLLECTION 2026",
+    "NOUVEAUTÉ",
+    "BEST-SELLER VIP",
+    "SIGNATURE GY",
+    "ÉLÉGANCE BUSINESS",
+    "HAUTE COUTURE",
+    "SUR COMMANDE",
+  ]);
+
+  const [newCatModal, setNewCatModal] = useState(false);
+  const [newCatInput, setNewCatInput] = useState("");
+  const [editCatModal, setEditCatModal] = useState(false);
+  const [editingCatOldName, setEditingCatOldName] = useState("");
+  const [editCatInput, setEditCatInput] = useState("");
+
+  const [newBadgeModal, setNewBadgeModal] = useState(false);
+  const [newBadgeInput, setNewBadgeInput] = useState("");
+  const [editBadgeModal, setEditBadgeModal] = useState(false);
+  const [editingBadgeOldName, setEditingBadgeOldName] = useState("");
+  const [editBadgeInput, setEditBadgeInput] = useState("");
 
   // CLIENT ACCOUNT CREATION STATE
   const [clientAccountModal, setClientAccountModal] = useState<any>(null); // holds the customer
@@ -437,14 +468,143 @@ export default function AdminDashboard() {
   const [creationUploading, setCreationUploading] = useState(false);
   const [selectedCreationPreview, setSelectedCreationPreview] = useState<any>(null);
 
+  const fetchCreationsConfig = async () => {
+    try {
+      const res = await fetch("/api/admin/creations-config", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.categories) && data.categories.length > 0) {
+          setCreationCategoriesList(data.categories);
+        }
+        if (Array.isArray(data.badges) && data.badges.length > 0) {
+          setCreationBadgesList(data.badges);
+        }
+      }
+    } catch (e) {}
+  };
+
+  const handleAddCategory = async () => {
+    if (!newCatInput.trim()) return alert("Veuillez saisir un nom de catégorie.");
+    try {
+      const res = await fetch("/api/admin/creations-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: "category", action: "add", value: newCatInput.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCreationCategoriesList(data.categories);
+        setNewCatModal(false);
+        setNewCatInput("");
+      }
+    } catch (e) {}
+  };
+
+  const handleEditCategory = async () => {
+    if (!editCatInput.trim() || !editingCatOldName) return;
+    try {
+      const res = await fetch("/api/admin/creations-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target: "category",
+          action: "update",
+          value: editCatInput.trim(),
+          oldValue: editingCatOldName,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCreationCategoriesList(data.categories);
+        setEditCatModal(false);
+        setEditingCatOldName("");
+        setEditCatInput("");
+        fetchData();
+      }
+    } catch (e) {}
+  };
+
+  const handleDeleteCategory = async (catName: string) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer la catégorie « ${catName} » ?`)) return;
+    try {
+      const res = await fetch("/api/admin/creations-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: "category", action: "delete", value: catName }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCreationCategoriesList(data.categories);
+        if (creationCategoryFilter === catName) setCreationCategoryFilter("TOUS");
+        fetchData();
+      }
+    } catch (e) {}
+  };
+
+  const handleAddBadge = async () => {
+    if (!newBadgeInput.trim()) return alert("Veuillez saisir un libellé de badge marketing.");
+    try {
+      const res = await fetch("/api/admin/creations-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: "badge", action: "add", value: newBadgeInput.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCreationBadgesList(data.badges);
+        setNewBadgeModal(false);
+        setNewBadgeInput("");
+      }
+    } catch (e) {}
+  };
+
+  const handleEditBadge = async () => {
+    if (!editBadgeInput.trim() || !editingBadgeOldName) return;
+    try {
+      const res = await fetch("/api/admin/creations-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target: "badge",
+          action: "update",
+          value: editBadgeInput.trim(),
+          oldValue: editingBadgeOldName,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCreationBadgesList(data.badges);
+        setEditBadgeModal(false);
+        setEditingBadgeOldName("");
+        setEditBadgeInput("");
+        fetchData();
+      }
+    } catch (e) {}
+  };
+
+  const handleDeleteBadge = async (badgeName: string) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer le badge « ${badgeName} » ?`)) return;
+    try {
+      const res = await fetch("/api/admin/creations-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: "badge", action: "delete", value: badgeName }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCreationBadgesList(data.badges);
+      }
+    } catch (e) {}
+  };
+
   const handleOpenNewCreation = () => {
     setEditingCreation(null);
     setCreationRef(`MOD-GY-2026-${String(creationsList.length + 1).padStart(2, "0")}`);
     setCreationTitle("");
-    setCreationCategory("ROBES DE SOIRÉE & GALA");
+    setCreationCategory(creationCategoriesList[0] || "ROBES DE SOIRÉE & GALA");
     setCreationDescription("");
     setCreationFabric("");
-    setCreationBadge("COLLECTION 2026");
+    setCreationBadge(creationBadgesList[0] || "COLLECTION 2026");
     setCreationPrice("");
     setCreationDelay("");
     setCreationImageUrl("");
@@ -708,7 +868,7 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const noCacheOpts: RequestInit = { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate" } };
-      const [dashRes, ordersRes, custRes, finRes, empRes, usersRes, stockRes, clientAccRes, creationsRes] = await Promise.all([
+      const [dashRes, ordersRes, custRes, finRes, empRes, usersRes, stockRes, clientAccRes, creationsRes, configRes] = await Promise.all([
         fetch("/api/admin/dashboard", noCacheOpts),
         fetch("/api/admin/orders", noCacheOpts),
         fetch("/api/admin/customers", noCacheOpts),
@@ -718,6 +878,7 @@ export default function AdminDashboard() {
         fetch("/api/admin/stock", noCacheOpts).catch(() => null),
         fetch("/api/admin/client-accounts", noCacheOpts).catch(() => null),
         fetch("/api/admin/creations", noCacheOpts).catch(() => null),
+        fetch("/api/admin/creations-config", noCacheOpts).catch(() => null),
       ]);
 
       const dashData = dashRes.ok ? await dashRes.json() : {};
@@ -729,9 +890,19 @@ export default function AdminDashboard() {
       const stockData = stockRes && stockRes.ok ? await stockRes.json() : [];
       const clientAccData = clientAccRes && clientAccRes.ok ? await clientAccRes.json() : [];
       const creationsData = creationsRes && creationsRes.ok ? await creationsRes.json() : [];
+      const configData = configRes && configRes.ok ? await configRes.json() : null;
+
       if (Array.isArray(stockData)) setStockList(stockData);
       if (Array.isArray(clientAccData)) setClientAccountsList(clientAccData);
       if (Array.isArray(creationsData)) setCreationsList(creationsData);
+      if (configData) {
+        if (Array.isArray(configData.categories) && configData.categories.length > 0) {
+          setCreationCategoriesList(configData.categories);
+        }
+        if (Array.isArray(configData.badges) && configData.badges.length > 0) {
+          setCreationBadgesList(configData.badges);
+        }
+      }
 
       const serverEmps = Array.isArray(empData) ? empData : [];
       const localEmps = getStoredLocal("gy_employees");
@@ -2821,15 +2992,7 @@ export default function AdminDashboard() {
               {/* Filter Pills & View Mode */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    "TOUS",
-                    "ROBES DE SOIRÉE & GALA",
-                    "BOUBOUS VIP & CAFTANS",
-                    "ENSEMBLES TAILLEURS & COMBINAISONS",
-                    "CRÉATIONS MARIAGE & CÉRÉMONIE",
-                    "HAUTE COUTURE TRADITIONNELLE",
-                    "CHEMISES & COSTUMES HOMMES VIP",
-                  ].map((cat) => (
+                  {["TOUS", ...creationCategoriesList].map((cat) => (
                     <button
                       key={cat}
                       onClick={() => setCreationCategoryFilter(cat)}
@@ -3742,14 +3905,15 @@ export default function AdminDashboard() {
                   >
                     [ RÉINITIALISER LA PLATEFORME À ZÉRO ]
                   </button>
-                  {adminSubTab === "comptes" ? (
+                  {adminSubTab === "comptes" && (
                     <button
                       onClick={() => setNewAdminModal(true)}
                       className="px-6 py-3.5 rounded-2xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95 transition-all cursor-pointer"
                     >
                       + CRÉER UN COMPTE ADMIN
                     </button>
-                  ) : (
+                  )}
+                  {adminSubTab === "lignes" && (
                     <button
                       onClick={() => setNewExpenseCategoryModal(true)}
                       className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-600 text-white font-black text-xs uppercase tracking-wider shadow-lg hover:opacity-95 transition-all cursor-pointer"
@@ -3757,14 +3921,36 @@ export default function AdminDashboard() {
                       + NOUVELLE LIGNE DE DÉPENSE
                     </button>
                   )}
+                  {adminSubTab === "catalogue" && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setNewCatInput("");
+                          setNewCatModal(true);
+                        }}
+                        className="px-5 py-3.5 rounded-2xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95 transition-all cursor-pointer"
+                      >
+                        + NOUVELLE CATÉGORIE
+                      </button>
+                      <button
+                        onClick={() => {
+                          setNewBadgeInput("");
+                          setNewBadgeModal(true);
+                        }}
+                        className="px-5 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95 transition-all cursor-pointer"
+                      >
+                        + NOUVEAU BADGE
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Sub-Tab Navigation Header */}
-              <div className="flex border-b-2 border-[#2A2A38] space-x-3">
+              <div className="flex border-b-2 border-[#2A2A38] space-x-3 overflow-x-auto">
                 <button
                   onClick={() => setAdminSubTab("comptes")}
-                  className={`py-3.5 px-6 font-black text-xs uppercase tracking-wider rounded-t-2xl transition-all border-t-2 border-x-2 ${
+                  className={`py-3.5 px-6 font-black text-xs uppercase tracking-wider rounded-t-2xl transition-all border-t-2 border-x-2 shrink-0 ${
                     adminSubTab === "comptes"
                       ? "bg-[#141419] border-[#D4AF37] text-[#F3E5AB] shadow-md"
                       : "bg-[#0E0E12] border-transparent text-[#A3A3B3] hover:text-white"
@@ -3775,7 +3961,7 @@ export default function AdminDashboard() {
 
                 <button
                   onClick={() => setAdminSubTab("clients")}
-                  className={`py-3.5 px-6 font-black text-xs uppercase tracking-wider rounded-t-2xl transition-all border-t-2 border-x-2 ${
+                  className={`py-3.5 px-6 font-black text-xs uppercase tracking-wider rounded-t-2xl transition-all border-t-2 border-x-2 shrink-0 ${
                     adminSubTab === "clients"
                       ? "bg-[#141419] border-[#D4AF37] text-[#F3E5AB] shadow-md"
                       : "bg-[#0E0E12] border-transparent text-[#A3A3B3] hover:text-white"
@@ -3786,13 +3972,24 @@ export default function AdminDashboard() {
 
                 <button
                   onClick={() => setAdminSubTab("lignes")}
-                  className={`py-3.5 px-6 font-black text-xs uppercase tracking-wider rounded-t-2xl transition-all border-t-2 border-x-2 ${
+                  className={`py-3.5 px-6 font-black text-xs uppercase tracking-wider rounded-t-2xl transition-all border-t-2 border-x-2 shrink-0 ${
                     adminSubTab === "lignes"
                       ? "bg-[#141419] border-[#D4AF37] text-[#F3E5AB] shadow-md"
                       : "bg-[#0E0E12] border-transparent text-[#A3A3B3] hover:text-white"
                   }`}
                 >
                   LIGNES DE DÉPENSES ({expenseCategories.length})
+                </button>
+
+                <button
+                  onClick={() => setAdminSubTab("catalogue")}
+                  className={`py-3.5 px-6 font-black text-xs uppercase tracking-wider rounded-t-2xl transition-all border-t-2 border-x-2 shrink-0 ${
+                    adminSubTab === "catalogue"
+                      ? "bg-[#141419] border-[#D4AF37] text-[#F3E5AB] shadow-md"
+                      : "bg-[#0E0E12] border-transparent text-[#A3A3B3] hover:text-white"
+                  }`}
+                >
+                  CATÉGORIES & BADGES ({creationCategoriesList.length + creationBadgesList.length})
                 </button>
               </div>
 
@@ -4097,6 +4294,171 @@ export default function AdminDashboard() {
                               </td>
                             </tr>
                           ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-TAB 4: CATÉGORIES & BADGES CRÉATIONS */}
+              {adminSubTab === "catalogue" && (
+                <div className="space-y-8">
+                  {/* 1. CATÉGORIES */}
+                  <div className="framed-card p-8 space-y-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gy-border pb-4 gap-4">
+                      <div>
+                        <h3 className="font-serif text-2xl font-bold text-white flex items-center gap-2">
+                          <span>✨ CATÉGORIES DE CRÉATIONS LOOKBOOK</span>
+                          <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40 font-mono font-bold">
+                            {creationCategoriesList.length}
+                          </span>
+                        </h3>
+                        <p className="text-xs text-gy-textMuted mt-0.5">
+                          Ces catégories s&apos;affichent dans les filtres du catalogue et dans le formulaire d&apos;ajout de modèles.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setNewCatInput("");
+                          setNewCatModal(true);
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95 transition-all cursor-pointer shrink-0"
+                      >
+                        + NOUVELLE CATÉGORIE
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="framed-table text-left text-sm text-gy-text font-aptos">
+                        <thead>
+                          <tr>
+                            <th className="w-16 text-center">#</th>
+                            <th className="min-w-[280px]">NOM DE LA CATÉGORIE</th>
+                            <th className="min-w-[160px] text-center">MODÈLES ASSOCIÉS</th>
+                            <th className="min-w-[120px] text-center">ACTIONS</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {creationCategoriesList.map((cat, idx) => {
+                            const count = creationsList.filter((cr) => cr.category === cat).length;
+                            return (
+                              <tr key={cat}>
+                                <td className="text-center font-mono text-xs text-gy-textMuted font-bold">{idx + 1}</td>
+                                <td className="font-black text-white text-sm tracking-wide">{cat}</td>
+                                <td className="text-center">
+                                  <span className="px-3 py-1 rounded-lg bg-[#1A1A24] border border-[#2A2A38] text-xs font-bold text-[#D4AF37]">
+                                    {count} modèle{count > 1 ? "s" : ""}
+                                  </span>
+                                </td>
+                                <td className="text-center">
+                                  <div className="flex items-center justify-center space-x-2">
+                                    <button
+                                      onClick={() => {
+                                        setEditingCatOldName(cat);
+                                        setEditCatInput(cat);
+                                        setEditCatModal(true);
+                                      }}
+                                      className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-xs font-black flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                                      title="Modifier la catégorie"
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteCategory(cat)}
+                                      className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/40 text-xs font-black flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                                      title="Supprimer la catégorie"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* 2. BADGES MARKETING */}
+                  <div className="framed-card p-8 space-y-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gy-border pb-4 gap-4">
+                      <div>
+                        <h3 className="font-serif text-2xl font-bold text-white flex items-center gap-2">
+                          <span>🏷️ BADGES MARKETING DU LOOKBOOK</span>
+                          <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40 font-mono font-bold">
+                            {creationBadgesList.length}
+                          </span>
+                        </h3>
+                        <p className="text-xs text-gy-textMuted mt-0.5">
+                          Badges mis en avant sur les fiches créations du catalogue client et admin.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setNewBadgeInput("");
+                          setNewBadgeModal(true);
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-95 transition-all cursor-pointer shrink-0"
+                      >
+                        + NOUVEAU BADGE MARKETING
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="framed-table text-left text-sm text-gy-text font-aptos">
+                        <thead>
+                          <tr>
+                            <th className="w-16 text-center">#</th>
+                            <th className="min-w-[220px]">LIBELLÉ DU BADGE</th>
+                            <th className="min-w-[200px] text-center">APERÇU VISUEL DU BADGE</th>
+                            <th className="min-w-[160px] text-center">MODÈLES ASSOCIÉS</th>
+                            <th className="min-w-[120px] text-center">ACTIONS</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {creationBadgesList.map((badge, idx) => {
+                            const count = creationsList.filter((cr) => cr.badge === badge).length;
+                            return (
+                              <tr key={badge}>
+                                <td className="text-center font-mono text-xs text-gy-textMuted font-bold">{idx + 1}</td>
+                                <td className="font-black text-white text-sm tracking-wide">{badge}</td>
+                                <td className="text-center">
+                                  <span className="px-3 py-1 rounded-full bg-gradient-to-r from-[#D4AF37]/30 via-[#D4AF37]/20 to-transparent border border-[#D4AF37] text-[#F3E5AB] font-black text-[10px] uppercase tracking-wider shadow-[0_0_10px_rgba(212,175,55,0.3)]">
+                                    ★ {badge}
+                                  </span>
+                                </td>
+                                <td className="text-center">
+                                  <span className="px-3 py-1 rounded-lg bg-[#1A1A24] border border-[#2A2A38] text-xs font-bold text-emerald-400">
+                                    {count} modèle{count > 1 ? "s" : ""}
+                                  </span>
+                                </td>
+                                <td className="text-center">
+                                  <div className="flex items-center justify-center space-x-2">
+                                    <button
+                                      onClick={() => {
+                                        setEditingBadgeOldName(badge);
+                                        setEditBadgeInput(badge);
+                                        setEditBadgeModal(true);
+                                      }}
+                                      className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-xs font-black flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                                      title="Modifier le badge"
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteBadge(badge)}
+                                      className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/40 text-xs font-black flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                                      title="Supprimer le badge"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -5965,12 +6327,9 @@ export default function AdminDashboard() {
                     onChange={(e) => setCreationCategory(e.target.value)}
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-[#D4AF37] focus:outline-none"
                   >
-                    <option value="ROBES DE SOIRÉE & GALA">ROBES DE SOIRÉE & GALA</option>
-                    <option value="BOUBOUS VIP & CAFTANS">BOUBOUS VIP & CAFTANS</option>
-                    <option value="ENSEMBLES TAILLEURS & COMBINAISONS">ENSEMBLES TAILLEURS & COMBINAISONS</option>
-                    <option value="CRÉATIONS MARIAGE & CÉRÉMONIE">CRÉATIONS MARIAGE & CÉRÉMONIE</option>
-                    <option value="HAUTE COUTURE TRADITIONNELLE">HAUTE COUTURE TRADITIONNELLE</option>
-                    <option value="CHEMISES & COSTUMES HOMMES VIP">CHEMISES & COSTUMES HOMMES VIP</option>
+                    {creationCategoriesList.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -6002,13 +6361,9 @@ export default function AdminDashboard() {
                     onChange={(e) => setCreationBadge(e.target.value)}
                     className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-[#D4AF37] focus:outline-none"
                   >
-                    <option value="COLLECTION 2026">COLLECTION 2026</option>
-                    <option value="NOUVEAUTÉ">NOUVEAUTÉ</option>
-                    <option value="BEST-SELLER VIP">BEST-SELLER VIP</option>
-                    <option value="SIGNATURE GY">SIGNATURE GY</option>
-                    <option value="ÉLÉGANCE BUSINESS">ÉLÉGANCE BUSINESS</option>
-                    <option value="HAUTE COUTURE">HAUTE COUTURE</option>
-                    <option value="SUR COMMANDE">SUR COMMANDE</option>
+                    {creationBadgesList.map((b) => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -6112,6 +6467,208 @@ export default function AdminDashboard() {
               <p className="text-white text-sm leading-relaxed">{selectedCreationPreview.description}</p>
               <p className="text-[#D4AF37] font-semibold">Matières : <span className="text-white">{selectedCreationPreview.fabric}</span></p>
               <p>Délai estimé : <span className="text-amber-300 font-bold">{selectedCreationPreview.deliveryDelay || "7 à 10 jours"}</span></p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: AJOUTER NOUVELLE CATÉGORIE CRÉATION                 */}
+      {/* ========================================================= */}
+      {newCatModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="glass-panel max-w-md w-full p-8 rounded-3xl border border-[#D4AF37]/50 shadow-2xl font-aptos space-y-6">
+            <div className="flex justify-between items-center border-b border-gy-border pb-4">
+              <h3 className="font-serif text-2xl font-bold text-white">AJOUTER UNE CATÉGORIE</h3>
+              <button
+                onClick={() => setNewCatModal(false)}
+                className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold"
+              >
+                [ FERMER ]
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs uppercase tracking-wider">
+                  Intitulé de la Catégorie *
+                </label>
+                <input
+                  type="text"
+                  value={newCatInput}
+                  onChange={(e) => setNewCatInput(e.target.value)}
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3.5 text-white font-bold uppercase focus:border-[#D4AF37] focus:outline-none"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-2">
+                <button
+                  onClick={() => setNewCatModal(false)}
+                  className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase"
+                >
+                  ANNULER
+                </button>
+                <button
+                  onClick={handleAddCategory}
+                  className="w-1/2 py-3.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase shadow-gold hover:opacity-95"
+                >
+                  ENREGISTRER
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: MODIFIER UNE CATÉGORIE CRÉATION                    */}
+      {/* ========================================================= */}
+      {editCatModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="glass-panel max-w-md w-full p-8 rounded-3xl border border-[#D4AF37]/50 shadow-2xl font-aptos space-y-6">
+            <div className="flex justify-between items-center border-b border-gy-border pb-4">
+              <h3 className="font-serif text-2xl font-bold text-white">MODIFIER LA CATÉGORIE</h3>
+              <button
+                onClick={() => setEditCatModal(false)}
+                className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold"
+              >
+                [ FERMER ]
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs uppercase tracking-wider">
+                  Nouveau nom de la catégorie *
+                </label>
+                <input
+                  type="text"
+                  value={editCatInput}
+                  onChange={(e) => setEditCatInput(e.target.value)}
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3.5 text-white font-bold uppercase focus:border-[#D4AF37] focus:outline-none"
+                  autoFocus
+                />
+                <p className="text-[11px] text-gy-textMuted mt-1 italic">
+                  Note : Tous les modèles déjà associés à cette catégorie seront automatiquement mis à jour.
+                </p>
+              </div>
+
+              <div className="flex space-x-3 pt-2">
+                <button
+                  onClick={() => setEditCatModal(false)}
+                  className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase"
+                >
+                  ANNULER
+                </button>
+                <button
+                  onClick={handleEditCategory}
+                  className="w-1/2 py-3.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase shadow-gold hover:opacity-95"
+                >
+                  METTRE À JOUR
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: AJOUTER NOUVEAU BADGE MARKETING                    */}
+      {/* ========================================================= */}
+      {newBadgeModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="glass-panel max-w-md w-full p-8 rounded-3xl border border-amber-500/50 shadow-2xl font-aptos space-y-6">
+            <div className="flex justify-between items-center border-b border-gy-border pb-4">
+              <h3 className="font-serif text-2xl font-bold text-white">AJOUTER UN BADGE MARKETING</h3>
+              <button
+                onClick={() => setNewBadgeModal(false)}
+                className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold"
+              >
+                [ FERMER ]
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs uppercase tracking-wider">
+                  Libellé du Badge *
+                </label>
+                <input
+                  type="text"
+                  value={newBadgeInput}
+                  onChange={(e) => setNewBadgeInput(e.target.value)}
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3.5 text-white font-bold uppercase focus:border-amber-400 focus:outline-none"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-2">
+                <button
+                  onClick={() => setNewBadgeModal(false)}
+                  className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase"
+                >
+                  ANNULER
+                </button>
+                <button
+                  onClick={handleAddBadge}
+                  className="w-1/2 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-black text-xs uppercase shadow-gold hover:opacity-95"
+                >
+                  ENREGISTRER
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: MODIFIER UN BADGE MARKETING                        */}
+      {/* ========================================================= */}
+      {editBadgeModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="glass-panel max-w-md w-full p-8 rounded-3xl border border-amber-500/50 shadow-2xl font-aptos space-y-6">
+            <div className="flex justify-between items-center border-b border-gy-border pb-4">
+              <h3 className="font-serif text-2xl font-bold text-white">MODIFIER LE BADGE</h3>
+              <button
+                onClick={() => setEditBadgeModal(false)}
+                className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold"
+              >
+                [ FERMER ]
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs uppercase tracking-wider">
+                  Nouveau libellé du badge *
+                </label>
+                <input
+                  type="text"
+                  value={editBadgeInput}
+                  onChange={(e) => setEditBadgeInput(e.target.value)}
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3.5 text-white font-bold uppercase focus:border-amber-400 focus:outline-none"
+                  autoFocus
+                />
+                <p className="text-[11px] text-gy-textMuted mt-1 italic">
+                  Note : Tous les modèles déjà associés à ce badge seront automatiquement mis à jour.
+                </p>
+              </div>
+
+              <div className="flex space-x-3 pt-2">
+                <button
+                  onClick={() => setEditBadgeModal(false)}
+                  className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase"
+                >
+                  ANNULER
+                </button>
+                <button
+                  onClick={handleEditBadge}
+                  className="w-1/2 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-black text-xs uppercase shadow-gold hover:opacity-95"
+                >
+                  METTRE À JOUR
+                </button>
+              </div>
             </div>
           </div>
         </div>

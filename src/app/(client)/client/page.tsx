@@ -101,15 +101,16 @@ export default function ClientPortal() {
     },
   ]);
 
-  const CATEGORIES = [
-    "TOUS",
+  const [categoriesList, setCategoriesList] = useState<string[]>([
     "ROBES DE SOIRÉE & GALA",
     "BOUBOUS VIP & CAFTANS",
     "ENSEMBLES TAILLEURS & COMBINAISONS",
     "CRÉATIONS MARIAGE & CÉRÉMONIE",
     "HAUTE COUTURE TRADITIONNELLE",
     "CHEMISES & COSTUMES HOMMES VIP",
-  ];
+  ]);
+
+  const CATEGORIES = ["TOUS", ...categoriesList];
 
   const filteredCreations = selectedCategory === "TOUS"
     ? creationsCatalog
@@ -117,10 +118,19 @@ export default function ClientPortal() {
 
   const fetchCreations = async () => {
     try {
-      const res = await fetch("/api/admin/creations", { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
+      const [resCreations, resConfig] = await Promise.all([
+        fetch("/api/admin/creations", { cache: "no-store" }),
+        fetch("/api/admin/creations-config", { cache: "no-store" }),
+      ]);
+      if (resCreations.ok) {
+        const data = await resCreations.json();
         if (Array.isArray(data) && data.length > 0) setCreationsCatalog(data);
+      }
+      if (resConfig.ok) {
+        const config = await resConfig.json();
+        if (Array.isArray(config.categories) && config.categories.length > 0) {
+          setCategoriesList(config.categories);
+        }
       }
     } catch (e) {}
   };

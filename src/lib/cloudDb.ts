@@ -15,7 +15,28 @@ export interface CloudStoreData {
   employees?: any[];
   users?: any[];
   creations?: any[];
+  creationCategories?: string[];
+  creationBadges?: string[];
 }
+
+export const DEFAULT_CREATION_CATEGORIES = [
+  "ROBES DE SOIRÉE & GALA",
+  "BOUBOUS VIP & CAFTANS",
+  "ENSEMBLES TAILLEURS & COMBINAISONS",
+  "CRÉATIONS MARIAGE & CÉRÉMONIE",
+  "HAUTE COUTURE TRADITIONNELLE",
+  "CHEMISES & COSTUMES HOMMES VIP",
+];
+
+export const DEFAULT_CREATION_BADGES = [
+  "COLLECTION 2026",
+  "NOUVEAUTÉ",
+  "BEST-SELLER VIP",
+  "SIGNATURE GY",
+  "ÉLÉGANCE BUSINESS",
+  "HAUTE COUTURE",
+  "SUR COMMANDE",
+];
 
 const DATA_FILE = path.join(process.cwd(), "src", "data", "cloud_store.json");
 
@@ -27,6 +48,8 @@ let memoryCache: CloudStoreData = {
   employees: [],
   users: [],
   creations: [],
+  creationCategories: DEFAULT_CREATION_CATEGORIES,
+  creationBadges: DEFAULT_CREATION_BADGES,
 };
 
 function readFromFile(): CloudStoreData {
@@ -43,6 +66,8 @@ function readFromFile(): CloudStoreData {
           employees: parsed.employees || [],
           users: parsed.users || [],
           creations: parsed.creations || [],
+          creationCategories: parsed.creationCategories && parsed.creationCategories.length > 0 ? parsed.creationCategories : DEFAULT_CREATION_CATEGORIES,
+          creationBadges: parsed.creationBadges && parsed.creationBadges.length > 0 ? parsed.creationBadges : DEFAULT_CREATION_BADGES,
         };
       }
     }
@@ -75,6 +100,8 @@ export async function getCloudData(): Promise<CloudStoreData> {
         employees: data.data.employees || [],
         users: data.data.users || [],
         creations: data.data.creations || [],
+        creationCategories: data.data.creationCategories && data.data.creationCategories.length > 0 ? data.data.creationCategories : DEFAULT_CREATION_CATEGORIES,
+        creationBadges: data.data.creationBadges && data.data.creationBadges.length > 0 ? data.data.creationBadges : DEFAULT_CREATION_BADGES,
       };
       writeToFile(memoryCache);
       return memoryCache;
