@@ -349,8 +349,9 @@ export default function AdminDashboard() {
 
   const [employeesList, setEmployeesList] = useState<any[]>(DEFAULT_EMPLOYEES);
   const [adminUsersList, setAdminUsersList] = useState<any[]>(DEFAULT_ADMIN_USERS);
+  const [clientAccountsList, setClientAccountsList] = useState<any[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<any[]>(DEFAULT_EXPENSE_CATEGORIES);
-  const [adminSubTab, setAdminSubTab] = useState<"comptes" | "lignes">("comptes");
+  const [adminSubTab, setAdminSubTab] = useState<"comptes" | "clients" | "lignes">("comptes");
   const [newExpenseCategoryModal, setNewExpenseCategoryModal] = useState(false);
   const [newExpCatLabel, setNewExpCatLabel] = useState("");
   const [newExpCatCode, setNewExpCatCode] = useState("");
@@ -714,6 +715,14 @@ export default function AdminDashboard() {
         setPayOrderId(mergedOrders[0].id);
       }
       setStockItems(dashData.lowStockItems || []);
+
+      try {
+        const clientAccsRes = await fetch("/api/admin/client-accounts", { cache: "no-store" });
+        if (clientAccsRes.ok) {
+          const accs = await clientAccsRes.json();
+          setClientAccountsList(accs);
+        }
+      } catch (e) {}
     } catch (e) {
       console.error("fetchData error:", e);
     } finally {
@@ -3335,6 +3344,17 @@ export default function AdminDashboard() {
                 </button>
 
                 <button
+                  onClick={() => setAdminSubTab("clients")}
+                  className={`py-3.5 px-6 font-black text-xs uppercase tracking-wider rounded-t-2xl transition-all border-t-2 border-x-2 ${
+                    adminSubTab === "clients"
+                      ? "bg-[#141419] border-[#D4AF37] text-[#F3E5AB] shadow-md"
+                      : "bg-[#0E0E12] border-transparent text-[#A3A3B3] hover:text-white"
+                  }`}
+                >
+                  COMPTES CLIENTS ({clientAccountsList.length})
+                </button>
+
+                <button
                   onClick={() => setAdminSubTab("lignes")}
                   className={`py-3.5 px-6 font-black text-xs uppercase tracking-wider rounded-t-2xl transition-all border-t-2 border-x-2 ${
                     adminSubTab === "lignes"
@@ -3407,6 +3427,118 @@ export default function AdminDashboard() {
                         </tbody>
                       </table>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-TAB 2: COMPTES CLIENTS */}
+              {adminSubTab === "clients" && (
+                <div className="space-y-6">
+                  <div className="framed-card p-8 space-y-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gy-border pb-4 gap-4">
+                      <div>
+                        <h3 className="font-serif text-2xl font-bold text-white">
+                          COMPTES D&apos;ACCÈS CLIENTS PORTAIL VIP
+                        </h3>
+                        <p className="text-xs text-gy-textMuted mt-0.5">Identifiants et accès générés pour le suivi des commandes par les clientes</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const firstCustWithoutAcc = customers.find((c) => !clientAccountsList.some((a) => a.customerId === c.id));
+                          if (firstCustWithoutAcc) {
+                            setClientAccountModal(firstCustWithoutAcc);
+                            setClientAccountEmail(firstCustWithoutAcc.email || "");
+                            setClientAccountCredentials(null);
+                          } else if (customers.length > 0) {
+                            setClientAccountModal(customers[0]);
+                            setClientAccountEmail(customers[0].email || "");
+                            setClientAccountCredentials(null);
+                          } else {
+                            alert("Veuillez d'abord enregistrer un client dans le module Clients.");
+                          }
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase hover:opacity-90 transition-all cursor-pointer shrink-0 shadow-gold"
+                      >
+                        + NOUVEL ACCÈS CLIENT
+                      </button>
+                    </div>
+
+                    {clientAccountsList.length === 0 ? (
+                      <div className="p-12 text-center text-gy-textMuted space-y-3">
+                        <p className="text-sm">Aucun compte client créé pour le moment.</p>
+                        <p className="text-xs text-gy-textMuted">Vous pouvez générer un accès pour chaque client depuis le module Clients ou via le bouton ci-dessus.</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="framed-table text-left text-sm text-gy-text font-aptos">
+                          <thead>
+                            <tr>
+                              <th className="min-w-[180px]">CLIENT(E)</th>
+                              <th className="min-w-[200px]">EMAIL DE CONNEXION</th>
+                              <th className="min-w-[150px]">MOT DE PASSE INIT.</th>
+                              <th className="min-w-[130px]">DATE CRÉATION</th>
+                              <th className="min-w-[100px]">STATUT</th>
+                              <th className="min-w-[160px] text-center">ACTIONS</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {clientAccountsList.map((acc) => (
+                              <tr key={acc.id}>
+                                <td className="font-bold text-white text-base">
+                                  {acc.fullName}
+                                </td>
+                                <td className="text-gy-gold font-semibold">{acc.email}</td>
+                                <td>
+                                  <span className="px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs font-mono font-bold text-amber-300">
+                                    {acc.tempPassword || "••••••••"}
+                                  </span>
+                                </td>
+                                <td className="text-gy-textMuted text-xs">{formatDate(acc.createdAt)}</td>
+                                <td>
+                                  <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black uppercase">
+                                    ACTIF
+                                  </span>
+                                </td>
+                                <td className="text-center">
+                                  <div className="flex items-center justify-center space-x-2">
+                                    <button
+                                      onClick={() => {
+                                        const loginUrl = `${window.location.origin}/client`;
+                                        const msg = `Bonjour ${acc.fullName},\n\nVotre espace client GY Maison Couture est disponible pour suivre vos créations et commandes en temps réel.\n\nLien d'accès : ${loginUrl}\nIdentifiant : ${acc.email}\nMot de passe : ${acc.tempPassword || "(votre mot de passe habituel)"}\n\nMaison GY Couture`;
+                                        navigator.clipboard.writeText(msg);
+                                        alert("Message d'accès copié dans le presse-papiers !");
+                                      }}
+                                      className="px-3 py-1.5 bg-[#181820] border border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                      title="Copier le message d'accès"
+                                    >
+                                      MESSAGE
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        if (!confirm(`Confirmer la suppression de l'accès client pour ${acc.fullName} (${acc.email}) ?`)) return;
+                                        try {
+                                          const res = await fetch(`/api/admin/client-accounts?id=${acc.id}`, { method: "DELETE" });
+                                          if (res.ok) {
+                                            setClientAccountsList((prev) => prev.filter((a) => a.id !== acc.id));
+                                            alert("Compte client supprimé avec succès.");
+                                          }
+                                        } catch (e) {
+                                          alert("Erreur lors de la suppression.");
+                                        }
+                                      }}
+                                      className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/40 text-xs font-black flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                                      title="Supprimer l'accès client"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
