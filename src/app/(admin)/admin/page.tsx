@@ -3438,35 +3438,89 @@ export default function AdminDashboard() {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gy-border pb-4 gap-4">
                       <div>
                         <h3 className="font-serif text-2xl font-bold text-white">
-                          COMPTES D&apos;ACCÈS CLIENTS PORTAIL VIP
+                          COMPTES D&apos;ACCÈS CLIENTS PORTAIL VIP ({clientAccountsList.length})
                         </h3>
-                        <p className="text-xs text-gy-textMuted mt-0.5">Identifiants et accès générés pour le suivi des commandes par les clientes</p>
+                        <p className="text-xs text-gy-textMuted mt-0.5">Identifiants (gy+prénom) et mots de passe pour le suivi des commandes par les clientes</p>
                       </div>
-                      <button
-                        onClick={() => {
-                          const firstCustWithoutAcc = customers.find((c) => !clientAccountsList.some((a) => a.customerId === c.id));
-                          if (firstCustWithoutAcc) {
-                            setClientAccountModal(firstCustWithoutAcc);
-                            setClientAccountEmail(firstCustWithoutAcc.email || "");
-                            setClientAccountCredentials(null);
-                          } else if (customers.length > 0) {
-                            setClientAccountModal(customers[0]);
-                            setClientAccountEmail(customers[0].email || "");
-                            setClientAccountCredentials(null);
-                          } else {
-                            alert("Veuillez d'abord enregistrer un client dans le module Clients.");
-                          }
-                        }}
-                        className="px-5 py-2.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase hover:opacity-90 transition-all cursor-pointer shrink-0 shadow-gold"
-                      >
-                        + NOUVEL ACCÈS CLIENT
-                      </button>
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Voulez-vous générer automatiquement des comptes d'accès pour TOUS les clients enregistrés qui n'en ont pas encore ?`)) return;
+                            try {
+                              const res = await fetch("/api/admin/client-accounts", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ action: "generate_all" }),
+                              });
+                              const data = await res.json();
+                              if (res.ok && data.success) {
+                                alert(`Succès : ${data.count} nouveau(x) compte(s) client(s) généré(s) avec succès !`);
+                                // Refresh client accounts
+                                const refreshRes = await fetch("/api/admin/client-accounts", { cache: "no-store" });
+                                if (refreshRes.ok) setClientAccountsList(await refreshRes.json());
+                              } else {
+                                alert("Erreur : " + (data.error || "Impossible de générer les comptes."));
+                              }
+                            } catch (e) {
+                              alert("Erreur réseau.");
+                            }
+                          }}
+                          className="px-5 py-2.5 rounded-xl bg-[#1A1A24] border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black font-black text-xs uppercase transition-all cursor-pointer shadow-sm"
+                        >
+                          ⚡ GÉNÉRER POUR TOUS LES CLIENTS
+                        </button>
+                        <button
+                          onClick={() => {
+                            const firstCustWithoutAcc = customers.find((c) => !clientAccountsList.some((a) => a.customerId === c.id));
+                            if (firstCustWithoutAcc) {
+                              setClientAccountModal(firstCustWithoutAcc);
+                              setClientAccountEmail(firstCustWithoutAcc.email || "");
+                              setClientAccountCredentials(null);
+                            } else if (customers.length > 0) {
+                              setClientAccountModal(customers[0]);
+                              setClientAccountEmail(customers[0].email || "");
+                              setClientAccountCredentials(null);
+                            } else {
+                              alert("Veuillez d'abord enregistrer un client dans le module Clients.");
+                            }
+                          }}
+                          className="px-5 py-2.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase hover:opacity-90 transition-all cursor-pointer shrink-0 shadow-gold"
+                        >
+                          + NOUVEL ACCÈS CLIENT
+                        </button>
+                      </div>
                     </div>
 
                     {clientAccountsList.length === 0 ? (
-                      <div className="p-12 text-center text-gy-textMuted space-y-3">
-                        <p className="text-sm">Aucun compte client créé pour le moment.</p>
-                        <p className="text-xs text-gy-textMuted">Vous pouvez générer un accès pour chaque client depuis le module Clients ou via le bouton ci-dessus.</p>
+                      <div className="p-12 text-center text-gy-textMuted space-y-4 border-2 border-dashed border-[#2A2A38] rounded-2xl">
+                        <div className="text-xl font-bold text-white font-serif">AUCUN COMPTE CLIENT CRÉÉ POUR LE MOMENT</div>
+                        <p className="text-xs text-gy-textMuted max-w-md mx-auto">
+                          Cliquez sur le bouton ci-dessous pour créer instantanément des identifiants (gy+prénom) et mots de passe simples pour tous vos clients enregistrés.
+                        </p>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetch("/api/admin/client-accounts", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ action: "generate_all" }),
+                              });
+                              const data = await res.json();
+                              if (res.ok && data.success) {
+                                alert(`Succès : ${data.count} compte(s) client(s) généré(s) !`);
+                                const refreshRes = await fetch("/api/admin/client-accounts", { cache: "no-store" });
+                                if (refreshRes.ok) setClientAccountsList(await refreshRes.json());
+                              } else {
+                                alert("Erreur : " + (data.error || "Impossible de générer les comptes."));
+                              }
+                            } catch (e) {
+                              alert("Erreur réseau.");
+                            }
+                          }}
+                          className="px-6 py-3 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase shadow-gold hover:opacity-90 transition-all cursor-pointer"
+                        >
+                          GÉNÉRER LES COMPTES POUR TOUS LES CLIENTS ({customers.length})
+                        </button>
                       </div>
                     ) : (
                       <div className="overflow-x-auto">
@@ -3474,8 +3528,9 @@ export default function AdminDashboard() {
                           <thead>
                             <tr>
                               <th className="min-w-[180px]">CLIENT(E)</th>
-                              <th className="min-w-[200px]">EMAIL DE CONNEXION</th>
-                              <th className="min-w-[150px]">MOT DE PASSE INIT.</th>
+                              <th className="min-w-[170px]">IDENTIFIANT DE CONNEXION</th>
+                              <th className="min-w-[200px]">EMAIL DU COMPTE</th>
+                              <th className="min-w-[150px]">MOT DE PASSE INITIAL</th>
                               <th className="min-w-[130px]">DATE CRÉATION</th>
                               <th className="min-w-[100px]">STATUT</th>
                               <th className="min-w-[160px] text-center">ACTIONS</th>
@@ -3487,7 +3542,12 @@ export default function AdminDashboard() {
                                 <td className="font-bold text-white text-base">
                                   {acc.fullName}
                                 </td>
-                                <td className="text-gy-gold font-semibold">{acc.email}</td>
+                                <td>
+                                  <span className="px-3 py-1 bg-[#D4AF37]/15 border border-[#D4AF37]/40 rounded-xl text-xs font-black text-[#D4AF37] font-mono">
+                                    {acc.username || acc.email?.split("@")[0]}
+                                  </span>
+                                </td>
+                                <td className="text-gy-textMuted text-xs font-semibold">{acc.email}</td>
                                 <td>
                                   <span className="px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs font-mono font-bold text-amber-300">
                                     {acc.tempPassword || "••••••••"}
@@ -3504,12 +3564,13 @@ export default function AdminDashboard() {
                                     <button
                                       onClick={() => {
                                         const loginUrl = `${window.location.origin}/client`;
-                                        const msg = `Bonjour ${acc.fullName},\n\nVotre espace client GY Maison Couture est disponible pour suivre vos créations et commandes en temps réel.\n\nLien d'accès : ${loginUrl}\nIdentifiant : ${acc.email}\nMot de passe : ${acc.tempPassword || "(votre mot de passe habituel)"}\n\nMaison GY Couture`;
+                                        const loginId = acc.username || acc.email;
+                                        const msg = `Bonjour ${acc.fullName},\n\nVotre espace client GY Maison Couture est prêt pour suivre vos créations et commandes en temps réel.\n\nLien du portail : ${loginUrl}\nIdentifiant : ${loginId}\nMot de passe : ${acc.tempPassword || "(votre mot de passe habituel)"}\n\nVous pourrez personnaliser votre mot de passe une fois connectée.\n\nGY Maison Couture`;
                                         navigator.clipboard.writeText(msg);
-                                        alert("Message d'accès copié dans le presse-papiers !");
+                                        alert(`Message d'accès copié dans le presse-papiers !\n\nIdentifiant : ${loginId}\nMot de passe : ${acc.tempPassword || "••••••••"}`);
                                       }}
                                       className="px-3 py-1.5 bg-[#181820] border border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black rounded-xl text-xs font-bold transition-all cursor-pointer"
-                                      title="Copier le message d'accès"
+                                      title="Copier le message d'accès complet pour WhatsApp"
                                     >
                                       MESSAGE
                                     </button>

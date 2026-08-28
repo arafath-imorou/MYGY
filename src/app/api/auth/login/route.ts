@@ -11,13 +11,20 @@ export async function POST(req: Request) {
     const { email, password, portal } = await req.json();
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Email et mot de passe requis" }, { status: 400 });
+      return NextResponse.json({ error: "Identifiant et mot de passe requis" }, { status: 400 });
     }
+
+    const normInput = String(email).trim().toLowerCase();
 
     let user: any = null;
     try {
-      user = await prisma.user.findUnique({
-        where: { email },
+      user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: normInput },
+            { email: email },
+          ],
+        },
         include: {
           customer: true,
           employee: true,
@@ -28,20 +35,25 @@ export async function POST(req: Request) {
     if (!user) {
       const cloudData = await getCloudData();
       const cloudUsers = (cloudData as any).users || [];
-      user = cloudUsers.find((u: any) => u.email === email);
+      user = cloudUsers.find(
+        (u: any) =>
+          u.email?.toLowerCase() === normInput ||
+          u.username?.toLowerCase() === normInput ||
+          u.login?.toLowerCase() === normInput
+      );
     }
 
-    if (!user && (email === "gymaisoncouture@gmail.com" || email === "admin@mygy.com")) {
+    if (!user && (normInput === "gymaisoncouture@gmail.com" || normInput === "admin@mygy.com" || normInput === "admin")) {
       user = {
         id: "usr_admin_gy_2026",
-        email,
+        email: "gymaisoncouture@gmail.com",
         fullName: "Ghislaine LOKO DJIDJOHO",
         role: "SUPER_ADMIN",
         passwordHash: "hashed_gymc2026_gy2026",
       };
     }
 
-    if (!user && email === "teeadjao@gmail.com") {
+    if (!user && (normInput === "teeadjao@gmail.com" || normInput === "fatia")) {
       user = {
         id: "usr_assistante_fatia",
         email: "teeadjao@gmail.com",
@@ -71,10 +83,11 @@ export async function POST(req: Request) {
       user: {
         id: user.id,
         email: user.email,
+        username: user.username,
         fullName: user.fullName,
         role: user.role,
-        customerId: user.customer?.id,
-        employeeId: user.employee?.id,
+        customerId: user.customerId || user.customer?.id,
+        employeeId: user.employeeId || user.employee?.id,
       },
     });
   } catch (error: any) {

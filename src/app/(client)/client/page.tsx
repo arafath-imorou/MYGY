@@ -109,12 +109,13 @@ export default function ClientPortal() {
             <h2 className="text-white font-serif text-2xl font-bold mb-6 text-center">CONNEXION</h2>
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-[#A3A3B3] text-xs font-semibold mb-1">Adresse email</label>
+                <label className="block text-[#A3A3B3] text-xs font-semibold mb-1">Identifiant ou Email</label>
                 <input
-                  type="email"
+                  type="text"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  className="w-full bg-[#1A1A24] border border-[#2A2A38] rounded-xl px-4 py-3 text-white focus:border-[#D4AF37] focus:outline-none"
+                  placeholder="ex: gytatadeen ou email"
+                  className="w-full bg-[#1A1A24] border border-[#2A2A38] rounded-xl px-4 py-3 text-white focus:border-[#D4AF37] focus:outline-none placeholder-[#555]"
                   required
                 />
               </div>
