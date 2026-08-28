@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
@@ -13,16 +13,16 @@ export async function POST(req: Request) {
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const orderId = formData.get("orderId") as string | null;
+    const orderId = (formData.get("orderId") as string) || (formData.get("creationId") as string) || "creations";
     const imageType = formData.get("imageType") as string | null;
 
-    if (!file || !orderId) {
-      return NextResponse.json({ error: "Fichier et orderId requis." }, { status: 400 });
+    if (!file) {
+      return NextResponse.json({ error: "Fichier requis." }, { status: 400 });
     }
 
     // Le client convertit toujours en WebP avant envoi via Canvas API
-    const baseName = file.name.replace(/\.[^.]+$/, "");
-    const fileName = `orders/${orderId}/${imageType || "fabric"}_${Date.now()}_${baseName}.webp`;
+    const baseName = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const fileName = `uploads/${orderId}/${imageType || "photo"}_${Date.now()}_${baseName}.webp`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);

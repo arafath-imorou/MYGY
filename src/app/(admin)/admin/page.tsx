@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 
 export default function AdminDashboard() {
   const [activeMenu, setActiveMenu] = useState<
-    "dashboard" | "clients" | "espace-client" | "commandes" | "atelier" | "finances" | "rh" | "administrations"
+    "dashboard" | "clients" | "espace-client" | "creations" | "commandes" | "atelier" | "finances" | "rh" | "stock" | "administrations"
   >("dashboard");
 
   const [financeSubTab, setFinanceSubTab] = useState<"recettes" | "depenses">("recettes");
@@ -403,6 +403,146 @@ export default function AdminDashboard() {
   const [editExpenseCategoryModal, setEditExpenseCategoryModal] = useState(false);
   const [editingExpCatId, setEditingExpCatId] = useState("");
 
+  // CREATIONS / LOOKBOOK CATALOGUE STATE
+  const [creationsList, setCreationsList] = useState<any[]>([]);
+  const [creationCategoryFilter, setCreationCategoryFilter] = useState<string>("TOUS");
+  const [creationViewMode, setCreationViewMode] = useState<"table" | "grid">("table");
+  const [newCreationModal, setNewCreationModal] = useState<boolean>(false);
+  const [editingCreation, setEditingCreation] = useState<any>(null);
+  const [creationRef, setCreationRef] = useState("");
+  const [creationTitle, setCreationTitle] = useState("");
+  const [creationCategory, setCreationCategory] = useState("ROBES DE SOIRÉE & GALA");
+  const [creationDescription, setCreationDescription] = useState("");
+  const [creationFabric, setCreationFabric] = useState("");
+  const [creationBadge, setCreationBadge] = useState("COLLECTION 2026");
+  const [creationPrice, setCreationPrice] = useState("Sur mesure");
+  const [creationDelay, setCreationDelay] = useState("7 à 10 jours");
+  const [creationImageUrl, setCreationImageUrl] = useState("");
+  const [creationUploading, setCreationUploading] = useState(false);
+  const [selectedCreationPreview, setSelectedCreationPreview] = useState<any>(null);
+
+  const handleOpenNewCreation = () => {
+    setEditingCreation(null);
+    setCreationRef(`MOD-GY-2026-${String(creationsList.length + 1).padStart(2, "0")}`);
+    setCreationTitle("");
+    setCreationCategory("ROBES DE SOIRÉE & GALA");
+    setCreationDescription("");
+    setCreationFabric("");
+    setCreationBadge("COLLECTION 2026");
+    setCreationPrice("Sur mesure");
+    setCreationDelay("7 à 10 jours");
+    setCreationImageUrl("https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=800&q=80");
+    setNewCreationModal(true);
+  };
+
+  const handleOpenEditCreation = (item: any) => {
+    setEditingCreation(item);
+    setCreationRef(item.reference || "");
+    setCreationTitle(item.title || "");
+    setCreationCategory(item.category || "ROBES DE SOIRÉE & GALA");
+    setCreationDescription(item.description || "");
+    setCreationFabric(item.fabric || "");
+    setCreationBadge(item.badge || "COLLECTION 2026");
+    setCreationPrice(item.priceEstimate || "Sur mesure");
+    setCreationDelay(item.deliveryDelay || "7 à 10 jours");
+    setCreationImageUrl(item.image || "");
+    setNewCreationModal(true);
+  };
+
+  const handleSaveCreation = async () => {
+    if (!creationTitle.trim()) {
+      alert("Veuillez saisir le titre ou nom du modèle.");
+      return;
+    }
+    try {
+      const payload = {
+        id: editingCreation ? editingCreation.id : undefined,
+        reference: creationRef,
+        title: creationTitle.trim(),
+        category: creationCategory,
+        description: creationDescription.trim(),
+        fabric: creationFabric.trim(),
+        badge: creationBadge.trim(),
+        priceEstimate: creationPrice.trim(),
+        deliveryDelay: creationDelay.trim(),
+        image: creationImageUrl.trim() || "https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=800&q=80",
+      };
+      const res = await fetch("/api/admin/creations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setCreationsList(data.creations);
+        setNewCreationModal(false);
+        alert(editingCreation ? "Modèle mis à jour avec succès !" : "Nouvelle création ajoutée au catalogue !");
+      } else {
+        alert("Erreur lors de l'enregistrement : " + (data.error || ""));
+      }
+    } catch (e) {
+      alert("Erreur de connexion.");
+    }
+  };
+
+  const handleDeleteCreation = async (item: any) => {
+    if (!confirm(`Supprimer définitivement le modèle "${item.title}" du catalogue ?`)) return;
+    try {
+      const res = await fetch(`/api/admin/creations?id=${item.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setCreationsList(data.creations);
+        alert("Modèle supprimé du catalogue.");
+      }
+    } catch (e) {
+      alert("Erreur lors de la suppression.");
+    }
+  };
+
+  const handleCreationImageUpload = async (e: any) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCreationUploading(true);
+    try {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise((res) => { img.onload = res; });
+      const canvas = document.createElement("canvas");
+      const maxDim = 1200;
+      let width = img.width;
+      let height = img.height;
+      if (width > height && width > maxDim) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+      } else if (height > maxDim) {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx?.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(async (blob) => {
+        if (!blob) { setCreationUploading(false); return; }
+        const formData = new FormData();
+        formData.append("file", blob, `${file.name.split(".")[0]}.webp`);
+        formData.append("creationId", "catalog");
+        formData.append("imageType", "creation");
+        const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+        const data = await res.json();
+        if (res.ok && data.url) {
+          setCreationImageUrl(data.url);
+        } else {
+          alert("Erreur lors du téléversement de la photo.");
+        }
+        setCreationUploading(false);
+      }, "image/webp", 0.85);
+    } catch (e) {
+      setCreationUploading(false);
+      alert("Erreur lors du traitement de l'image.");
+    }
+  };
+
   const handleCreateExpenseCategory = () => {
     if (!newExpCatLabel) {
       alert("Veuillez entrer le libellé de la ligne de dépense.");
@@ -552,7 +692,7 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const noCacheOpts: RequestInit = { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate" } };
-      const [dashRes, ordersRes, custRes, finRes, empRes, usersRes, stockRes, clientAccRes] = await Promise.all([
+      const [dashRes, ordersRes, custRes, finRes, empRes, usersRes, stockRes, clientAccRes, creationsRes] = await Promise.all([
         fetch("/api/admin/dashboard", noCacheOpts),
         fetch("/api/admin/orders", noCacheOpts),
         fetch("/api/admin/customers", noCacheOpts),
@@ -561,6 +701,7 @@ export default function AdminDashboard() {
         fetch("/api/admin/users", noCacheOpts).catch(() => null),
         fetch("/api/admin/stock", noCacheOpts).catch(() => null),
         fetch("/api/admin/client-accounts", noCacheOpts).catch(() => null),
+        fetch("/api/admin/creations", noCacheOpts).catch(() => null),
       ]);
 
       const dashData = dashRes.ok ? await dashRes.json() : {};
@@ -571,8 +712,10 @@ export default function AdminDashboard() {
       const usersData = usersRes && usersRes.ok ? await usersRes.json() : [];
       const stockData = stockRes && stockRes.ok ? await stockRes.json() : [];
       const clientAccData = clientAccRes && clientAccRes.ok ? await clientAccRes.json() : [];
+      const creationsData = creationsRes && creationsRes.ok ? await creationsRes.json() : [];
       if (Array.isArray(stockData)) setStockList(stockData);
       if (Array.isArray(clientAccData)) setClientAccountsList(clientAccData);
+      if (Array.isArray(creationsData)) setCreationsList(creationsData);
 
       const serverEmps = Array.isArray(empData) ? empData : [];
       const localEmps = getStoredLocal("gy_employees");
@@ -1800,6 +1943,17 @@ export default function AdminDashboard() {
                 </button>
 
                 <button
+                  onClick={() => { setActiveMenu("creations"); setMobileMenuOpen(false); }}
+                  className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
+                    activeMenu === "creations"
+                      ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
+                      : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
+                  }`}
+                >
+                  <span>NOS CRÉATIONS</span>
+                </button>
+
+                <button
                   onClick={() => { setActiveMenu("commandes"); setMobileMenuOpen(false); }}
                   className={`w-full flex items-center justify-start px-5 py-4 rounded-2xl text-sm transition-all tracking-wider font-extrabold ${
                     activeMenu === "commandes"
@@ -1957,6 +2111,17 @@ export default function AdminDashboard() {
               }`}
             >
               <span>ESPACE CLIENT</span>
+            </button>
+
+            <button
+              onClick={() => setActiveMenu("creations")}
+              className={`w-full flex items-center justify-start px-4 py-3 rounded-xl text-xs sm:text-sm transition-all tracking-wider font-extrabold ${
+                activeMenu === "creations"
+                  ? "bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black shadow-[0_4px_20px_rgba(212,175,55,0.4)]"
+                  : "bg-[#181820] text-white border border-[#2A2A38] hover:border-[#D4AF37]/60 hover:bg-[#20202C]"
+              }`}
+            >
+              <span>NOS CRÉATIONS</span>
             </button>
 
             <button
@@ -2577,6 +2742,239 @@ export default function AdminDashboard() {
                       </tbody>
                     </table>
                   </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* NOS CRÉATIONS / CATALOGUE LOOKBOOK MODULE                */}
+          {/* ========================================================= */}
+          {activeMenu === "creations" && (
+            <div className="space-y-8">
+              {/* Top Banner */}
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-gradient-to-r from-[#181820] to-[#121217] p-8 rounded-3xl border border-[#D4AF37]/30 shadow-xl">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <span className="px-3 py-1 bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40 rounded-full text-xs font-black uppercase tracking-wider">
+                      COLLECTION HAUTE COUTURE
+                    </span>
+                    <span className="text-xs font-bold text-gy-textMuted font-mono">
+                      {creationsList.length} MODÈLE(S) EN CATALOGUE
+                    </span>
+                  </div>
+                  <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white mt-2">
+                    CATALOGUE DE CRÉATIONS & LOOKBOOK VIP
+                  </h2>
+                  <p className="text-xs sm:text-sm text-gy-textMuted mt-1 max-w-2xl leading-relaxed">
+                    Gérez les créations exclusives de la Maison GY visibles par les clientes sur leur portail VIP pour commander sur-mesure.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={handleOpenNewCreation}
+                    className="px-6 py-3 rounded-2xl bg-gold-gradient text-black font-black text-xs uppercase tracking-wider shadow-gold hover:opacity-90 transition-all cursor-pointer flex items-center gap-2"
+                  >
+                    + AJOUTER UN MODÈLE
+                  </button>
+                  <button
+                    onClick={fetchData}
+                    className="px-4 py-3 rounded-2xl bg-[#181820] border border-[#2A2A38] text-white hover:border-[#D4AF37] text-xs font-bold transition-all cursor-pointer"
+                  >
+                    ACTUALISER
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter Pills & View Mode */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "TOUS",
+                    "ROBES DE SOIRÉE & GALA",
+                    "BOUBOUS VIP & CAFTANS",
+                    "ENSEMBLES TAILLEURS & COMBINAISONS",
+                    "CRÉATIONS MARIAGE & CÉRÉMONIE",
+                    "HAUTE COUTURE TRADITIONNELLE",
+                    "CHEMISES & COSTUMES HOMMES VIP",
+                  ].map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setCreationCategoryFilter(cat)}
+                      className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
+                        creationCategoryFilter === cat
+                          ? "bg-[#D4AF37] text-black border-[#D4AF37] shadow-gold"
+                          : "bg-[#14141C] text-[#A3A3B3] border-[#2A2A38] hover:text-white hover:border-[#D4AF37]/50"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex bg-[#14141C] p-1 rounded-xl border border-[#2A2A38] shrink-0">
+                  <button
+                    onClick={() => setCreationViewMode("table")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      creationViewMode === "table" ? "bg-[#D4AF37] text-black" : "text-[#A3A3B3] hover:text-white"
+                    }`}
+                  >
+                    TABLEAU
+                  </button>
+                  <button
+                    onClick={() => setCreationViewMode("grid")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      creationViewMode === "grid" ? "bg-[#D4AF37] text-black" : "text-[#A3A3B3] hover:text-white"
+                    }`}
+                  >
+                    GALERIE
+                  </button>
+                </div>
+              </div>
+
+              {/* VIEW 1: TABLE */}
+              {creationViewMode === "table" && (
+                <div className="framed-card p-6 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="framed-table text-left text-sm text-gy-text font-aptos">
+                      <thead>
+                        <tr>
+                          <th className="min-w-[120px]">RÉFÉRENCE</th>
+                          <th className="min-w-[90px] text-center">PHOTO</th>
+                          <th className="min-w-[220px]">MODÈLE & COUPE</th>
+                          <th className="min-w-[180px]">CATÉGORIE</th>
+                          <th className="min-w-[200px]">MATIÈRES CONSEILLÉES</th>
+                          <th className="min-w-[130px]">DÉLAI ESTIMÉ</th>
+                          <th className="min-w-[130px]">BADGE</th>
+                          <th className="min-w-[130px] text-center">ACTIONS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {creationsList
+                          .filter((c) => creationCategoryFilter === "TOUS" || c.category === creationCategoryFilter)
+                          .map((cr) => (
+                            <tr key={cr.id} className="hover:bg-[#181822] transition-colors">
+                              <td className="font-bold text-[#D4AF37] font-mono text-xs">
+                                {cr.reference || cr.id}
+                              </td>
+                              <td className="text-center">
+                                <div
+                                  className="w-12 h-12 rounded-xl overflow-hidden border border-[#2A2A38] mx-auto cursor-pointer hover:border-[#D4AF37]"
+                                  onClick={() => setSelectedCreationPreview(cr)}
+                                >
+                                  <img src={cr.image} alt={cr.title} className="w-full h-full object-cover" />
+                                </div>
+                              </td>
+                              <td>
+                                <strong className="text-white text-base block font-bold">{cr.title}</strong>
+                                <p className="text-xs text-gy-textMuted line-clamp-1 mt-0.5">{cr.description}</p>
+                              </td>
+                              <td>
+                                <span className="px-2.5 py-1 bg-[#181820] border border-[#2A2A38] rounded-lg text-xs font-semibold text-white">
+                                  {cr.category}
+                                </span>
+                              </td>
+                              <td className="text-xs text-gy-textMuted font-medium">
+                                {cr.fabric || "—"}
+                              </td>
+                              <td>
+                                <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold">
+                                  {cr.deliveryDelay || "7 à 10 jours"}
+                                </span>
+                              </td>
+                              <td>
+                                <span className="px-2.5 py-1 bg-[#D4AF37]/15 border border-[#D4AF37]/40 rounded-xl text-[10px] font-black text-[#D4AF37] uppercase">
+                                  {cr.badge || "COLLECTION"}
+                                </span>
+                              </td>
+                              <td className="text-center">
+                                <div className="flex items-center justify-center space-x-2">
+                                  <button
+                                    onClick={() => handleOpenEditCreation(cr)}
+                                    className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-xs font-black flex items-center justify-center transition-all cursor-pointer"
+                                    title="Modifier le modèle"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteCreation(cr)}
+                                    className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/40 text-xs font-black flex items-center justify-center transition-all cursor-pointer"
+                                    title="Supprimer du catalogue"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* VIEW 2: GRID LOOKBOOK */}
+              {creationViewMode === "grid" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {creationsList
+                    .filter((c) => creationCategoryFilter === "TOUS" || c.category === creationCategoryFilter)
+                    .map((cr) => (
+                      <div
+                        key={cr.id}
+                        className="bg-[#12121A] border border-[#2A2A38] hover:border-[#D4AF37]/60 rounded-3xl overflow-hidden transition-all flex flex-col justify-between group shadow-xl"
+                      >
+                        <div
+                          className="relative overflow-hidden aspect-[4/5] cursor-pointer"
+                          onClick={() => setSelectedCreationPreview(cr)}
+                        >
+                          <img
+                            src={cr.image}
+                            alt={cr.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+                          <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#D4AF37] text-black text-[10px] font-black tracking-wider uppercase shadow-md">
+                            {cr.badge}
+                          </span>
+                          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/70 text-amber-300 text-[10px] font-mono font-bold border border-[#D4AF37]/30">
+                            {cr.reference || cr.id}
+                          </span>
+                          <div className="absolute bottom-3 left-3 right-3">
+                            <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider block">{cr.category}</span>
+                            <h3 className="font-serif text-lg font-bold text-white leading-tight mt-0.5">{cr.title}</h3>
+                          </div>
+                        </div>
+
+                        <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
+                          <div className="space-y-2">
+                            <p className="text-xs text-[#A3A3B3] line-clamp-2 leading-relaxed">
+                              {cr.description}
+                            </p>
+                            <div className="text-[11px] text-[#D4AF37] font-semibold">
+                              Matières : <span className="text-white">{cr.fabric}</span>
+                            </div>
+                            <div className="text-[11px] text-[#A3A3B3]">
+                              Délai confection : <span className="text-amber-300 font-bold">{cr.deliveryDelay || "7 à 10 jours"}</span>
+                            </div>
+                          </div>
+
+                          <div className="pt-3 border-t border-[#2A2A38] flex items-center justify-between gap-3">
+                            <button
+                              onClick={() => handleOpenEditCreation(cr)}
+                              className="px-3 py-2 bg-[#1A1A24] border border-[#2A2A38] hover:border-[#D4AF37] text-white rounded-xl text-xs font-bold transition-all"
+                            >
+                              ✏️ MODIFIER
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCreation(cr)}
+                              className="px-3 py-2 bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500 hover:text-white rounded-xl text-xs font-bold transition-all"
+                            >
+                              🗑️ SUPPRIMER
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                 </div>
               )}
             </div>
@@ -5503,6 +5901,203 @@ export default function AdminDashboard() {
                   VALIDER LE MOUVEMENT
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ========================================================= */}
+      {/* MODAL: NOUVELLE / MODIFIER UNE CRÉATION                    */}
+      {/* ========================================================= */}
+      {newCreationModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-panel max-w-xl w-full p-8 rounded-3xl border border-[#D4AF37]/50 shadow-2xl font-aptos my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
+              <div>
+                <h3 className="font-serif text-2xl font-bold text-white">
+                  {editingCreation ? "MODIFIER LA CRÉATION" : "AJOUTER UNE NOUVELLE CRÉATION"}
+                </h3>
+                <p className="text-xs text-[#D4AF37] font-mono mt-0.5">RÉF : {creationRef}</p>
+              </div>
+              <button
+                onClick={() => setNewCreationModal(false)}
+                className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold"
+              >
+                [ FERMER ]
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Titre du Modèle *</label>
+                  <input
+                    type="text"
+                    value={creationTitle}
+                    onChange={(e) => setCreationTitle(e.target.value)}
+                    placeholder="ex: Robe Sirène Soie Sauvage"
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none font-bold"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Catégorie *</label>
+                  <select
+                    value={creationCategory}
+                    onChange={(e) => setCreationCategory(e.target.value)}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-[#D4AF37] focus:outline-none"
+                  >
+                    <option value="ROBES DE SOIRÉE & GALA">ROBES DE SOIRÉE & GALA</option>
+                    <option value="BOUBOUS VIP & CAFTANS">BOUBOUS VIP & CAFTANS</option>
+                    <option value="ENSEMBLES TAILLEURS & COMBINAISONS">ENSEMBLES TAILLEURS & COMBINAISONS</option>
+                    <option value="CRÉATIONS MARIAGE & CÉRÉMONIE">CRÉATIONS MARIAGE & CÉRÉMONIE</option>
+                    <option value="HAUTE COUTURE TRADITIONNELLE">HAUTE COUTURE TRADITIONNELLE</option>
+                    <option value="CHEMISES & COSTUMES HOMMES VIP">CHEMISES & COSTUMES HOMMES VIP</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Description & Détails de la Coupe</label>
+                <textarea
+                  value={creationDescription}
+                  onChange={(e) => setCreationDescription(e.target.value)}
+                  rows={2}
+                  placeholder="ex: Coupe sculptante avec incrustations de perles, fente latérale et traîne royale..."
+                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Matières & Finitions Conseillées</label>
+                  <input
+                    type="text"
+                    value={creationFabric}
+                    onChange={(e) => setCreationFabric(e.target.value)}
+                    placeholder="ex: Soie Sauvage, Dentelle, Bazin Getzner..."
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Badge Marketing</label>
+                  <select
+                    value={creationBadge}
+                    onChange={(e) => setCreationBadge(e.target.value)}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold focus:border-[#D4AF37] focus:outline-none"
+                  >
+                    <option value="COLLECTION 2026">COLLECTION 2026</option>
+                    <option value="NOUVEAUTÉ">NOUVEAUTÉ</option>
+                    <option value="BEST-SELLER VIP">BEST-SELLER VIP</option>
+                    <option value="SIGNATURE GY">SIGNATURE GY</option>
+                    <option value="ÉLÉGANCE BUSINESS">ÉLÉGANCE BUSINESS</option>
+                    <option value="HAUTE COUTURE">HAUTE COUTURE</option>
+                    <option value="SUR COMMANDE">SUR COMMANDE</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Délai Estimé de Confection</label>
+                  <input
+                    type="text"
+                    value={creationDelay}
+                    onChange={(e) => setCreationDelay(e.target.value)}
+                    placeholder="ex: 7 à 10 jours"
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-amber-300 font-bold focus:border-[#D4AF37] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Tarif / Estimation</label>
+                  <input
+                    type="text"
+                    value={creationPrice}
+                    onChange={(e) => setCreationPrice(e.target.value)}
+                    placeholder="ex: Sur mesure ou 150 000 FCFA"
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-emerald-400 font-bold focus:border-[#D4AF37] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Photo Upload & Preview */}
+              <div className="space-y-2 p-4 bg-[#181822] rounded-2xl border border-[#2A2A38]">
+                <label className="block text-[#D4AF37] font-bold text-xs uppercase tracking-wider">
+                  Photo du Modèle (WebP Cloud Storage)
+                </label>
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden border border-[#D4AF37]/50 shrink-0 bg-black">
+                    {creationImageUrl ? (
+                      <img src={creationImageUrl} alt="Prévisualisation" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gy-textMuted text-xs font-bold">AUCUNE</div>
+                    )}
+                  </div>
+                  <div className="space-y-2 flex-1 w-full">
+                    <label className="flex items-center justify-center px-4 py-2.5 bg-[#14141C] border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black rounded-xl text-xs font-black uppercase cursor-pointer transition-all">
+                      {creationUploading ? "CONVERSION WEBP & ENVOI..." : "📸 CHOISIR UNE PHOTO DU MODÈLE"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCreationImageUpload}
+                        disabled={creationUploading}
+                        className="hidden"
+                      />
+                    </label>
+                    <input
+                      type="text"
+                      value={creationImageUrl}
+                      onChange={(e) => setCreationImageUrl(e.target.value)}
+                      placeholder="Ou collez une URL d'image directe"
+                      className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-xs text-gy-textMuted focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => setNewCreationModal(false)}
+                  className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase"
+                >
+                  ANNULER
+                </button>
+                <button
+                  onClick={handleSaveCreation}
+                  className="w-1/2 py-3.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase shadow-gold hover:opacity-95"
+                >
+                  {editingCreation ? "ENREGISTRER MODIFICATIONS" : "AJOUTER AU CATALOGUE"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: PREVIEW DU MODÈLE */}
+      {selectedCreationPreview && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={() => setSelectedCreationPreview(null)}>
+          <div className="bg-[#12121A] border border-[#D4AF37]/50 rounded-3xl p-8 max-w-xl w-full my-8 max-h-[90vh] overflow-y-auto shadow-2xl space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start border-b border-[#2A2A38] pb-3">
+              <div>
+                <span className="text-xs font-bold text-[#D4AF37] uppercase">{selectedCreationPreview.category}</span>
+                <h3 className="font-serif text-2xl font-bold text-white mt-0.5">{selectedCreationPreview.title}</h3>
+              </div>
+              <button
+                onClick={() => setSelectedCreationPreview(null)}
+                className="text-[#A3A3B3] hover:text-white px-3 py-1 bg-[#1A1A24] border border-[#2A2A38] rounded-lg text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="rounded-2xl overflow-hidden aspect-[4/5] relative">
+              <img src={selectedCreationPreview.image} alt={selectedCreationPreview.title} className="w-full h-full object-cover" />
+            </div>
+
+            <div className="space-y-2 text-xs text-gy-textMuted">
+              <p className="text-white text-sm leading-relaxed">{selectedCreationPreview.description}</p>
+              <p className="text-[#D4AF37] font-semibold">Matières : <span className="text-white">{selectedCreationPreview.fabric}</span></p>
+              <p>Délai estimé : <span className="text-amber-300 font-bold">{selectedCreationPreview.deliveryDelay || "7 à 10 jours"}</span></p>
             </div>
           </div>
         </div>

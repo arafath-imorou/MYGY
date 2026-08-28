@@ -25,83 +25,107 @@ export default function ClientPortal() {
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
 
-  const CREATIONS_CATALOG = [
+  const [creationsCatalog, setCreationsCatalog] = useState<any[]>([
     {
       id: "cr_1",
+      reference: "MOD-GY-2026-01",
       title: "Robe Sirène Soie Sauvage & Perles Swarovski",
       category: "ROBES DE SOIRÉE & GALA",
       description: "Coupe sirène sculptante en soie sauvage avec incrustations manuelles de perles et cristaux Swarovski. Fente latérale discrète et traîne impériale.",
       fabric: "Soie Sauvage, Dentelle Perlée, Cristaux Swarovski",
       badge: "COLLECTION 2026",
       priceEstimate: "Sur mesure",
+      deliveryDelay: "7 à 10 jours",
       image: "https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: "cr_2",
+      reference: "MOD-GY-2026-02",
       title: "Boubou Royal Grand Duc Brodé Fil d'Or",
       category: "BOUBOUS VIP & CAFTANS",
       description: "Boubou d'apparat en Bazin Riche Getzner teinté artisanalement, orné de broderies fines au fil d'or 24 carats au col et aux manches.",
       fabric: "Bazin Riche Getzner 1ère Qualité, Broderie Fil d'Or",
       badge: "BEST-SELLER VIP",
       priceEstimate: "Sur mesure",
+      deliveryDelay: "5 à 7 jours",
       image: "https://images.unsplash.com/photo-1590736969955-71cc94801759?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: "cr_3",
+      reference: "MOD-GY-2026-03",
       title: "Ensemble Tailleur Prestige Crêpe & Satin Duchesse",
-      category: "ENSEMBLES TAILLEURS",
+      category: "ENSEMBLES TAILLEURS & COMBINAISONS",
       description: "Veste cintrée à revers en satin duchesse brillant, pantalon palazzo taille haute à pinces parfaites. Idéal pour réceptions officielles et événements d'affaires.",
       fabric: "Crêpe Lourd Haute Couture & Satin Duchesse",
       badge: "ÉLÉGANCE BUSINESS",
       priceEstimate: "Sur mesure",
+      deliveryDelay: "6 à 8 jours",
       image: "https://images.unsplash.com/photo-1584273143981-41c073dfe8f8?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: "cr_4",
+      reference: "MOD-GY-2026-04",
       title: "Robe de Mariée Princesse Organza & Dentelle de Calais",
-      category: "CRÉATIONS MARIAGE",
+      category: "CRÉATIONS MARIAGE & CÉRÉMONIE",
       description: "Bustier cœur brodé main en dentelle de Calais avec jupon voluptueux en organza de soie multicouches et traîne royale cathédrale.",
       fabric: "Organza de Soie, Dentelle de Calais, Tulle Illusion",
       badge: "MARIAGE VIP",
       priceEstimate: "Sur mesure",
+      deliveryDelay: "14 à 21 jours",
       image: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: "cr_5",
+      reference: "MOD-GY-2026-05",
       title: "Caftan Majestueux Velours de Soie & Pierreries",
       category: "BOUBOUS VIP & CAFTANS",
       description: "Caftan moderne ceinturé en velours de soie pourpre, orné d'améthystes brodées à la main et sfifa dorée traditionnelle revisitée.",
       fabric: "Velours de Soie Pourpre, Sfifa Dorée, Pierres Fines",
       badge: "HAUTE COUTURE",
       priceEstimate: "Sur mesure",
+      deliveryDelay: "8 à 12 jours",
       image: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: "cr_6",
+      reference: "MOD-GY-2026-06",
       title: "Ensemble Cérémonie Pagne Tissé & Soie Mikado",
-      category: "HAUTE COUTURE SUR-MESURE",
+      category: "HAUTE COUTURE TRADITIONNELLE",
       description: "Alliance unique entre le noble pagne tissé traditionnel béninois et la rigidité sculpturale du Mikado de soie pour une silhouette intemporelle.",
       fabric: "Kanvo / Pagne Tissé Main & Mikado de Soie",
       badge: "SIGNATURE GY",
       priceEstimate: "Sur mesure",
+      deliveryDelay: "7 à 10 jours",
       image: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80",
     },
-  ];
+  ]);
 
   const CATEGORIES = [
     "TOUS",
     "ROBES DE SOIRÉE & GALA",
     "BOUBOUS VIP & CAFTANS",
-    "ENSEMBLES TAILLEURS",
-    "CRÉATIONS MARIAGE",
-    "HAUTE COUTURE SUR-MESURE",
+    "ENSEMBLES TAILLEURS & COMBINAISONS",
+    "CRÉATIONS MARIAGE & CÉRÉMONIE",
+    "HAUTE COUTURE TRADITIONNELLE",
+    "CHEMISES & COSTUMES HOMMES VIP",
   ];
 
   const filteredCreations = selectedCategory === "TOUS"
-    ? CREATIONS_CATALOG
-    : CREATIONS_CATALOG.filter((c) => c.category === selectedCategory);
+    ? creationsCatalog
+    : creationsCatalog.filter((c) => c.category === selectedCategory);
+
+  const fetchCreations = async () => {
+    try {
+      const res = await fetch("/api/admin/creations", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) setCreationsCatalog(data);
+      }
+    } catch (e) {}
+  };
 
   useEffect(() => {
+    fetchCreations();
     const saved = localStorage.getItem("gy_client_user");
     if (saved) {
       const u = JSON.parse(saved);

@@ -14,6 +14,7 @@ export interface CloudStoreData {
   depenses: any[];
   employees?: any[];
   users?: any[];
+  creations?: any[];
 }
 
 const DATA_FILE = path.join(process.cwd(), "src", "data", "cloud_store.json");
@@ -25,6 +26,7 @@ let memoryCache: CloudStoreData = {
   depenses: [],
   employees: [],
   users: [],
+  creations: [],
 };
 
 function readFromFile(): CloudStoreData {
@@ -40,6 +42,7 @@ function readFromFile(): CloudStoreData {
           depenses: parsed.depenses || [],
           employees: parsed.employees || [],
           users: parsed.users || [],
+          creations: parsed.creations || [],
         };
       }
     }
@@ -71,6 +74,7 @@ export async function getCloudData(): Promise<CloudStoreData> {
         depenses: data.data.depenses || [],
         employees: data.data.employees || [],
         users: data.data.users || [],
+        creations: data.data.creations || [],
       };
       writeToFile(memoryCache);
       return memoryCache;
