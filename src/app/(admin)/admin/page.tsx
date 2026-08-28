@@ -3303,37 +3303,50 @@ export default function AdminDashboard() {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      {adminUsersList.map((usr, idx) => (
-                        <div key={usr.id || idx} className="p-6 rounded-2xl bg-gy-dark border border-gy-border hover:border-[#D4AF37]/60 transition-all flex flex-col justify-between space-y-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${
-                                usr.role === "SUPER_ADMIN"
-                                  ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
-                                  : "bg-purple-500/20 text-purple-400 border-purple-500/40"
-                              }`}>
-                                {usr.roleLabel || (usr.role === "SUPER_ADMIN" ? "SUPER ADMIN (DIRECTION)" : "ASSISTANTE (ADMINISTRATION)")}
-                              </span>
-                              <h4 className="font-bold text-white text-xl mt-3">{usr.fullName}</h4>
-                              <p className="text-xs text-[#D4AF37] font-bold mt-1">{usr.email}</p>
-                            </div>
-                            <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black uppercase shrink-0">
-                              {usr.status || "ACTIF"}
-                            </span>
-                          </div>
-
-                          <div className="pt-3 border-t border-gy-border/60 flex items-center justify-between text-xs text-gy-textMuted">
-                            <span>Créé le {usr.createdAt || "01/01/2024"}</span>
-                            <button
-                              onClick={() => alert(`Informations du compte ${usr.fullName}:\nEmail: ${usr.email}\nRôle ERP: ${usr.roleLabel || usr.role}`)}
-                              className="px-3 py-1 bg-[#181820] border border-[#2A2A38] text-white hover:border-[#D4AF37] hover:text-[#D4AF37] rounded-lg text-xs font-bold transition-all cursor-pointer"
-                            >
-                              [ DÉTAILS COMPTE ]
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="overflow-x-auto">
+                      <table className="framed-table text-left text-sm text-gy-text font-aptos">
+                        <thead>
+                          <tr>
+                            <th className="min-w-[180px]">UTILISATEUR</th>
+                            <th className="min-w-[200px]">EMAIL DE CONNEXION</th>
+                            <th className="min-w-[180px]">RÔLE / PRIVILÈGES</th>
+                            <th className="min-w-[130px]">DATE CRÉATION</th>
+                            <th className="min-w-[100px]">STATUT</th>
+                            <th className="min-w-[120px] text-center">ACTIONS</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {adminUsersList.map((usr, idx) => (
+                            <tr key={usr.id || idx}>
+                              <td className="font-bold text-white text-base">{usr.fullName}</td>
+                              <td className="text-gy-gold font-semibold">{usr.email}</td>
+                              <td>
+                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${
+                                  usr.role === "SUPER_ADMIN"
+                                    ? "bg-amber-500/20 text-amber-400 border-amber-500/40"
+                                    : "bg-purple-500/20 text-purple-400 border-purple-500/40"
+                                }`}>
+                                  {usr.roleLabel || (usr.role === "SUPER_ADMIN" ? "SUPER ADMIN (DIRECTION)" : "ASSISTANTE (ADMINISTRATION)")}
+                                </span>
+                              </td>
+                              <td className="text-gy-textMuted text-xs">{usr.createdAt || "01/01/2024"}</td>
+                              <td>
+                                <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black uppercase">
+                                  {usr.status || "ACTIF"}
+                                </span>
+                              </td>
+                              <td className="text-center">
+                                <button
+                                  onClick={() => alert(`Informations du compte ${usr.fullName}:\nEmail: ${usr.email}\nRôle ERP: ${usr.roleLabel || usr.role}`)}
+                                  className="px-3 py-1.5 bg-[#181820] border border-[#2A2A38] text-white hover:border-[#D4AF37] hover:text-[#D4AF37] rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                >
+                                  DÉTAILS
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
@@ -3373,36 +3386,52 @@ export default function AdminDashboard() {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {expenseCategories.map((cat) => (
-                        <div key={cat.id} className="p-5 rounded-2xl bg-gy-dark border border-gy-border hover:border-[#D4AF37]/50 transition-all flex flex-col justify-between space-y-3">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <span className="framed-badge-gold text-[10px] font-black">{cat.code}</span>
-                              <h5 className="font-bold text-white text-base mt-2">{cat.label}</h5>
-                              {cat.description && (
-                                <p className="text-xs text-gy-textMuted mt-1 line-clamp-2">{cat.description}</p>
-                              )}
-                            </div>
-                            <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1 rounded-lg shrink-0">ACTIF</span>
-                          </div>
-
-                          <div className="pt-3 border-t border-gy-border/60 flex items-center justify-end space-x-2">
-                            <button
-                              onClick={() => handleOpenEditExpenseCategory(cat)}
-                              className="px-2.5 py-1 bg-[#181820] border border-[#2A2A38] text-white hover:border-[#D4AF37] hover:text-[#D4AF37] rounded-lg text-xs font-bold transition-all cursor-pointer"
-                            >
-                              [ MODIFIER ]
-                            </button>
-                            <button
-                              onClick={() => handleDeleteExpenseCategory(cat)}
-                              className="px-2.5 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
-                            >
-                              [ SUPPRIMER ]
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="overflow-x-auto">
+                      <table className="framed-table text-left text-sm text-gy-text font-aptos">
+                        <thead>
+                          <tr>
+                            <th className="min-w-[120px]">CODE</th>
+                            <th className="min-w-[280px]">INTITULÉ DU POSTE DE DÉPENSE</th>
+                            <th className="min-w-[240px]">DESCRIPTION / DÉTAILS</th>
+                            <th className="min-w-[100px]">STATUT</th>
+                            <th className="min-w-[120px] text-center">ACTIONS</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {expenseCategories.map((cat) => (
+                            <tr key={cat.id}>
+                              <td className="font-bold text-gy-gold">
+                                <span className="framed-badge-gold text-xs font-black">{cat.code}</span>
+                              </td>
+                              <td className="font-bold text-white text-base">{cat.label}</td>
+                              <td className="text-gy-textMuted text-xs">{cat.description || "—"}</td>
+                              <td>
+                                <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30 px-2.5 py-1 rounded-lg">
+                                  ACTIF
+                                </span>
+                              </td>
+                              <td className="text-center">
+                                <div className="flex items-center justify-center space-x-2">
+                                  <button
+                                    onClick={() => handleOpenEditExpenseCategory(cat)}
+                                    className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500 hover:text-black border border-amber-500/40 text-xs font-black flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                                    title="Modifier le poste"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteExpenseCategory(cat)}
+                                    className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white border border-rose-500/40 text-xs font-black flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                                    title="Supprimer le poste"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
