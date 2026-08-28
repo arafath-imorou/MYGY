@@ -3275,21 +3275,6 @@ export default function AdminDashboard() {
               {/* SUB-TAB 1: COMPTES UTILISATEURS */}
               {adminSubTab === "comptes" && (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    <div className="framed-card p-5 border-l-4 border-l-[#D4AF37]">
-                      <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Comptes Administrateurs</span>
-                      <h3 className="font-serif text-3xl font-black text-white mt-2">{adminUsersList.length} Comptes Autorisés</h3>
-                    </div>
-                    <div className="framed-card p-5 border-l-4 border-l-purple-400">
-                      <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Profils Direction & Accueil</span>
-                      <h3 className="font-serif text-3xl font-black text-purple-400 mt-2">Accès Actifs</h3>
-                    </div>
-                    <div className="framed-card p-5 border-l-4 border-l-emerald-400">
-                      <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Statut Sécurité ERP</span>
-                      <h3 className="font-serif text-3xl font-black text-emerald-400 mt-2">100% SÉCURISÉ</h3>
-                    </div>
-                  </div>
-
                   <div className="framed-card p-8 space-y-6">
                     <div className="flex justify-between items-center border-b border-gy-border pb-4">
                       <div>
@@ -3355,21 +3340,6 @@ export default function AdminDashboard() {
               {/* SUB-TAB 2: LIGNES DE DÉPENSES */}
               {adminSubTab === "lignes" && (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                    <div className="framed-card p-5 border-l-4 border-l-rose-500">
-                      <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Lignes de Dépenses</span>
-                      <h3 className="font-serif text-3xl font-black text-rose-400 mt-2">{expenseCategories.length} Lignes Actives</h3>
-                    </div>
-                    <div className="framed-card p-5 border-l-4 border-l-amber-400">
-                      <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Postes d&apos;Exploitation</span>
-                      <h3 className="font-serif text-3xl font-black text-amber-400 mt-2">Atelier & Boutique</h3>
-                    </div>
-                    <div className="framed-card p-5 border-l-4 border-l-emerald-400">
-                      <span className="text-xs font-extrabold text-gy-textMuted uppercase tracking-wider block">Statut Saisie Caisse</span>
-                      <h3 className="font-serif text-3xl font-black text-emerald-400 mt-2">DISPONIBLE</h3>
-                    </div>
-                  </div>
-
                   <div className="framed-card p-8 space-y-6">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gy-border pb-4 gap-4">
                       <div>
