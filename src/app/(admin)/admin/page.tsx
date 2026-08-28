@@ -4573,7 +4573,7 @@ export default function AdminDashboard() {
                   onClick={() => { setOrderImagesModal(viewOrderModal); setViewOrderModal(null); }}
                   className="px-3 py-1.5 bg-violet-500/20 text-violet-300 border border-violet-500/40 rounded-lg text-xs font-black hover:bg-violet-500 hover:text-white transition-all"
                 >
-                  📸 PHOTOS
+                  PHOTOS
                 </button>
                 <button onClick={() => setViewOrderModal(null)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
                   [ FERMER ]
@@ -4603,7 +4603,7 @@ export default function AdminDashboard() {
               {/* Image gallery preview */}
               {((viewOrderModal.images && viewOrderModal.images.length > 0) || viewOrderModal.deliveryImage) && (
                 <div>
-                  <h4 className="font-serif text-lg font-bold text-white mb-3">📸 Photos de la Commande</h4>
+                  <h4 className="font-serif text-lg font-bold text-white mb-3">Photos de la Commande</h4>
                   <div className="flex flex-wrap gap-3">
                     {(viewOrderModal.images || []).map((img: string, idx: number) => (
                       <img key={idx} src={img} alt={`Tissu ${idx + 1}`} className="w-24 h-24 object-cover rounded-xl border border-gy-border" />
@@ -4654,7 +4654,7 @@ export default function AdminDashboard() {
                   }}
                   className="px-3 py-1.5 bg-violet-500/20 text-violet-300 border border-violet-500/40 rounded-lg text-xs font-black hover:bg-violet-500 hover:text-white transition-all"
                 >
-                  🔑 CRÉER ACCÈS CLIENT
+                  CRÉER ACCÈS CLIENT
                 </button>
               </div>
             </div>
@@ -4722,7 +4722,7 @@ export default function AdminDashboard() {
                                     onClick={() => { setOrderImagesModal(o); setViewCustomerModal(null); }}
                                     className="px-3 py-1.5 rounded-xl bg-violet-500/20 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/40 text-xs font-black uppercase"
                                   >
-                                    📸 PHOTOS
+                                    PHOTOS
                                   </button>
                                 </div>
                               </div>
@@ -4958,7 +4958,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="space-y-4">
                 <div className="p-4 bg-emerald-500/10 border border-emerald-500/40 rounded-2xl">
-                  <p className="text-emerald-400 font-black text-sm mb-3">✅ COMPTE CRÉÉ AVEC SUCCÈS</p>
+                  <p className="text-emerald-400 font-black text-sm mb-3">COMPTE CRÉÉ AVEC SUCCÈS</p>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between items-center">
                       <span className="text-gy-textMuted">Email :</span>
@@ -4971,7 +4971,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-400">
-                  ⚠️ Transmettez ces identifiants par WhatsApp ou email à la cliente. Elle pourra changer son mot de passe depuis son espace.
+                  Note : Transmettez ces identifiants par WhatsApp ou email à la cliente. Elle pourra changer son mot de passe depuis son espace.
                 </div>
                 <button
                   onClick={() => {
@@ -4980,7 +4980,7 @@ export default function AdminDashboard() {
                   }}
                   className="w-full py-3 rounded-xl bg-gy-gold/20 text-gy-gold border border-gy-gold/40 font-black text-xs uppercase hover:bg-gy-gold hover:text-black transition-all"
                 >
-                  📋 COPIER LE MESSAGE À ENVOYER
+                  COPIER LE MESSAGE À ENVOYER
                 </button>
                 <button onClick={() => { setClientAccountModal(null); setClientAccountCredentials(null); }} className="w-full py-2 rounded-xl bg-gy-dark border border-gy-border text-gy-textMuted font-black text-xs uppercase">FERMER</button>
               </div>
@@ -4997,7 +4997,7 @@ export default function AdminDashboard() {
           <div className="glass-panel max-w-2xl w-full p-8 rounded-3xl border border-violet-500/50 shadow-2xl font-aptos my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
               <div>
-                <h3 className="font-serif text-2xl font-bold text-white">📸 PHOTOS — COMMANDE</h3>
+                <h3 className="font-serif text-2xl font-bold text-white">PHOTOS — COMMANDE</h3>
                 <p className="text-xs text-violet-400 font-bold mt-1">{orderImagesModal.reference}</p>
               </div>
               <button onClick={() => setOrderImagesModal(null)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">[ FERMER ]</button>
@@ -5007,7 +5007,7 @@ export default function AdminDashboard() {
               {/* Fabric images */}
               <div>
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="font-bold text-white">🧵 Photos des Tissus ({(orderImagesModal.images || []).length})</h4>
+                  <h4 className="font-bold text-white">Photos des Tissus ({(orderImagesModal.images || []).length})</h4>
                   <label className={`px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-black uppercase cursor-pointer hover:bg-emerald-500 hover:text-black transition-all ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
                     {uploadingImage ? "CHARGEMENT..." : "+ AJOUTER TISSU"}
                     <input type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleUploadOrderImage(e.target.files[0], "fabric"); }} />
@@ -5032,9 +5032,9 @@ export default function AdminDashboard() {
               {/* Delivery / finished product image */}
               <div>
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="font-bold text-white">✨ Photo du Produit Fini (Livraison)</h4>
+                  <h4 className="font-bold text-white">Photo du Produit Fini (Livraison)</h4>
                   <label className={`px-4 py-2 rounded-xl bg-gy-gold/20 text-gy-gold border border-gy-gold/40 text-xs font-black uppercase cursor-pointer hover:bg-gy-gold hover:text-black transition-all ${uploadingImage ? "opacity-50 pointer-events-none" : ""}`}>
-                    {uploadingImage ? "CHARGEMENT..." : (orderImagesModal.deliveryImage ? "🔄 CHANGER" : "+ PHOTO LIVRAISON")}
+                    {uploadingImage ? "CHARGEMENT..." : (orderImagesModal.deliveryImage ? "CHANGER" : "+ PHOTO LIVRAISON")}
                     <input type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleUploadOrderImage(e.target.files[0], "delivery"); }} />
                   </label>
                 </div>

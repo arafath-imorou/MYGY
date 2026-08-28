@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 
@@ -84,7 +84,7 @@ export default function ClientPortal() {
     RETOUCHE: { label: "Retouches en cours", color: "text-orange-400" },
     CONTROLE_QUALITE: { label: "Contrôle qualité", color: "text-cyan-400" },
     SOLDE_A_PAYER: { label: "Solde à payer", color: "text-rose-400" },
-    PRET: { label: "Prêt à livrer ✅", color: "text-emerald-400" },
+    PRET: { label: "Prêt à livrer", color: "text-emerald-400" },
     CLOTURE: { label: "Clôturé", color: "text-gray-400" },
   };
 
@@ -158,7 +158,7 @@ export default function ClientPortal() {
             onClick={() => setChangePwdModal(true)}
             className="px-3 py-1.5 bg-[#1A1A24] border border-[#2A2A38] rounded-lg text-xs font-bold text-[#A3A3B3] hover:text-white transition-all"
           >
-            🔑 MOT DE PASSE
+            MOT DE PASSE
           </button>
           <button
             onClick={handleLogout}
@@ -181,7 +181,7 @@ export default function ClientPortal() {
 
         {!loading && clientOrders.length === 0 && (
           <div className="text-center py-16 bg-[#12121A] rounded-3xl border border-[#2A2A38]">
-            <div className="text-5xl mb-4">✨</div>
+            <div className="text-5xl mb-4 text-[#D4AF37] font-serif font-black">GY</div>
             <h3 className="font-serif text-xl font-bold text-white mb-2">Aucune commande en cours</h3>
             <p className="text-[#A3A3B3] text-sm">Vos commandes apparaîtront ici dès qu&apos;elles seront enregistrées.</p>
           </div>
@@ -208,7 +208,7 @@ export default function ClientPortal() {
                       <div className="text-xs text-rose-400 font-bold mt-0.5">Solde dû : {formatFcfa(order.balanceDue)}</div>
                     )}
                     {Number(order.balanceDue) === 0 && (
-                      <div className="text-xs text-emerald-400 font-bold mt-0.5">✅ Entièrement payé</div>
+                      <div className="text-xs text-emerald-400 font-bold mt-0.5">Entièrement payé</div>
                     )}
                   </div>
                 </div>
@@ -231,7 +231,7 @@ export default function ClientPortal() {
                 {/* Images section */}
                 {((order.images && order.images.length > 0) || order.deliveryImage) && (
                   <div>
-                    <p className="text-xs text-[#A3A3B3] font-bold mb-2">📸 Photos</p>
+                    <p className="text-xs text-[#A3A3B3] font-bold mb-2">Photos</p>
                     <div className="flex flex-wrap gap-2">
                       {(order.images || []).map((img: string, idx: number) => (
                         <img key={idx} src={img} alt={`Tissu ${idx + 1}`} className="w-20 h-20 object-cover rounded-xl border border-[#2A2A38]" />
