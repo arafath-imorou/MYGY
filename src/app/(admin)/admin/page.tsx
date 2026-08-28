@@ -3899,12 +3899,6 @@ export default function AdminDashboard() {
                   <p className="text-sm text-gy-textMuted mt-1">Gestion des comptes utilisateurs autorisés, privilèges d&apos;accès et postes de dépenses</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={handleResetPlatform}
-                    className="px-5 py-3.5 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/40 font-black text-xs uppercase tracking-wider hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-lg"
-                  >
-                    [ RÉINITIALISER LA PLATEFORME À ZÉRO ]
-                  </button>
                   {adminSubTab === "comptes" && (
                     <button
                       onClick={() => setNewAdminModal(true)}
