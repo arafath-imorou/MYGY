@@ -71,6 +71,22 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        if (data.redirectUrl === "/client" || data.user.role === "CLIENT") {
+          if (typeof window !== "undefined") {
+            localStorage.setItem("gy_client_user", JSON.stringify(data.user));
+            window.location.href = "/client";
+          }
+          return;
+        }
+
+        if (data.redirectUrl === "/atelier" || data.user.role === "TAILLEUR" || data.user.role === "COUTURIER") {
+          if (typeof window !== "undefined") {
+            localStorage.setItem("gy_atelier_user", JSON.stringify(data.user));
+            window.location.href = "/atelier";
+          }
+          return;
+        }
+
         setIsAuthenticated(true);
         const isFatia = data.user.email === "teeadjao@gmail.com" || data.user.fullName?.includes("ADJAO");
         const uName = isFatia ? "Fatia ADJAO MOUFTAOU" : (data.user.fullName || "Ghislaine LOKO DJIDJOHO");
@@ -90,7 +106,7 @@ export default function AdminDashboard() {
           localStorage.setItem("gy_user_role", uRole);
         }
       } else {
-        setLoginError(data.error || "Email ou mot de passe incorrect");
+        setLoginError(data.error || "Identifiant ou mot de passe incorrect");
       }
     } catch (err) {
       setLoginError("Erreur de connexion au serveur");
@@ -1809,7 +1825,7 @@ export default function AdminDashboard() {
             />
             <div>
               <h1 className="font-serif text-3xl font-bold text-white tracking-wide">GY MAISON COUTURE</h1>
-              <p className="text-xs font-black text-[#D4AF37] uppercase tracking-widest mt-1">PORTAIL D&apos;ACCÈS SÉCURISÉ ADMIN ERP</p>
+              <p className="text-xs font-black text-[#D4AF37] uppercase tracking-widest mt-1">PORTAIL SÉCURISÉ ERP & CLIENTS</p>
             </div>
           </div>
 
@@ -1826,7 +1842,7 @@ export default function AdminDashboard() {
                 type="text"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="Votre identifiant ou email"
+                placeholder="Votre identifiant (ex: gytatadeen) ou email"
                 className="w-full bg-[#181820] border border-[#2A2A38] rounded-xl p-3.5 text-white font-bold text-sm focus:border-[#D4AF37] focus:outline-none normal-case placeholder-[#555]"
                 required
               />
@@ -1856,11 +1872,27 @@ export default function AdminDashboard() {
             <button
               type="submit"
               disabled={loginLoading}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:opacity-95 transition-opacity"
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#C5A059] to-[#997A2C] text-black font-black text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(212,175,55,0.4)] hover:opacity-95 transition-opacity cursor-pointer"
             >
               {loginLoading ? "CONNEXION EN COURS..." : "SE CONNECTER"}
             </button>
           </form>
+
+          {/* Quick Portal Switch Links */}
+          <div className="pt-2 space-y-2">
+            <Link
+              href="/client"
+              className="w-full py-2.5 px-4 rounded-xl bg-[#14141C] border border-[#D4AF37]/40 text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black font-bold text-xs flex items-center justify-center gap-2 transition-all block text-center"
+            >
+              <span>👑 VOUS ÊTES CLIENTE ? ACCÉDER À L&apos;ESPACE VIP</span>
+            </Link>
+            <Link
+              href="/atelier"
+              className="w-full py-2 px-4 rounded-xl bg-[#14141C] border border-[#2A2A38] text-[#A3A3B3] hover:text-white font-semibold text-[11px] flex items-center justify-center gap-2 transition-all block text-center"
+            >
+              <span>✂️ Portail Atelier & Confection</span>
+            </Link>
+          </div>
 
           <div className="text-center pt-3 border-t border-[#2A2A38]">
             <a
