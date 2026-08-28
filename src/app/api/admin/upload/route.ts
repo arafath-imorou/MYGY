@@ -1,32 +1,33 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://egpgppglcnwrzznhzgbi.supabase.co";
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
 export async function POST(req: Request) {
   try {
+    // Initialisation DANS le handler pour eviter les erreurs de build Vercel
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://egpgppglcnwrzznhzgbi.supabase.co";
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const orderId = formData.get("orderId") as string | null;
-    const imageType = formData.get("imageType") as string | null; // "fabric" or "delivery"
+    const imageType = formData.get("imageType") as string | null;
 
     if (!file || !orderId) {
       return NextResponse.json({ error: "Fichier et orderId requis." }, { status: 400 });
     }
 
-    // Le client envoie toujours du WebP après conversion Canvas — on force l'extension
+    // Le client convertit toujours en WebP avant envoi via Canvas API
     const baseName = file.name.replace(/\.[^.]+$/, "");
     const fileName = `orders/${orderId}/${imageType || "fabric"}_${Date.now()}_${baseName}.webp`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from("gy-orders")
       .upload(fileName, buffer, {
         contentType: "image/webp",
@@ -34,7 +35,6 @@ export async function POST(req: Request) {
       });
 
     if (error) {
-      // Fallback: return a placeholder URL if storage not configured
       console.warn("Supabase storage error:", error.message);
       return NextResponse.json({
         url: `https://placehold.co/400x300/1a1a2e/D4AF37?text=Image+${imageType || "tissu"}`,
