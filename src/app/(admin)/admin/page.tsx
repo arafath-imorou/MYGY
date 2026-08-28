@@ -2645,46 +2645,101 @@ export default function AdminDashboard() {
                           </div>
                         </div>
 
-                    {/* Timeline des Créations */}
+                    {/* Tableau des Créations & Commandes du Client */}
                     <div className="space-y-4">
-                      <h3 className="font-serif text-2xl font-bold text-white">SUIVI DE CONFECTION SUR-MESURE</h3>
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-serif text-2xl font-bold text-white">SUIVI DE CONFECTION & COMMANDES ({custOrders.length})</h3>
+                      </div>
 
                       {custOrders.length === 0 ? (
-                        <div className="framed-card p-6 text-center text-gy-textMuted text-sm font-semibold">
+                        <div className="framed-card p-8 text-center text-gy-textMuted text-sm font-semibold">
                           Aucune commande enregistrée pour ce client.
                         </div>
                       ) : (
-                        custOrders.map((o) => (
-                          <div key={o.id} className="framed-card p-6 space-y-4 border border-gy-border">
-                            <div className="flex justify-between items-center border-b border-gy-border pb-3">
-                              <div>
-                                <span className="text-xs font-bold text-gy-gold uppercase">{o.reference}</span>
-                                <h4 className="font-serif text-xl font-bold text-white mt-0.5">
-                                  {o.items?.[0]?.itemName || "Tenue Haute Couture"}
-                                </h4>
-                                <span className="text-xs text-gy-textMuted block mt-0.5">TISSU: {o.items?.[0]?.fabricDetails || "Sélectionné en boutique"}</span>
-                              </div>
-                              <span className="px-4 py-1.5 rounded-xl bg-gy-dark border border-gy-gold/40 text-xs font-black text-gy-gold uppercase">
-                                RETRAIT PRÉVU: {formatDate(o.promisedDate)}
-                              </span>
-                            </div>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                              <div className={`p-3 rounded-xl border text-center text-xs font-bold ${o.status === "ACOMPTE_ATTENDU" ? "bg-amber-500/20 text-amber-400 border-amber-500/50" : "bg-gy-dark/50 text-gy-textMuted border-gy-border"}`}>
-                                1. COMMANDE & MESURES
-                              </div>
-                              <div className={`p-3 rounded-xl border text-center text-xs font-bold ${o.status === "PRODUCTION" ? "bg-sky-500/20 text-sky-400 border-sky-500/50" : "bg-gy-dark/50 text-gy-textMuted border-gy-border"}`}>
-                                2. CONFECTION ATELIER
-                              </div>
-                              <div className={`p-3 rounded-xl border text-center text-xs font-bold ${o.status === "ESSAYAGE" ? "bg-purple-500/20 text-purple-400 border-purple-500/50" : "bg-gy-dark/50 text-gy-textMuted border-gy-border"}`}>
-                                3. ESSAYAGE & AJUSTEMENT
-                              </div>
-                              <div className={`p-3 rounded-xl border text-center text-xs font-bold ${o.status === "PRET" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/50" : "bg-gy-dark/50 text-gy-textMuted border-gy-border"}`}>
-                                4. PRÊT À LIVRER
-                              </div>
-                            </div>
+                        <div className="framed-card p-2 overflow-hidden border-2 border-gy-border bg-[#121217]">
+                          <div className="overflow-x-auto">
+                            <table className="framed-table text-left text-sm text-gy-text font-aptos">
+                              <thead>
+                                <tr>
+                                  <th className="min-w-[130px]">RÉFÉRENCE</th>
+                                  <th className="min-w-[240px]">TENUE & TISSU</th>
+                                  <th className="min-w-[130px]">DATE COMMANDE</th>
+                                  <th className="min-w-[160px]">RETRAIT PRÉVU</th>
+                                  <th className="min-w-[140px]">TOTAL</th>
+                                  <th className="min-w-[140px]">SOLDE DÛ</th>
+                                  <th className="min-w-[160px]">STATUT ATELIER</th>
+                                  <th className="min-w-[120px] text-center">ACTIONS</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {custOrders.map((o) => (
+                                  <tr key={o.id}>
+                                    <td className="font-bold text-white">
+                                      <span className="framed-badge-gold text-xs font-black">{o.reference}</span>
+                                    </td>
+                                    <td>
+                                      <div className="p-2 rounded-xl bg-gy-dark/90 border border-gy-gold/30">
+                                        <strong className="text-gy-gold text-sm block font-bold">
+                                          {o.items?.[0]?.itemName || "Création Sur-Mesure"}
+                                        </strong>
+                                        <span className="text-xs text-gy-textMuted block mt-0.5">
+                                          Tissu: {o.items?.[0]?.fabricDetails || "Non précisé"}
+                                        </span>
+                                      </div>
+                                    </td>
+                                    <td className="font-semibold text-gy-textMuted">{formatDate(o.orderDate || o.createdAt)}</td>
+                                    <td>
+                                      <span className="framed-badge-amber text-xs font-bold">
+                                        {formatDate(o.promisedDate)}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <span className="framed-badge-emerald text-sm font-bold">
+                                        {formatFcfa(o.totalAmount)}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <span className={`text-sm font-bold ${Number(o.balanceDue || 0) > 0 ? "text-amber-400" : "text-emerald-400"}`}>
+                                        {formatFcfa(o.balanceDue)}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <span className={`px-3 py-1 rounded-xl text-xs font-black uppercase border ${
+                                        o.status === "PRET"
+                                          ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                                          : o.status === "ESSAYAGE"
+                                          ? "bg-purple-500/20 text-purple-400 border-purple-500/40"
+                                          : o.status === "PRODUCTION"
+                                          ? "bg-sky-500/20 text-sky-400 border-sky-500/40"
+                                          : "bg-amber-500/20 text-amber-400 border-amber-500/40"
+                                      }`}>
+                                        {o.status}
+                                      </span>
+                                    </td>
+                                    <td className="text-center">
+                                      <div className="flex items-center justify-center space-x-1.5">
+                                        <button
+                                          onClick={() => setViewOrderModal(o)}
+                                          className="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-300 hover:bg-sky-500 hover:text-white border border-sky-500/40 text-xs font-black flex items-center justify-center transition-all shadow-sm"
+                                          title="Voir la fiche"
+                                        >
+                                          👁️
+                                        </button>
+                                        <button
+                                          onClick={() => setOrderImagesModal(o)}
+                                          className="w-8 h-8 rounded-xl bg-violet-500/20 text-violet-300 hover:bg-violet-500 hover:text-white border border-violet-500/40 text-xs font-black flex items-center justify-center transition-all shadow-sm"
+                                          title="Photos"
+                                        >
+                                          📸
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
-                        ))
+                        </div>
                       )}
                     </div>
 
