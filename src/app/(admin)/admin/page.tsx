@@ -682,7 +682,11 @@ export default function AdminDashboard() {
     try {
       const img = new Image();
       img.src = URL.createObjectURL(file);
-      await new Promise((res) => { img.onload = res; });
+      await new Promise((res, rej) => {
+        img.onload = res;
+        img.onerror = rej;
+      });
+
       const canvas = document.createElement("canvas");
       const maxDim = 1200;
       let width = img.width;
@@ -698,20 +702,34 @@ export default function AdminDashboard() {
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       ctx?.drawImage(img, 0, 0, width, height);
+
+      const localDataUrl = canvas.toDataURL("image/webp", 0.85);
+
       canvas.toBlob(async (blob) => {
-        if (!blob) { setCreationUploading(false); return; }
-        const formData = new FormData();
-        formData.append("file", blob, `${file.name.split(".")[0]}.webp`);
-        formData.append("creationId", "catalog");
-        formData.append("imageType", "creation");
-        const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
-        const data = await res.json();
-        if (res.ok && data.url) {
-          setCreationImageUrl(data.url);
-        } else {
-          alert("Erreur lors du téléversement de la photo.");
+        if (!blob) {
+          setCreationImageUrl(localDataUrl);
+          setCreationUploading(false);
+          return;
         }
-        setCreationUploading(false);
+        try {
+          const formData = new FormData();
+          formData.append("file", blob, `${file.name.split(".")[0]}.webp`);
+          formData.append("creationId", "catalog");
+          formData.append("imageType", "creation");
+          const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+          const data = await res.json().catch(() => null);
+          if (res.ok && data?.url) {
+            setCreationImageUrl(data.url);
+          } else {
+            // Instant seamless fallback to WebP Data URL
+            setCreationImageUrl(localDataUrl);
+          }
+        } catch (uploadErr) {
+          // Instant seamless fallback to WebP Data URL
+          setCreationImageUrl(localDataUrl);
+        } finally {
+          setCreationUploading(false);
+        }
       }, "image/webp", 0.85);
     } catch (e) {
       setCreationUploading(false);
