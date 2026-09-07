@@ -214,7 +214,7 @@ export default function AdminDashboard() {
   const [newOrderCustomerId, setNewOrderCustomerId] = useState("");
   const [newOrderItemName, setNewOrderItemName] = useState("");
   const [newOrderItemsList, setNewOrderItemsList] = useState<any[]>([
-    { id: "1", itemName: "", price: "", fabricDetails: "" },
+    { id: "1", itemName: "", price: "", fabricList: [{ id: "f1", details: "", stockItemId: "", stockItemName: "", stockItemImage: "" }] },
   ]);
   const [newOrderOrderDate, setNewOrderOrderDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -238,6 +238,11 @@ export default function AdminDashboard() {
   const [editOrderPriority, setEditOrderPriority] = useState("VIP");
   const [editOrderStatus, setEditOrderStatus] = useState("PRODUCTION");
   const [editOrderItemsList, setEditOrderItemsList] = useState<any[]>([]);
+
+  // Stock Picker for Fabric Selection in Orders
+  const [stockPickerModal, setStockPickerModal] = useState(false);
+  const [stockPickerTarget, setStockPickerTarget] = useState<{ formType: "new" | "edit"; itemId: string; fabricId: string } | null>(null);
+  const [stockPickerSearch, setStockPickerSearch] = useState("");
 
   // RH & Personnel State
   const DEFAULT_EMPLOYEES = [
@@ -840,10 +845,11 @@ export default function AdminDashboard() {
     });
   };
 
+
   const handleAddItemToOrder = () => {
     setNewOrderItemsList((prev) => [
       ...prev,
-      { id: String(Date.now()), itemName: "", price: "", fabricDetails: "" },
+      { id: String(Date.now()), itemName: "", price: "", fabricList: [{ id: `f${Date.now()}`, details: "", stockItemId: "", stockItemName: "", stockItemImage: "" }] },
     ]);
   };
 
@@ -864,6 +870,92 @@ export default function AdminDashboard() {
       setNewOrderTotalAmount(total > 0 ? total : "");
       return updated;
     });
+  };
+
+  // Fabric list helpers — new order
+  const handleAddFabric = (itemId: string) => {
+    setNewOrderItemsList((prev) =>
+      prev.map((it) =>
+        it.id === itemId
+          ? { ...it, fabricList: [...(it.fabricList || []), { id: `f${Date.now()}`, details: "", stockItemId: "", stockItemName: "", stockItemImage: "" }] }
+          : it
+      )
+    );
+  };
+
+  const handleRemoveFabric = (itemId: string, fabricId: string) => {
+    setNewOrderItemsList((prev) =>
+      prev.map((it) => {
+        if (it.id !== itemId) return it;
+        const fl = (it.fabricList || []).filter((f: any) => f.id !== fabricId);
+        return { ...it, fabricList: fl.length > 0 ? fl : it.fabricList };
+      })
+    );
+  };
+
+  const handleFabricChange = (itemId: string, fabricId: string, field: string, val: string) => {
+    setNewOrderItemsList((prev) =>
+      prev.map((it) =>
+        it.id === itemId
+          ? { ...it, fabricList: (it.fabricList || []).map((f: any) => f.id === fabricId ? { ...f, [field]: val } : f) }
+          : it
+      )
+    );
+  };
+
+  // Fabric list helpers — edit order
+  const handleEditAddFabric = (itemId: string) => {
+    setEditOrderItemsList((prev) =>
+      prev.map((it) =>
+        it.id === itemId
+          ? { ...it, fabricList: [...(it.fabricList || [{ id: `f${Date.now()}`, details: it.fabricDetails || "", stockItemId: "", stockItemName: "", stockItemImage: "" }]), { id: `f${Date.now() + 1}`, details: "", stockItemId: "", stockItemName: "", stockItemImage: "" }] }
+          : it
+      )
+    );
+  };
+
+  const handleEditRemoveFabric = (itemId: string, fabricId: string) => {
+    setEditOrderItemsList((prev) =>
+      prev.map((it) => {
+        if (it.id !== itemId) return it;
+        const fl = (it.fabricList || []).filter((f: any) => f.id !== fabricId);
+        return { ...it, fabricList: fl.length > 0 ? fl : it.fabricList };
+      })
+    );
+  };
+
+  const handleEditFabricChange = (itemId: string, fabricId: string, field: string, val: string) => {
+    setEditOrderItemsList((prev) =>
+      prev.map((it) =>
+        it.id === itemId
+          ? { ...it, fabricList: (it.fabricList || []).map((f: any) => f.id === fabricId ? { ...f, [field]: val } : f) }
+          : it
+      )
+    );
+  };
+
+  // Assign stock article to a fabric entry
+  const handleAssignStockToFabric = (stockItem: any) => {
+    if (!stockPickerTarget) return;
+    const { formType, itemId, fabricId } = stockPickerTarget;
+    const setter = formType === "new" ? setNewOrderItemsList : setEditOrderItemsList;
+    setter((prev) =>
+      prev.map((it) =>
+        it.id === itemId
+          ? {
+              ...it,
+              fabricList: (it.fabricList || []).map((f: any) =>
+                f.id === fabricId
+                  ? { ...f, stockItemId: stockItem.id, stockItemName: stockItem.name, stockItemImage: stockItem.image || "", stockItemRef: stockItem.reference || "" }
+                  : f
+              ),
+            }
+          : it
+      )
+    );
+    setStockPickerModal(false);
+    setStockPickerTarget(null);
+    setStockPickerSearch("");
   };
 
   const getStoredLocal = (key: string) => {
@@ -1797,7 +1889,7 @@ export default function AdminDashboard() {
   const handleEditAddItem = () => {
     setEditOrderItemsList((prev) => [
       ...prev,
-      { id: String(Date.now()), itemName: "", price: "", fabricDetails: "" },
+      { id: String(Date.now()), itemName: "", price: "", fabricList: [{ id: `f${Date.now()}`, details: "", stockItemId: "", stockItemName: "", stockItemImage: "" }] },
     ]);
   };
 
@@ -4971,7 +5063,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {newOrderItemsList.map((item, idx) => (
-                  <div key={item.id} className="p-3 bg-[#181820] border border-[#2A2A38] rounded-xl space-y-2">
+                  <div key={item.id} className="p-3 bg-[#181820] border border-[#2A2A38] rounded-xl space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-bold text-gy-textMuted">Tenue N° {idx + 1}</span>
                       {newOrderItemsList.length > 1 && (
@@ -5007,17 +5099,82 @@ export default function AdminDashboard() {
                         />
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">Détails & Tissu Spécifique</label>
-                      <input
-                        type="text"
-                        value={item.fabricDetails}
-                        onChange={(e) => handleItemChange(item.id, "fabricDetails", e.target.value)}
-                        className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-gy-textMuted text-xs focus:outline-none"
-                      />
+
+                    {/* ── MULTI-FABRIC SECTION ── */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[#D4AF37] font-bold text-[10px] uppercase tracking-wider">
+                          🧵 Tissus & Matières ({(item.fabricList || []).length})
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleAddFabric(item.id)}
+                          className="px-2 py-0.5 bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40 rounded text-[10px] font-black hover:bg-[#D4AF37] hover:text-black transition-all"
+                        >
+                          + AJOUTER UN TISSU
+                        </button>
+                      </div>
+                      {(item.fabricList || []).map((fab: any, fidx: number) => (
+                        <div key={fab.id} className="p-2 bg-[#0E0E16] border border-[#D4AF37]/20 rounded-lg space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[#D4AF37] text-[10px] font-bold">Tissu {fidx + 1}</span>
+                            {(item.fabricList || []).length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveFabric(item.id, fab.id)}
+                                className="text-rose-400 text-[10px] font-bold hover:underline"
+                              >
+                                ✕ Retirer
+                              </button>
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            value={fab.details}
+                            onChange={(e) => handleFabricChange(item.id, fab.id, "details", e.target.value)}
+                            placeholder="Description du tissu, couleur, quantité..."
+                            className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-white text-[11px] focus:border-[#D4AF37] focus:outline-none"
+                          />
+                          {/* Article stock associé */}
+                          {fab.stockItemId ? (
+                            <div className="flex items-center gap-2 p-1.5 bg-emerald-900/20 border border-emerald-500/30 rounded-lg">
+                              {fab.stockItemImage && (
+                                <img src={fab.stockItemImage} alt={fab.stockItemName} className="w-8 h-8 object-cover rounded" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-emerald-400 text-[10px] font-bold truncate">{fab.stockItemName}</p>
+                                {fab.stockItemRef && <p className="text-gy-textMuted text-[9px]">{fab.stockItemRef}</p>}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => { handleFabricChange(item.id, fab.id, "stockItemId", ""); handleFabricChange(item.id, fab.id, "stockItemName", ""); }}
+                                className="text-rose-400 text-[10px] hover:underline"
+                              >
+                                ✕
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => { setStockPickerTarget({ formType: "new", itemId: item.id, fabricId: fab.id }); setStockPickerModal(true); }}
+                                className="text-[#D4AF37] text-[10px] hover:underline font-bold"
+                              >
+                                Changer
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => { setStockPickerTarget({ formType: "new", itemId: item.id, fabricId: fab.id }); setStockPickerModal(true); }}
+                              className="w-full py-1.5 border border-dashed border-[#D4AF37]/40 rounded-lg text-[10px] text-[#D4AF37]/70 hover:border-[#D4AF37] hover:text-[#D4AF37] transition-all flex items-center justify-center gap-1"
+                            >
+                              📦 Associer un article du stock
+                            </button>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
+
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -5184,17 +5341,80 @@ export default function AdminDashboard() {
                         />
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">Détails & Tissu Spécifique</label>
-                      <input
-                        type="text"
-                        value={item.fabricDetails}
-                        onChange={(e) => handleEditItemChange(item.id, "fabricDetails", e.target.value)}
-                        className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-gy-textMuted text-xs focus:outline-none"
-                      />
+                    {/* ── MULTI-FABRIC SECTION ── */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[#D4AF37] font-bold text-[10px] uppercase tracking-wider">
+                          🧵 Tissus & Matières ({(item.fabricList || [{ id: "f0", details: item.fabricDetails || "", stockItemId: "", stockItemName: "", stockItemImage: "" }]).length})
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleEditAddFabric(item.id)}
+                          className="px-2 py-0.5 bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40 rounded text-[10px] font-black hover:bg-[#D4AF37] hover:text-black transition-all"
+                        >
+                          + AJOUTER UN TISSU
+                        </button>
+                      </div>
+                      {(item.fabricList || [{ id: `f_${item.id}`, details: item.fabricDetails || "", stockItemId: "", stockItemName: "", stockItemImage: "" }]).map((fab: any, fidx: number) => (
+                        <div key={fab.id} className="p-2 bg-[#0E0E16] border border-[#D4AF37]/20 rounded-lg space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[#D4AF37] text-[10px] font-bold">Tissu {fidx + 1}</span>
+                            {(item.fabricList || []).length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleEditRemoveFabric(item.id, fab.id)}
+                                className="text-rose-400 text-[10px] font-bold hover:underline"
+                              >
+                                ✕ Retirer
+                              </button>
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            value={fab.details}
+                            onChange={(e) => handleEditFabricChange(item.id, fab.id, "details", e.target.value)}
+                            placeholder="Description du tissu, couleur, quantité..."
+                            className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-white text-[11px] focus:border-[#D4AF37] focus:outline-none"
+                          />
+                          {fab.stockItemId ? (
+                            <div className="flex items-center gap-2 p-1.5 bg-emerald-900/20 border border-emerald-500/30 rounded-lg">
+                              {fab.stockItemImage && (
+                                <img src={fab.stockItemImage} alt={fab.stockItemName} className="w-8 h-8 object-cover rounded" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-emerald-400 text-[10px] font-bold truncate">{fab.stockItemName}</p>
+                                {fab.stockItemRef && <p className="text-gy-textMuted text-[9px]">{fab.stockItemRef}</p>}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => { handleEditFabricChange(item.id, fab.id, "stockItemId", ""); handleEditFabricChange(item.id, fab.id, "stockItemName", ""); }}
+                                className="text-rose-400 text-[10px] hover:underline"
+                              >
+                                ✕
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => { setStockPickerTarget({ formType: "edit", itemId: item.id, fabricId: fab.id }); setStockPickerModal(true); }}
+                                className="text-[#D4AF37] text-[10px] hover:underline font-bold"
+                              >
+                                Changer
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => { setStockPickerTarget({ formType: "edit", itemId: item.id, fabricId: fab.id }); setStockPickerModal(true); }}
+                              className="w-full py-1.5 border border-dashed border-[#D4AF37]/40 rounded-lg text-[10px] text-[#D4AF37]/70 hover:border-[#D4AF37] hover:text-[#D4AF37] transition-all flex items-center justify-center gap-1"
+                            >
+                              📦 Associer un article du stock
+                            </button>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
+
               </div>
 
               <div>
@@ -6843,6 +7063,83 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+      {/* ========================================================= */}
+      {/* MODAL: SÉLECTEUR D'ARTICLE TISSU DU STOCK                  */}
+      {/* ========================================================= */}
+      {stockPickerModal && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+          <div className="glass-panel max-w-2xl w-full p-6 rounded-3xl border border-[#D4AF37]/50 shadow-2xl font-aptos max-h-[85vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="font-serif text-xl font-bold text-white">📦 ARTICLES EN STOCK</h3>
+                <p className="text-[#D4AF37] text-[10px] font-bold uppercase tracking-widest mt-0.5">Sélectionnez un article tissu à associer</p>
+              </div>
+              <button
+                onClick={() => { setStockPickerModal(false); setStockPickerTarget(null); setStockPickerSearch(""); }}
+                className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold"
+              >
+                [ FERMER ]
+              </button>
+            </div>
+            <input
+              type="text"
+              value={stockPickerSearch}
+              onChange={(e) => setStockPickerSearch(e.target.value)}
+              placeholder="Rechercher un article..."
+              className="w-full bg-gy-dark border border-gy-border rounded-xl px-4 py-2.5 text-white text-xs focus:border-[#D4AF37] focus:outline-none mb-4"
+            />
+            <div className="overflow-y-auto flex-1 pr-1">
+              {stockList.filter((s: any) =>
+                !stockPickerSearch ||
+                s.name?.toLowerCase().includes(stockPickerSearch.toLowerCase()) ||
+                s.reference?.toLowerCase().includes(stockPickerSearch.toLowerCase()) ||
+                s.category?.toLowerCase().includes(stockPickerSearch.toLowerCase())
+              ).length === 0 ? (
+                <div className="text-center py-12 text-gy-textMuted">
+                  <p className="text-3xl mb-2">📦</p>
+                  <p className="text-sm">Aucun article trouvé</p>
+                  <p className="text-[10px] mt-1">Ajoutez d&apos;abord des articles dans le module Stock</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {stockList
+                    .filter((s: any) =>
+                      !stockPickerSearch ||
+                      s.name?.toLowerCase().includes(stockPickerSearch.toLowerCase()) ||
+                      s.reference?.toLowerCase().includes(stockPickerSearch.toLowerCase()) ||
+                      s.category?.toLowerCase().includes(stockPickerSearch.toLowerCase())
+                    )
+                    .map((article: any) => (
+                      <button
+                        key={article.id}
+                        type="button"
+                        onClick={() => handleAssignStockToFabric(article)}
+                        className="p-2 bg-[#181820] border border-[#2A2A38] rounded-xl hover:border-[#D4AF37] hover:bg-[#D4AF37]/10 transition-all text-left group"
+                      >
+                        <div className="w-full aspect-square rounded-lg overflow-hidden bg-[#0E0E16] mb-2 flex items-center justify-center">
+                          {article.image ? (
+                            <img src={article.image} alt={article.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          ) : (
+                            <span className="text-3xl">🧵</span>
+                          )}
+                        </div>
+                        <p className="text-white text-[10px] font-bold truncate">{article.name}</p>
+                        <p className="text-gy-textMuted text-[9px] truncate">{article.reference}</p>
+                        <div className="flex justify-between items-center mt-1">
+                          <span className="text-[#D4AF37] text-[9px] font-bold">{article.category}</span>
+                          <span className={`text-[9px] font-bold ${article.quantity > 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                            {article.quantity} {article.unit}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
