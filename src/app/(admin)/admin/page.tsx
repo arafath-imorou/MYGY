@@ -866,7 +866,7 @@ export default function AdminDashboard() {
   const handleAddItemToOrder = () => {
     setNewOrderItemsList((prev) => [
       ...prev,
-      { id: String(Date.now()), itemName: "", price: "", fabricList: [{ id: `f${Date.now()}`, details: "", stockItemId: "", stockItemName: "", stockItemImage: "" }] },
+      { id: String(Date.now()), itemName: "", price: "", creationId: "", fabricList: [{ id: `f${Date.now()}`, details: "", stockItemId: "", stockItemName: "", stockItemImage: "" }] },
     ]);
   };
 
@@ -883,6 +883,36 @@ export default function AdminDashboard() {
   const handleItemChange = (id: string, field: string, val: any) => {
     setNewOrderItemsList((prev) => {
       const updated = prev.map((it) => (it.id === id ? { ...it, [field]: val } : it));
+      const total = updated.reduce((acc, it) => acc + Number(it.price || 0), 0);
+      setNewOrderTotalAmount(total > 0 ? total : "");
+      return updated;
+    });
+  };
+
+  const handleItemCreationChange = (itemId: string, selectedVal: string) => {
+    setNewOrderItemsList((prev) => {
+      const updated = prev.map((it, idx) => {
+        if (it.id !== itemId) return it;
+        if (selectedVal === "__AUTRE__") {
+          return { ...it, creationId: "__AUTRE__", itemName: "" };
+        }
+        if (!selectedVal) {
+          return { ...it, creationId: "", itemName: "" };
+        }
+        const found = creationsList.find((c) => c.id === selectedVal);
+        if (found) {
+          const itemPrice = found.price ? Number(found.price) : it.price;
+          if (idx === 0) setNewOrderItemName(found.title);
+          return {
+            ...it,
+            creationId: found.id,
+            itemName: found.title,
+            price: itemPrice || it.price || "",
+            creationImage: found.imageUrl || "",
+          };
+        }
+        return it;
+      });
       const total = updated.reduce((acc, it) => acc + Number(it.price || 0), 0);
       setNewOrderTotalAmount(total > 0 ? total : "");
       return updated;
@@ -1705,8 +1735,17 @@ export default function AdminDashboard() {
     setEditOrderStatus(o.status || "PRODUCTION");
     setEditOrderItemsList(
       o.items && o.items.length > 0
-        ? o.items.map((it: any, idx: number) => ({ id: it.id || String(idx + 1), itemName: it.itemName || "", price: it.price || "", fabricDetails: it.fabricDetails || "" }))
-        : [{ id: "1", itemName: o.itemName || "Tenue Sur-Mesure", price: o.totalAmount || "", fabricDetails: o.fabricDetails || "" }]
+        ? o.items.map((it: any, idx: number) => {
+            const matchedCr = creationsList.find((c) => c.id === it.creationId || (c.title && it.itemName && c.title.toLowerCase() === it.itemName.toLowerCase()));
+            return {
+              id: it.id || String(idx + 1),
+              itemName: it.itemName || "",
+              price: it.price || "",
+              creationId: matchedCr ? matchedCr.id : (it.creationId || (it.itemName ? "__AUTRE__" : "")),
+              fabricList: it.fabricList || [{ id: `f${Date.now()}_${idx}`, details: it.fabricDetails || "", stockItemId: it.stockItemId || "", stockItemName: it.stockItemName || "", stockItemImage: it.stockItemImage || "" }],
+            };
+          })
+        : [{ id: "1", itemName: o.itemName || "Tenue Sur-Mesure", price: o.totalAmount || "", creationId: "__AUTRE__", fabricList: [{ id: "f1", details: o.fabricDetails || "", stockItemId: "", stockItemName: "", stockItemImage: "" }] }]
     );
     setEditOrderModal(true);
   };
@@ -1979,7 +2018,7 @@ export default function AdminDashboard() {
   const handleEditAddItem = () => {
     setEditOrderItemsList((prev) => [
       ...prev,
-      { id: String(Date.now()), itemName: "", price: "", fabricList: [{ id: `f${Date.now()}`, details: "", stockItemId: "", stockItemName: "", stockItemImage: "" }] },
+      { id: String(Date.now()), itemName: "", price: "", creationId: "", fabricList: [{ id: `f${Date.now()}`, details: "", stockItemId: "", stockItemName: "", stockItemImage: "" }] },
     ]);
   };
 
@@ -1996,6 +2035,35 @@ export default function AdminDashboard() {
   const handleEditItemChange = (id: string, field: string, val: any) => {
     setEditOrderItemsList((prev) => {
       const updated = prev.map((it) => (it.id === id ? { ...it, [field]: val } : it));
+      const total = updated.reduce((acc, it) => acc + Number(it.price || 0), 0);
+      setEditOrderTotalAmount(total > 0 ? total : "");
+      return updated;
+    });
+  };
+
+  const handleEditItemCreationChange = (itemId: string, selectedVal: string) => {
+    setEditOrderItemsList((prev) => {
+      const updated = prev.map((it) => {
+        if (it.id !== itemId) return it;
+        if (selectedVal === "__AUTRE__") {
+          return { ...it, creationId: "__AUTRE__", itemName: "" };
+        }
+        if (!selectedVal) {
+          return { ...it, creationId: "", itemName: "" };
+        }
+        const found = creationsList.find((c) => c.id === selectedVal);
+        if (found) {
+          const itemPrice = found.price ? Number(found.price) : it.price;
+          return {
+            ...it,
+            creationId: found.id,
+            itemName: found.title,
+            price: itemPrice || it.price || "",
+            creationImage: found.imageUrl || "",
+          };
+        }
+        return it;
+      });
       const total = updated.reduce((acc, it) => acc + Number(it.price || 0), 0);
       setEditOrderTotalAmount(total > 0 ? total : "");
       return updated;
@@ -5289,16 +5357,26 @@ export default function AdminDashboard() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">Nom de la Tenue *</label>
-                        <input
-                          type="text"
-                          value={item.itemName}
-                          onChange={(e) => {
-                            handleItemChange(item.id, "itemName", e.target.value);
-                            if (idx === 0) setNewOrderItemName(e.target.value);
-                          }}
+                        <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">
+                          Modèle / Création *
+                        </label>
+                        <select
+                          value={item.creationId || (item.itemName ? (creationsList.some((c) => c.title === item.itemName) ? creationsList.find((c) => c.title === item.itemName)?.id : "__AUTRE__") : "")}
+                          onChange={(e) => handleItemCreationChange(item.id, e.target.value)}
                           className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-white font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
-                        />
+                        >
+                          <option value="">-- Choisir dans les créations --</option>
+                          <optgroup label="✨ MODÈLES DE NOS CRÉATIONS">
+                            {creationsList.map((cr) => (
+                              <option key={cr.id} value={cr.id}>
+                                👗 {cr.reference ? cr.reference + " - " : ""}{cr.title} {cr.price ? `(${Number(cr.price).toLocaleString()} F)` : ""}
+                              </option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="✍️ SUR-MESURE">
+                            <option value="__AUTRE__">✏️ Autre (Saisie manuelle)</option>
+                          </optgroup>
+                        </select>
                       </div>
                       <div>
                         <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">Prix de cette Tenue (FCFA)</label>
@@ -5310,6 +5388,53 @@ export default function AdminDashboard() {
                         />
                       </div>
                     </div>
+
+                    {/* Si AUTRE sélectionné ou modèle personnalisé */}
+                    {(item.creationId === "__AUTRE__" || (!item.creationId && item.itemName) || (!item.creationId && creationsList.length === 0)) && (
+                      <div className="animate-in fade-in">
+                        <label className="block text-[#D4AF37] mb-1 font-semibold text-[11px]">
+                          Nom de la Tenue voulue (Saisie manuelle) *
+                        </label>
+                        <input
+                          type="text"
+                          value={item.itemName}
+                          onChange={(e) => {
+                            handleItemChange(item.id, "itemName", e.target.value);
+                            if (idx === 0) setNewOrderItemName(e.target.value);
+                          }}
+                          placeholder="Nom de la tenue voulue..."
+                          className="w-full bg-gy-dark border border-[#D4AF37]/50 rounded-lg p-2 text-white font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
+                        />
+                      </div>
+                    )}
+
+                    {/* Si une création du catalogue est sélectionnée, afficher son badge avec photo */}
+                    {item.creationId && item.creationId !== "__AUTRE__" && (
+                      <div className="flex items-center gap-3 p-2 bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-lg animate-in fade-in">
+                        {(() => {
+                          const cr = creationsList.find((c) => c.id === item.creationId);
+                          return (
+                            <>
+                              {cr?.imageUrl && (
+                                <img src={cr.imageUrl} alt={cr.title} className="w-10 h-10 object-cover rounded-md border border-[#D4AF37]/40" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <span className="text-[#D4AF37] text-[10px] font-bold uppercase tracking-wider block">
+                                  {cr?.reference || "MODÈLE GY"}
+                                </span>
+                                <p className="text-white font-bold text-xs truncate">{cr?.title || item.itemName}</p>
+                                {cr?.category && (
+                                  <span className="text-gy-textMuted text-[10px]">{cr.category}</span>
+                                )}
+                              </div>
+                              <span className="text-emerald-400 font-bold text-xs whitespace-nowrap">
+                                {item.price ? `${Number(item.price).toLocaleString()} FCFA` : ""}
+                              </span>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
 
                     {/* ── MULTI-FABRIC SECTION ── */}
                     <div className="space-y-2">
@@ -5524,13 +5649,26 @@ export default function AdminDashboard() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">Nom de la Tenue *</label>
-                        <input
-                          type="text"
-                          value={item.itemName}
-                          onChange={(e) => handleEditItemChange(item.id, "itemName", e.target.value)}
+                        <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">
+                          Modèle / Création *
+                        </label>
+                        <select
+                          value={item.creationId || (item.itemName ? (creationsList.some((c) => c.title === item.itemName) ? creationsList.find((c) => c.title === item.itemName)?.id : "__AUTRE__") : "")}
+                          onChange={(e) => handleEditItemCreationChange(item.id, e.target.value)}
                           className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-white font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
-                        />
+                        >
+                          <option value="">-- Choisir dans les créations --</option>
+                          <optgroup label="✨ MODÈLES DE NOS CRÉATIONS">
+                            {creationsList.map((cr) => (
+                              <option key={cr.id} value={cr.id}>
+                                👗 {cr.reference ? cr.reference + " - " : ""}{cr.title} {cr.price ? `(${Number(cr.price).toLocaleString()} F)` : ""}
+                              </option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="✍️ SUR-MESURE">
+                            <option value="__AUTRE__">✏️ Autre (Saisie manuelle)</option>
+                          </optgroup>
+                        </select>
                       </div>
                       <div>
                         <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">Prix de cette Tenue (FCFA)</label>
@@ -5542,6 +5680,50 @@ export default function AdminDashboard() {
                         />
                       </div>
                     </div>
+
+                    {/* Si AUTRE sélectionné ou modèle personnalisé */}
+                    {(item.creationId === "__AUTRE__" || (!item.creationId && item.itemName) || (!item.creationId && creationsList.length === 0)) && (
+                      <div className="animate-in fade-in">
+                        <label className="block text-[#D4AF37] mb-1 font-semibold text-[11px]">
+                          Nom de la Tenue voulue (Saisie manuelle) *
+                        </label>
+                        <input
+                          type="text"
+                          value={item.itemName}
+                          onChange={(e) => handleEditItemChange(item.id, "itemName", e.target.value)}
+                          placeholder="Nom de la tenue voulue..."
+                          className="w-full bg-gy-dark border border-[#D4AF37]/50 rounded-lg p-2 text-white font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
+                        />
+                      </div>
+                    )}
+
+                    {/* Si une création du catalogue est sélectionnée, afficher son badge avec photo */}
+                    {item.creationId && item.creationId !== "__AUTRE__" && (
+                      <div className="flex items-center gap-3 p-2 bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-lg animate-in fade-in">
+                        {(() => {
+                          const cr = creationsList.find((c) => c.id === item.creationId);
+                          return (
+                            <>
+                              {cr?.imageUrl && (
+                                <img src={cr.imageUrl} alt={cr.title} className="w-10 h-10 object-cover rounded-md border border-[#D4AF37]/40" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <span className="text-[#D4AF37] text-[10px] font-bold uppercase tracking-wider block">
+                                  {cr?.reference || "MODÈLE GY"}
+                                </span>
+                                <p className="text-white font-bold text-xs truncate">{cr?.title || item.itemName}</p>
+                                {cr?.category && (
+                                  <span className="text-gy-textMuted text-[10px]">{cr.category}</span>
+                                )}
+                              </div>
+                              <span className="text-emerald-400 font-bold text-xs whitespace-nowrap">
+                                {item.price ? `${Number(item.price).toLocaleString()} FCFA` : ""}
+                              </span>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
                     {/* ── MULTI-FABRIC SECTION ── */}
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
