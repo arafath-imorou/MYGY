@@ -457,6 +457,8 @@ export default function AdminDashboard() {
   const [mvtType, setMvtType] = useState("ENTREE");
   const [mvtQty, setMvtQty] = useState<number | "">("");
   const [mvtReason, setMvtReason] = useState("");
+  const [mvtRecipient, setMvtRecipient] = useState("");
+  const [mvtRecipientOther, setMvtRecipientOther] = useState("");
 
   const [rhRoleFilter, setRhRoleFilter] = useState("TOUS");
   const [newEmployeeModal, setNewEmployeeModal] = useState(false);
@@ -1989,20 +1991,44 @@ export default function AdminDashboard() {
 
   const handleStockMovement = async () => {
     if (!stockMvtModal || !mvtQty) { alert("Quantité requise."); return; }
+
+    let finalRecipient = "";
+    if (mvtType === "SORTIE" || mvtType === "MISE_A_DISPO") {
+      if (!mvtRecipient) {
+        alert("Veuillez sélectionner le destinataire (membre du personnel RH ou Autre).");
+        return;
+      }
+      if (mvtRecipient === "__AUTRE__") {
+        if (!mvtRecipientOther.trim()) {
+          alert("Veuillez préciser le destinataire dans le champ Autre.");
+          return;
+        }
+        finalRecipient = mvtRecipientOther.trim();
+      } else {
+        finalRecipient = mvtRecipient;
+      }
+    }
+
     try {
       const res = await fetch("/api/admin/stock", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: stockMvtModal.id,
-          movement: { type: mvtType, quantity: mvtQty, reason: mvtReason, by: currentUser?.fullName || "Admin" },
+          movement: {
+            type: mvtType,
+            quantity: mvtQty,
+            reason: mvtReason,
+            recipient: finalRecipient || null,
+            by: currentUser?.fullName || "Admin",
+          },
         }),
       });
       if (res.ok) {
         const updated = await res.json();
         setStockList((prev) => prev.map((s) => s.id === updated.id ? updated : s));
         setStockMvtModal(null);
-        setMvtType("ENTREE"); setMvtQty(""); setMvtReason("");
+        setMvtType("ENTREE"); setMvtQty(""); setMvtReason(""); setMvtRecipient(""); setMvtRecipientOther("");
       }
     } catch (e) { alert("Erreur réseau."); }
   };
@@ -4103,6 +4129,8 @@ export default function AdminDashboard() {
                       setMvtType("ENTREE");
                       setMvtQty("");
                       setMvtReason("");
+                      setMvtRecipient("");
+                      setMvtRecipientOther("");
                     }}
                     className="px-5 py-3.5 rounded-2xl bg-gy-gold/20 text-gy-gold border border-gy-gold/40 font-black text-xs uppercase tracking-wider hover:bg-gy-gold hover:text-black transition-all cursor-pointer shadow-lg"
                   >
@@ -4196,7 +4224,7 @@ export default function AdminDashboard() {
                           <td className="p-4">
                             <div className="flex gap-2">
                               <button
-                                onClick={() => { setStockMvtModal(item); setMvtType("ENTREE"); setMvtQty(""); setMvtReason(""); }}
+                                onClick={() => { setStockMvtModal(item); setMvtType("ENTREE"); setMvtQty(""); setMvtReason(""); setMvtRecipient(""); setMvtRecipientOther(""); }}
                                 className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-lg text-xs font-black hover:bg-emerald-500 hover:text-black transition-all"
                               >
                                 MOUVEMENT
@@ -4236,6 +4264,11 @@ export default function AdminDashboard() {
                           "bg-blue-500/20 text-blue-400"
                         }`}>{mv.type}</span>
                         <span className="font-bold text-white">{mv.itemName}</span>
+                        {mv.recipient && (
+                          <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[11px] font-bold">
+                            👤 {mv.recipient}
+                          </span>
+                        )}
                         {mv.reason && <span className="text-gy-textMuted text-xs ml-2">— {mv.reason}</span>}
                       </div>
                       <div className="text-right">
@@ -7227,6 +7260,64 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
+
+              {/* Destinataire pour SORTIE et MISE À DISPO */}
+              {(mvtType === "SORTIE" || mvtType === "MISE_A_DISPO") && (
+                <div className="p-3.5 bg-[#0E0E16] border border-gy-gold/40 rounded-2xl space-y-2.5 animate-in fade-in">
+                  <div className="flex justify-between items-center">
+                    <label className="block text-gy-gold font-bold text-xs uppercase tracking-wider">
+                      👤 Destinataire / Bénéficiaire *
+                    </label>
+                    <span className="text-[10px] text-gy-textMuted italic">
+                      {mvtType === "SORTIE" ? "Qui consomme ce stock ?" : "À qui est mis à disposition ce matériel ?"}
+                    </span>
+                  </div>
+
+                  <select
+                    value={mvtRecipient}
+                    onChange={(e) => {
+                      setMvtRecipient(e.target.value);
+                      if (e.target.value !== "__AUTRE__") setMvtRecipientOther("");
+                    }}
+                    className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white font-bold text-xs focus:border-gy-gold focus:outline-none"
+                  >
+                    <option value="">-- Choisir un membre du personnel (RH) --</option>
+                    <optgroup label="👥 PERSONNEL ENREGISTRÉ DANS RH">
+                      {employeesList.map((emp) => (
+                        <option key={emp.id} value={`${emp.firstName} ${emp.lastName} (${emp.role || emp.department})`}>
+                          👤 {emp.firstName} {emp.lastName} — {emp.role} {emp.department ? `[${emp.department}]` : ""}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="✍️ AUTRE DESTINATAIRE">
+                      <option value="__AUTRE__">✏️ Autre (Préciser manuellement)</option>
+                    </optgroup>
+                  </select>
+
+                  {/* Champ de saisie libre si AUTRE */}
+                  {mvtRecipient === "__AUTRE__" && (
+                    <div className="animate-in fade-in pt-1">
+                      <label className="block text-gy-textMuted mb-1 font-semibold text-[11px]">
+                        Préciser le nom du destinataire *
+                      </label>
+                      <input
+                        type="text"
+                        value={mvtRecipientOther}
+                        onChange={(e) => setMvtRecipientOther(e.target.value)}
+                        placeholder="ex: Atelier broderie externe, M. Jean (prestataire), Client(e)..."
+                        className="w-full bg-gy-dark border border-gy-gold/50 rounded-xl p-3 text-white font-bold text-xs focus:border-gy-gold focus:outline-none"
+                      />
+                    </div>
+                  )}
+
+                  {mvtRecipient && mvtRecipient !== "__AUTRE__" && (
+                    <div className="flex items-center gap-2 p-2 bg-emerald-900/20 border border-emerald-500/30 rounded-xl text-xs text-emerald-300">
+                      <span>✓</span>
+                      <span>Destinataire sélectionné : <strong className="text-white">{mvtRecipient}</strong></span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Motif / Justification</label>

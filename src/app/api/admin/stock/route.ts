@@ -94,6 +94,7 @@ export async function PUT(req: Request) {
             type: movement.type,
             quantity: qty,
             reason: movement.reason || "",
+            recipient: movement.recipient || null,
             orderId: movement.orderId || null,
             date: new Date().toISOString(),
             by: movement.by || "Admin",
