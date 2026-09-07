@@ -17,11 +17,24 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, category, unit, quantity, minQuantity, type, reference, supplierInfo, image } = body;
+    const { name, category, unit, quantity, minQuantity, type, reference, supplierInfo, image, createdBy } = body;
 
     if (!name || !category) {
       return NextResponse.json({ error: "Nom et categorie requis." }, { status: 400 });
     }
+
+    const initQty = Number(quantity || 0);
+    const initialMovements = initQty > 0 ? [
+      {
+        id: `mv_${Date.now()}`,
+        type: "ENTREE",
+        quantity: initQty,
+        reason: "STOCK INITIAL (CRÉATION DE L'ARTICLE)",
+        orderId: null,
+        date: new Date().toISOString(),
+        by: createdBy || "Admin",
+      },
+    ] : [];
 
     const newItem = {
       id: `stk_${Date.now()}`,
@@ -30,11 +43,11 @@ export async function POST(req: Request) {
       category, // TISSU, FIL, AIGUILLE, ACCESSOIRE, EQUIPEMENT, AUTRE
       type: type || "CONSOMMABLE", // CONSOMMABLE ou EQUIPEMENT
       unit: unit || "m",
-      quantity: Number(quantity || 0),
+      quantity: initQty,
       minQuantity: Number(minQuantity || 0),
       supplierInfo: supplierInfo || "",
       image: image || "",
-      movements: [],
+      movements: initialMovements,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

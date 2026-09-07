@@ -1749,15 +1749,19 @@ export default function AdminDashboard() {
           unit: stkUnit, quantity: stkQuantity, minQuantity: stkMinQty,
           supplierInfo: stkSupplier,
           image: stkImage || "",
+          createdBy: currentUser?.fullName || "Admin",
         }),
       });
       if (res.ok) {
         const item = await res.json();
-        setStockList((prev) => [item, ...prev]);
         setNewStockModal(false);
         setStkName(""); setStkCategory("TISSU"); setStkType("CONSOMMABLE");
         setStkUnit("m"); setStkQuantity(""); setStkMinQty(""); setStkSupplier("");
         setStkImage("");
+        await fetchData();
+        alert(`L'article « ${item.name} » (${item.reference}) a été enregistré avec succès dans la base de données !`);
+      } else {
+        alert("Erreur lors de l'enregistrement de l'article.");
       }
     } catch (e) { alert("Erreur réseau."); }
   };
