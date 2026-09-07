@@ -153,6 +153,11 @@ export async function POST(req: Request) {
       };
     }
 
+    customerResult = {
+      ...customerResult,
+      measures: body.measures || null,
+    };
+
     // Save to Cloud Database so ALL devices see this customer instantly
     await updateCloudData((store) => {
       const existing = store.customers || [];
@@ -169,7 +174,7 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
-    const { id, firstName, lastName, phone, email, city, category, profession, notes, measurements } = body;
+    const { id, firstName, lastName, phone, email, city, category, profession, notes, measurements, measures } = body;
 
     if (!id) {
       return NextResponse.json({ error: "ID client manquant." }, { status: 400 });
@@ -180,27 +185,41 @@ export async function PUT(req: Request) {
       updatedCustomer = await prisma.customer.update({
         where: { id },
         data: {
-          firstName,
-          lastName,
-          phone,
-          email: email || null,
-          city: city || "Cotonou",
-          category: category || "VIP",
-          profession: profession || null,
-          notes: notes || null,
+          ...(firstName ? { firstName } : {}),
+          ...(lastName ? { lastName } : {}),
+          ...(phone ? { phone } : {}),
+          ...(email !== undefined ? { email } : {}),
+          ...(city ? { city } : {}),
+          ...(category ? { category } : {}),
+          ...(profession !== undefined ? { profession } : {}),
+          ...(notes !== undefined ? { notes } : {}),
         },
       });
     } catch (e) {
       updatedCustomer = { id, firstName, lastName, phone, email, city, category, profession, notes };
     }
 
+    const finalMeasures = measures !== undefined ? measures : measurements;
+
     await updateCloudData((store) => {
       const existing = store.customers || [];
-      const updatedCusts = existing.map((c: any) => (c.id === id ? { ...c, ...updatedCustomer } : c));
+      const updatedCusts = existing.map((c: any) => {
+        if (c.id === id) {
+          return {
+            ...c,
+            ...updatedCustomer,
+            ...(finalMeasures !== undefined ? { measures: finalMeasures } : {}),
+          };
+        }
+        return c;
+      });
       return { ...store, customers: updatedCusts };
     });
 
-    return NextResponse.json(updatedCustomer);
+    return NextResponse.json({
+      ...updatedCustomer,
+      ...(finalMeasures !== undefined ? { measures: finalMeasures } : {}),
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

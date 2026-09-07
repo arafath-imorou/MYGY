@@ -155,6 +155,16 @@ export default function AdminDashboard() {
   // Client Modals
   const [viewCustomerModal, setViewCustomerModal] = useState<any>(null);
   const [editCustomerModal, setEditCustomerModal] = useState<any>(null);
+  const [measuresModalCustomer, setMeasuresModalCustomer] = useState<any>(null);
+  const [customerMeasures, setCustomerMeasures] = useState({
+    buste: "", tourTaille: "", hanches: "", epaules: "",
+    longDos: "", longRobe: "", longPantalon: "", pointure: "",
+    encolure: "", poitrine: "", bassinHanche: "", tourBras: "",
+    hauteurTaille: "", longJupe: "", sousPoitrine: "", carrure: "",
+    poignet: "", hauteurPoitrine: "", ecartPoitrine: "", entrejambe: "",
+    cuisse: "", genou: "", mollet: "", cheville: "", morphologie: "", notes: "",
+  });
+  const [savingMeasures, setSavingMeasures] = useState(false);
 
   // Edit Customer Form State
   const [editFirstName, setEditFirstName] = useState("");
@@ -1374,6 +1384,75 @@ export default function AdminDashboard() {
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleOpenCustomerMeasures = (cust: any) => {
+    setMeasuresModalCustomer(cust);
+    const m = cust.measures || (cust.measurements && cust.measurements.length > 0 ? cust.measurements[0] : {}) || {};
+    setCustomerMeasures({
+      buste: m.buste || m.poitrine || "",
+      tourTaille: m.tourTaille || m.taille || "",
+      hanches: m.hanches || "",
+      epaules: m.epaules || m.epaule || "",
+      longDos: m.longDos || m.longueurDos || "",
+      longRobe: m.longRobe || m.longueurRobe || "",
+      longPantalon: m.longPantalon || m.pantalon || "",
+      pointure: m.pointure || "",
+      encolure: m.encolure || "",
+      poitrine: m.poitrine || m.buste || "",
+      bassinHanche: m.bassinHanche || m.hauteurBassin || "",
+      tourBras: m.tourBras || m.bras || "",
+      hauteurTaille: m.hauteurTaille || "",
+      longJupe: m.longJupe || m.longueurJupe || "",
+      sousPoitrine: m.sousPoitrine || "",
+      carrure: m.carrure || "",
+      poignet: m.poignet || "",
+      hauteurPoitrine: m.hauteurPoitrine || "",
+      ecartPoitrine: m.ecartPoitrine || "",
+      entrejambe: m.entrejambe || "",
+      cuisse: m.cuisse || "",
+      genou: m.genou || "",
+      mollet: m.mollet || "",
+      cheville: m.cheville || "",
+      morphologie: m.morphologie || "",
+      notes: m.notes || "",
+    });
+  };
+
+  const handleSaveCustomerMeasures = async () => {
+    if (!measuresModalCustomer) return;
+    setSavingMeasures(true);
+    try {
+      const res = await fetch("/api/admin/customers", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: measuresModalCustomer.id,
+          measures: customerMeasures,
+        }),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setCustomers((prev) =>
+          prev.map((c) =>
+            c.id === measuresModalCustomer.id ? { ...c, ...updated, measures: customerMeasures } : c
+          )
+        );
+        if (viewCustomerModal && viewCustomerModal.id === measuresModalCustomer.id) {
+          setViewCustomerModal((prev: any) => ({ ...prev, measures: customerMeasures }));
+        }
+        setMeasuresModalCustomer((prev: any) => ({ ...prev, measures: customerMeasures }));
+        alert("Mesures enregistrées avec succès !");
+      } else {
+        alert("Erreur lors de l'enregistrement des mesures.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Erreur réseau.");
+    } finally {
+      setSavingMeasures(false);
     }
   };
 
@@ -2791,6 +2870,14 @@ export default function AdminDashboard() {
                                 title="Voir la fiche client"
                               >
                                 👁️
+                              </button>
+
+                              <button
+                                onClick={() => handleOpenCustomerMeasures(c)}
+                                className="w-9 h-9 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black border border-[#D4AF37]/40 transition-all text-sm font-bold flex items-center justify-center shadow-sm"
+                                title="Voir et modifier les mesures de la cliente"
+                              >
+                                📏
                               </button>
 
                               <button
@@ -6113,17 +6200,28 @@ export default function AdminDashboard() {
                 <button onClick={() => setViewCustomerModal(null)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
                   [ FERMER ]
                 </button>
-                <button
-                  onClick={() => {
-                    setClientAccountModal(viewCustomerModal);
-                    setClientAccountEmail(viewCustomerModal.email || "");
-                    setClientAccountCredentials(null);
-                    setViewCustomerModal(null);
-                  }}
-                  className="px-3 py-1.5 bg-violet-500/20 text-violet-300 border border-violet-500/40 rounded-lg text-xs font-black hover:bg-violet-500 hover:text-white transition-all"
-                >
-                  CRÉER ACCÈS CLIENT
-                </button>
+                <div className="flex gap-2 items-center">
+                  <button
+                    onClick={() => {
+                      handleOpenCustomerMeasures(viewCustomerModal);
+                    }}
+                    className="px-3 py-1.5 bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40 rounded-lg text-xs font-black hover:bg-[#D4AF37] hover:text-black transition-all flex items-center gap-1.5"
+                    title="Voir et modifier les mesures"
+                  >
+                    <span>📏</span> MESURES
+                  </button>
+                  <button
+                    onClick={() => {
+                      setClientAccountModal(viewCustomerModal);
+                      setClientAccountEmail(viewCustomerModal.email || "");
+                      setClientAccountCredentials(null);
+                      setViewCustomerModal(null);
+                    }}
+                    className="px-3 py-1.5 bg-violet-500/20 text-violet-300 border border-violet-500/40 rounded-lg text-xs font-black hover:bg-violet-500 hover:text-white transition-all"
+                  >
+                    CRÉER ACCÈS CLIENT
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -6205,6 +6303,224 @@ export default function AdminDashboard() {
                     </>
                   );
                 })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: MESURES DE LA CLIENTE (CONSULTATION & MODIFICATION) */}
+      {/* ========================================================= */}
+      {measuresModalCustomer && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-panel max-w-2xl w-full p-8 rounded-3xl border border-[#D4AF37]/60 shadow-2xl font-aptos my-8 max-h-[92vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex justify-between items-start border-b border-gy-border pb-5 mb-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">📏</span>
+                  <span className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider">
+                    {measuresModalCustomer.code}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-[#D4AF37]/20 text-[#D4AF37] text-[10px] font-black">
+                    {measuresModalCustomer.category || "VIP Standard"}
+                  </span>
+                </div>
+                <h3 className="font-serif text-2xl font-bold text-white mt-1">
+                  MESURES DE LA CLIENTE
+                </h3>
+                <p className="text-xs text-gy-textMuted mt-0.5">
+                  <span className="text-white font-bold">{measuresModalCustomer.firstName} {measuresModalCustomer.lastName}</span>
+                  {measuresModalCustomer.phone && (
+                    <span className="ml-2 text-emerald-400">({measuresModalCustomer.phone})</span>
+                  )}
+                </p>
+              </div>
+              <button
+                onClick={() => setMeasuresModalCustomer(null)}
+                className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold"
+              >
+                [ FERMER ]
+              </button>
+            </div>
+
+            <div className="space-y-6 text-sm">
+              {/* Info banner */}
+              <div className="p-3 bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-xl flex items-center justify-between text-xs text-[#D4AF37]">
+                <span className="flex items-center gap-2">
+                  <span>ℹ️</span>
+                  <span>Consultez ou modifiez directement les mensurations ci-dessous. Enregistrez pour sauvegarder.</span>
+                </span>
+              </div>
+
+              {/* 1. Tours de corps & Poitrine */}
+              <div className="p-4 bg-[#0E0E16] border border-[#D4AF37]/20 rounded-2xl space-y-3">
+                <div className="flex items-center gap-2 pb-2 border-b border-[#D4AF37]/20">
+                  <span className="text-[#D4AF37] text-sm">👗</span>
+                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-widest">
+                    1. Tours de Corps & Poitrine (cm)
+                  </h4>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[
+                    { key: "buste", label: "Buste / Poitrine" },
+                    { key: "sousPoitrine", label: "Sous-Poitrine" },
+                    { key: "tourTaille", label: "Tour de Taille" },
+                    { key: "hanches", label: "Tour des Hanches" },
+                    { key: "bassinHanche", label: "Bassin / Hanche Basse" },
+                    { key: "hauteurPoitrine", label: "Hauteur Poitrine" },
+                    { key: "ecartPoitrine", label: "Écart Poitrine" },
+                  ].map(({ key, label }) => (
+                    <div key={key}>
+                      <label className="block text-gy-textMuted mb-1 font-semibold text-[10px] uppercase">{label}</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={(customerMeasures as any)[key] || ""}
+                          onChange={(e) => setCustomerMeasures((prev) => ({ ...prev, [key]: e.target.value }))}
+                          placeholder="—"
+                          className="w-full bg-gy-dark border border-[#D4AF37]/30 rounded-xl p-2.5 pr-7 text-white font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#D4AF37] text-[9px] font-bold">cm</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2. Haut du corps, Carrure & Bras */}
+              <div className="p-4 bg-[#0E0E16] border border-[#D4AF37]/20 rounded-2xl space-y-3">
+                <div className="flex items-center gap-2 pb-2 border-b border-[#D4AF37]/20">
+                  <span className="text-[#D4AF37] text-sm">✂️</span>
+                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-widest">
+                    2. Haut du Corps, Épaules & Bras (cm)
+                  </h4>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[
+                    { key: "epaules", label: "Largeur Épaules" },
+                    { key: "carrure", label: "Carrure" },
+                    { key: "encolure", label: "Encolure / Cou" },
+                    { key: "tourBras", label: "Tour de Bras / Biceps" },
+                    { key: "poignet", label: "Tour de Poignet" },
+                  ].map(({ key, label }) => (
+                    <div key={key}>
+                      <label className="block text-gy-textMuted mb-1 font-semibold text-[10px] uppercase">{label}</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={(customerMeasures as any)[key] || ""}
+                          onChange={(e) => setCustomerMeasures((prev) => ({ ...prev, [key]: e.target.value }))}
+                          placeholder="—"
+                          className="w-full bg-gy-dark border border-[#D4AF37]/30 rounded-xl p-2.5 pr-7 text-white font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#D4AF37] text-[9px] font-bold">cm</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Longueurs & Bas du corps */}
+              <div className="p-4 bg-[#0E0E16] border border-[#D4AF37]/20 rounded-2xl space-y-3">
+                <div className="flex items-center gap-2 pb-2 border-b border-[#D4AF37]/20">
+                  <span className="text-[#D4AF37] text-sm">📐</span>
+                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-widest">
+                    3. Longueurs & Bas du Corps (cm)
+                  </h4>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[
+                    { key: "longDos", label: "Longueur Dos" },
+                    { key: "hauteurTaille", label: "Hauteur Taille" },
+                    { key: "longRobe", label: "Longueur Robe" },
+                    { key: "longJupe", label: "Longueur Jupe" },
+                    { key: "longPantalon", label: "Longueur Pantalon" },
+                    { key: "entrejambe", label: "Entrejambe" },
+                    { key: "cuisse", label: "Tour de Cuisse" },
+                    { key: "genou", label: "Tour de Genou" },
+                    { key: "mollet", label: "Tour de Mollet" },
+                    { key: "cheville", label: "Tour de Cheville" },
+                    { key: "pointure", label: "Pointure (Chaussure)", unit: "EU" },
+                  ].map(({ key, label, unit }) => (
+                    <div key={key}>
+                      <label className="block text-gy-textMuted mb-1 font-semibold text-[10px] uppercase">{label}</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={(customerMeasures as any)[key] || ""}
+                          onChange={(e) => setCustomerMeasures((prev) => ({ ...prev, [key]: e.target.value }))}
+                          placeholder="—"
+                          className="w-full bg-gy-dark border border-[#D4AF37]/30 rounded-xl p-2.5 pr-7 text-white font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#D4AF37] text-[9px] font-bold">
+                          {unit || "cm"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 4. Morphologie & Particularités */}
+              <div className="p-4 bg-[#0E0E16] border border-[#D4AF37]/20 rounded-2xl space-y-3">
+                <div className="flex items-center gap-2 pb-2 border-b border-[#D4AF37]/20">
+                  <span className="text-[#D4AF37] text-sm">💎</span>
+                  <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-widest">
+                    4. Morphologie & Particularités
+                  </h4>
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Type de Morphologie</label>
+                  <select
+                    value={customerMeasures.morphologie || ""}
+                    onChange={(e) => setCustomerMeasures((prev) => ({ ...prev, morphologie: e.target.value }))}
+                    className="w-full bg-gy-dark border border-[#D4AF37]/30 rounded-xl p-3 text-white font-bold text-xs focus:border-[#D4AF37] focus:outline-none"
+                  >
+                    <option value="">Non spécifiée</option>
+                    <option value="Sablier (8 / X)">Sablier (8 / X) — Épaules & hanches alignées, taille marquée</option>
+                    <option value="Rectangle (H)">Rectangle (H) — Silhouette droite, taille peu marquée</option>
+                    <option value="Pyramide (A / Triangle)">Pyramide (A / Triangle) — Hanches plus larges que les épaules</option>
+                    <option value="Pyramide Inversée (V)">Pyramide Inversée (V) — Épaules plus larges que les hanches</option>
+                    <option value="Rondeur (O / Ovale)">Rondeur (O / Ovale) — Silhouette tout en rondeur</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Notes & Particularités Morphologiques</label>
+                  <textarea
+                    value={customerMeasures.notes || ""}
+                    onChange={(e) => setCustomerMeasures((prev) => ({ ...prev, notes: e.target.value }))}
+                    rows={3}
+                    placeholder="Morphologie particulière, cambrure, épaules tombantes, ajustements préférés..."
+                    className="w-full bg-gy-dark border border-[#D4AF37]/30 rounded-xl p-3 text-white text-xs focus:border-[#D4AF37] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Actions buttons */}
+              <div className="flex space-x-3 pt-4 border-t border-gy-border">
+                <button
+                  type="button"
+                  onClick={() => setMeasuresModalCustomer(null)}
+                  className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase hover:bg-white/5 transition-all"
+                >
+                  ANNULER
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveCustomerMeasures}
+                  disabled={savingMeasures}
+                  className="w-1/2 py-3.5 rounded-xl bg-gold-gradient text-black font-black text-xs uppercase shadow-gold hover:opacity-95 transition-all flex items-center justify-center gap-2"
+                >
+                  {savingMeasures ? (
+                    <span>ENREGISTREMENT...</span>
+                  ) : (
+                    <>
+                      <span>💾</span> ENREGISTRER LES MESURES
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
