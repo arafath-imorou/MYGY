@@ -208,6 +208,13 @@ export default function AdminDashboard() {
   const [newCustCategory, setNewCustCategory] = useState("Standard");
   const [newCustProfession, setNewCustProfession] = useState("");
   const [newCustNotes, setNewCustNotes] = useState("");
+  const [newCustTakeMeasures, setNewCustTakeMeasures] = useState(false);
+  const [newCustMeasures, setNewCustMeasures] = useState({
+    buste: "", tourTaille: "", hanches: "", epaules: "",
+    longDos: "", longRobe: "", longPantalon: "", pointure: "",
+    encolure: "", poitrine: "", bassinHanche: "", tourBras: "",
+    hauteurTaille: "", longJupe: "", notes: "",
+  });
 
   // Order Creation Form Modal
   const [newOrderModal, setNewOrderModal] = useState(false);
@@ -1517,6 +1524,7 @@ export default function AdminDashboard() {
           category: newCustCategory,
           profession: newCustProfession,
           notes: newCustNotes,
+          measures: newCustTakeMeasures ? newCustMeasures : null,
         }),
       });
 
@@ -1535,6 +1543,8 @@ export default function AdminDashboard() {
         setNewCustPhone("");
         setNewCustEmail("");
         setNewCustNotes("");
+        setNewCustTakeMeasures(false);
+        setNewCustMeasures({ buste: "", tourTaille: "", hanches: "", epaules: "", longDos: "", longRobe: "", longPantalon: "", pointure: "", encolure: "", poitrine: "", bassinHanche: "", tourBras: "", hauteurTaille: "", longJupe: "", notes: "" });
         setActiveMenu("clients");
       } else {
         const err = await res.json();
@@ -1544,6 +1554,7 @@ export default function AdminDashboard() {
       console.error(e);
     }
   };
+
 
   const handleCreateOrder = async () => {
     const targetCustomerId = newOrderCustomerId || (customers.length > 0 ? customers[0].id : "");
@@ -4934,7 +4945,7 @@ export default function AdminDashboard() {
       {/* ========================================================= */}
       {newCustomerModal && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="glass-panel max-w-lg w-full p-8 rounded-3xl border border-[#D4AF37]/50 shadow-2xl font-aptos my-8">
+          <div className="glass-panel max-w-lg w-full p-8 rounded-3xl border border-[#D4AF37]/50 shadow-2xl font-aptos my-8 max-h-[92vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6 border-b border-gy-border pb-4">
               <h3 className="font-serif text-2xl font-bold text-white">CRÉER UN NOUVEAU CLIENT VIP</h3>
               <button onClick={() => setNewCustomerModal(false)} className="text-gy-textMuted hover:text-white px-3 py-1 bg-gy-dark border border-gy-border rounded-lg text-xs font-bold">
@@ -4999,6 +5010,118 @@ export default function AdminDashboard() {
                 </select>
               </div>
 
+              {/* ── PRISE DE MESURES ── */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setNewCustTakeMeasures(!newCustTakeMeasures)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 font-bold text-sm transition-all ${
+                    newCustTakeMeasures
+                      ? "bg-[#D4AF37]/15 border-[#D4AF37] text-[#D4AF37]"
+                      : "bg-gy-dark border-gy-border text-gy-textMuted hover:border-[#D4AF37]/50"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-base">📏</span>
+                    PRENDRE LES MESURES
+                  </span>
+                  <span className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${newCustTakeMeasures ? "bg-[#D4AF37] border-[#D4AF37]" : "border-gy-border"}`}>
+                    {newCustTakeMeasures && <span className="text-black text-xs font-black">✓</span>}
+                  </span>
+                </button>
+              </div>
+
+              {/* Formulaire de mesures (affiché si coché) */}
+              {newCustTakeMeasures && (
+                <div className="p-4 bg-[#0E0E16] border border-[#D4AF37]/30 rounded-2xl space-y-4 animate-in fade-in">
+                  <div className="flex items-center gap-2 pb-2 border-b border-[#D4AF37]/20">
+                    <span className="text-[#D4AF37] text-sm">📏</span>
+                    <h4 className="text-[#D4AF37] font-bold text-xs uppercase tracking-widest">FICHE DE MENSURATIONS (cm)</h4>
+                  </div>
+
+                  {/* Rangée 1 */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { key: "buste", label: "Buste / Tour Poitrine" },
+                      { key: "tourTaille", label: "Tour de Taille" },
+                      { key: "hanches", label: "Tour des Hanches" },
+                    ].map(({ key, label }) => (
+                      <div key={key}>
+                        <label className="block text-gy-textMuted mb-1 font-semibold text-[10px] uppercase">{label}</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={(newCustMeasures as any)[key]}
+                            onChange={(e) => setNewCustMeasures((prev) => ({ ...prev, [key]: e.target.value }))}
+                            className="w-full bg-gy-dark border border-[#D4AF37]/30 rounded-lg p-2 pr-7 text-white text-xs focus:border-[#D4AF37] focus:outline-none"
+                          />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#D4AF37] text-[9px] font-bold">cm</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Rangée 2 */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { key: "epaules", label: "Largeur Épaules" },
+                      { key: "encolure", label: "Encolure / Col" },
+                      { key: "tourBras", label: "Tour de Bras" },
+                    ].map(({ key, label }) => (
+                      <div key={key}>
+                        <label className="block text-gy-textMuted mb-1 font-semibold text-[10px] uppercase">{label}</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={(newCustMeasures as any)[key]}
+                            onChange={(e) => setNewCustMeasures((prev) => ({ ...prev, [key]: e.target.value }))}
+                            className="w-full bg-gy-dark border border-[#D4AF37]/30 rounded-lg p-2 pr-7 text-white text-xs focus:border-[#D4AF37] focus:outline-none"
+                          />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#D4AF37] text-[9px] font-bold">cm</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Rangée 3 — Longueurs */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { key: "longDos", label: "Longueur Dos" },
+                      { key: "hauteurTaille", label: "Hauteur Taille" },
+                      { key: "longRobe", label: "Longueur Robe" },
+                      { key: "longJupe", label: "Longueur Jupe" },
+                      { key: "longPantalon", label: "Longueur Pantalon" },
+                      { key: "pointure", label: "Pointure (chaussure)" },
+                    ].map(({ key, label }) => (
+                      <div key={key}>
+                        <label className="block text-gy-textMuted mb-1 font-semibold text-[10px] uppercase">{label}</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={(newCustMeasures as any)[key]}
+                            onChange={(e) => setNewCustMeasures((prev) => ({ ...prev, [key]: e.target.value }))}
+                            className="w-full bg-gy-dark border border-[#D4AF37]/30 rounded-lg p-2 pr-7 text-white text-xs focus:border-[#D4AF37] focus:outline-none"
+                          />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#D4AF37] text-[9px] font-bold">{key === "pointure" ? "EU" : "cm"}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Notes mesures */}
+                  <div>
+                    <label className="block text-gy-textMuted mb-1 font-semibold text-[10px] uppercase">Notes / Particularités</label>
+                    <textarea
+                      value={newCustMeasures.notes}
+                      onChange={(e) => setNewCustMeasures((prev) => ({ ...prev, notes: e.target.value }))}
+                      rows={2}
+                      placeholder="Morphologie particulière, préférences, ajustements..."
+                      className="w-full bg-gy-dark border border-[#D4AF37]/30 rounded-lg p-2 text-white text-xs focus:border-[#D4AF37] focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="flex space-x-3 pt-4">
                 <button
                   onClick={() => setNewCustomerModal(false)}
@@ -5017,6 +5140,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
 
       {/* ========================================================= */}
       {/* 2. MODAL: NOUVELLE COMMANDE FORM                          */}
