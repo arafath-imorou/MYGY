@@ -67,6 +67,7 @@ function readFromFile(): CloudStoreData {
           employees: parsed.employees || [],
           users: parsed.users || [],
           creations: parsed.creations || [],
+          stock: parsed.stock || [],
           creationCategories: parsed.creationCategories && parsed.creationCategories.length > 0 ? parsed.creationCategories : DEFAULT_CREATION_CATEGORIES,
           creationBadges: parsed.creationBadges && parsed.creationBadges.length > 0 ? parsed.creationBadges : DEFAULT_CREATION_BADGES,
         };
@@ -101,6 +102,7 @@ export async function getCloudData(): Promise<CloudStoreData> {
         employees: data.data.employees || [],
         users: data.data.users || [],
         creations: data.data.creations || [],
+        stock: data.data.stock || [],
         creationCategories: data.data.creationCategories && data.data.creationCategories.length > 0 ? data.data.creationCategories : DEFAULT_CREATION_CATEGORIES,
         creationBadges: data.data.creationBadges && data.data.creationBadges.length > 0 ? data.data.creationBadges : DEFAULT_CREATION_BADGES,
       };
