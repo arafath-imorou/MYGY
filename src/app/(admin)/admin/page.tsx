@@ -5199,16 +5199,6 @@ export default function AdminDashboard() {
               </div>
 
               <div>
-                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Informations sur le Tissu Voulu *</label>
-                <textarea
-                  value={newOrderFabricDetails}
-                  onChange={(e) => setNewOrderFabricDetails(e.target.value)}
-                  rows={2}
-                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none"
-                />
-              </div>
-
-              <div>
                 <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Montant Total de la Commande (FCFA) *</label>
                 <input
                   type="number"
@@ -5424,16 +5414,6 @@ export default function AdminDashboard() {
                   value={editOrderPromisedDate}
                   onChange={(e) => setEditOrderPromisedDate(e.target.value)}
                   className="w-full bg-gy-dark border border-[#D4AF37] rounded-xl p-3 text-[#D4AF37] font-bold focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Informations sur le Tissu Voulu</label>
-                <textarea
-                  value={editOrderFabricDetails}
-                  onChange={(e) => setEditOrderFabricDetails(e.target.value)}
-                  rows={2}
-                  className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:border-[#D4AF37] focus:outline-none"
                 />
               </div>
 
