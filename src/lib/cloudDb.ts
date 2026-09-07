@@ -17,6 +17,7 @@ export interface CloudStoreData {
   creations?: any[];
   creationCategories?: string[];
   creationBadges?: string[];
+  stock?: any[];
 }
 
 export const DEFAULT_CREATION_CATEGORIES = [

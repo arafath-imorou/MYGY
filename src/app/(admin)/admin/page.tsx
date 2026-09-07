@@ -428,6 +428,9 @@ export default function AdminDashboard() {
   const [stkQuantity, setStkQuantity] = useState<number | "">("");
   const [stkMinQty, setStkMinQty] = useState<number | "">("");
   const [stkSupplier, setStkSupplier] = useState("");
+  const [stkImage, setStkImage] = useState("");
+  const [stkUploading, setStkUploading] = useState(false);
+  const [previewStockImage, setPreviewStockImage] = useState<string | null>(null);
   // New movement form
   const [mvtType, setMvtType] = useState("ENTREE");
   const [mvtQty, setMvtQty] = useState<number | "">("");
@@ -1675,6 +1678,66 @@ export default function AdminDashboard() {
   // ============================================================
   // STOCK HANDLERS
   // ============================================================
+  const handleStockImageUpload = async (e: any) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setStkUploading(true);
+    try {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise((res, rej) => {
+        img.onload = res;
+        img.onerror = rej;
+      });
+
+      const canvas = document.createElement("canvas");
+      const maxDim = 1200;
+      let width = img.width;
+      let height = img.height;
+      if (width > height && width > maxDim) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+      } else if (height > maxDim) {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx?.drawImage(img, 0, 0, width, height);
+
+      const localDataUrl = canvas.toDataURL("image/webp", 0.85);
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          setStkImage(localDataUrl);
+          setStkUploading(false);
+          return;
+        }
+        try {
+          const formData = new FormData();
+          formData.append("file", blob, `${file.name.split(".")[0]}.webp`);
+          formData.append("orderId", "stock");
+          formData.append("imageType", "stock_article");
+          const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+          const data = await res.json().catch(() => null);
+          if (res.ok && data?.url) {
+            setStkImage(data.url);
+          } else {
+            setStkImage(localDataUrl);
+          }
+        } catch (uploadErr) {
+          setStkImage(localDataUrl);
+        } finally {
+          setStkUploading(false);
+        }
+      }, "image/webp", 0.85);
+    } catch (e) {
+      setStkUploading(false);
+      alert("Erreur lors du traitement de l'image.");
+    }
+  };
+
   const handleCreateStockItem = async () => {
     if (!stkName) { alert("Veuillez saisir le nom de l'article."); return; }
     try {
@@ -1685,6 +1748,7 @@ export default function AdminDashboard() {
           name: stkName, category: stkCategory, type: stkType,
           unit: stkUnit, quantity: stkQuantity, minQuantity: stkMinQty,
           supplierInfo: stkSupplier,
+          image: stkImage || "",
         }),
       });
       if (res.ok) {
@@ -1693,6 +1757,7 @@ export default function AdminDashboard() {
         setNewStockModal(false);
         setStkName(""); setStkCategory("TISSU"); setStkType("CONSOMMABLE");
         setStkUnit("m"); setStkQuantity(""); setStkMinQty(""); setStkSupplier("");
+        setStkImage("");
       }
     } catch (e) { alert("Erreur réseau."); }
   };
@@ -3821,6 +3886,7 @@ export default function AdminDashboard() {
                   <table className="w-full text-left text-sm">
                     <thead>
                       <tr className="border-b border-gy-border bg-gy-dark/50">
+                        <th className="p-4 text-gy-gold font-bold uppercase tracking-wider text-xs w-16 text-center">Photo</th>
                         <th className="p-4 text-gy-gold font-bold uppercase tracking-wider text-xs">Référence</th>
                         <th className="p-4 text-gy-gold font-bold uppercase tracking-wider text-xs">Article</th>
                         <th className="p-4 text-gy-gold font-bold uppercase tracking-wider text-xs">Catégorie</th>
@@ -3834,6 +3900,22 @@ export default function AdminDashboard() {
                     <tbody>
                       {stockList.filter((s) => !stockSearch || s.name?.toLowerCase().includes(stockSearch.toLowerCase()) || s.category?.toLowerCase().includes(stockSearch.toLowerCase())).map((item) => (
                         <tr key={item.id} className="border-b border-gy-border/30 hover:bg-gy-dark/40">
+                          <td className="p-4 text-center">
+                            {item.image ? (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewStockImage(item.image)}
+                                className="w-11 h-11 rounded-xl overflow-hidden border border-[#D4AF37]/50 inline-block hover:scale-110 transition-transform cursor-pointer shadow-md bg-black"
+                                title="Cliquer pour agrandir"
+                              >
+                                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                              </button>
+                            ) : (
+                              <div className="w-11 h-11 rounded-xl bg-[#181822] border border-[#2A2A38] flex items-center justify-center text-base text-gy-textMuted mx-auto">
+                                {item.category === "TISSU" ? "🧵" : item.category === "FIL" ? "🪡" : item.category === "ACCESSOIRE" ? "💎" : item.type === "EQUIPEMENT" ? "⚙️" : "📦"}
+                              </div>
+                            )}
+                          </td>
                           <td className="p-4 text-gy-gold font-bold text-xs">{item.reference}</td>
                           <td className="p-4 font-bold text-white">{item.name}</td>
                           <td className="p-4 text-gy-textMuted text-xs">{item.category}</td>
@@ -3869,7 +3951,7 @@ export default function AdminDashboard() {
                       ))}
                       {stockList.length === 0 && (
                         <tr>
-                          <td colSpan={8} className="p-8 text-center text-gy-textMuted italic">
+                          <td colSpan={9} className="p-8 text-center text-gy-textMuted italic">
                             Aucun article en stock. Cliquez sur &quot;+ NOUVEL ARTICLE&quot; pour commencer.
                           </td>
                         </tr>
@@ -6167,6 +6249,53 @@ export default function AdminDashboard() {
                 <label className="block text-gy-textMuted mb-1 font-semibold text-xs">Fournisseur / Informations</label>
                 <input type="text" value={stkSupplier} onChange={(e) => setStkSupplier(e.target.value)} className="w-full bg-gy-dark border border-gy-border rounded-xl p-3 text-white focus:outline-none" />
               </div>
+
+              {/* Photo de l'article (Facultative) */}
+              <div className="space-y-2 p-4 bg-[#14141C] rounded-2xl border border-[#2A2A38]">
+                <div className="flex justify-between items-center">
+                  <label className="block text-[#D4AF37] font-bold text-xs uppercase tracking-wider">
+                    Photo de l&apos;article <span className="text-gy-textMuted font-normal lowercase">(facultative)</span>
+                  </label>
+                  {stkImage && (
+                    <button
+                      type="button"
+                      onClick={() => setStkImage("")}
+                      className="text-[11px] text-rose-400 hover:text-rose-300 font-bold"
+                    >
+                      ✕ Retirer
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden border border-[#D4AF37]/40 shrink-0 bg-black flex items-center justify-center">
+                    {stkImage ? (
+                      <img src={stkImage} alt="Aperçu article" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-gy-textMuted text-[10px] font-bold text-center px-1">SANS PHOTO</div>
+                    )}
+                  </div>
+                  <div className="space-y-2 flex-1 w-full">
+                    <label className="flex items-center justify-center px-4 py-2.5 bg-[#181822] border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black rounded-xl text-xs font-black uppercase cursor-pointer transition-all">
+                      {stkUploading ? "CONVERSION WEBP & ENVOI..." : "📸 CHOISIR UNE PHOTO (FACULTATIF)"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleStockImageUpload}
+                        disabled={stkUploading}
+                        className="hidden"
+                      />
+                    </label>
+                    <input
+                      type="text"
+                      value={stkImage}
+                      onChange={(e) => setStkImage(e.target.value)}
+                      placeholder="Ou URL de l'image"
+                      className="w-full bg-gy-dark border border-gy-border rounded-lg p-2 text-xs text-gy-textMuted focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="flex space-x-3 pt-2">
                 <button onClick={() => setNewStockModal(false)} className="w-1/2 py-3.5 rounded-xl bg-gy-dark border border-gy-border text-gy-text font-black text-xs uppercase">ANNULER</button>
                 <button onClick={handleCreateStockItem} className="w-1/2 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase shadow-lg transition-all">ENREGISTRER</button>
@@ -6681,6 +6810,31 @@ export default function AdminDashboard() {
                   METTRE À JOUR
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* MODAL: APERÇU PHOTO ARTICLE STOCK */}
+      {previewStockImage && (
+        <div
+          className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setPreviewStockImage(null)}
+        >
+          <div
+            className="bg-[#12121A] border border-[#D4AF37]/50 rounded-3xl p-4 max-w-lg w-full shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center border-b border-[#2A2A38] pb-3">
+              <h4 className="font-serif text-lg font-bold text-white">PHOTO DE L&apos;ARTICLE</h4>
+              <button
+                onClick={() => setPreviewStockImage(null)}
+                className="text-[#A3A3B3] hover:text-white px-3 py-1 bg-[#1A1A24] border border-[#2A2A38] rounded-lg text-xs font-bold"
+              >
+                ✕ FERMER
+              </button>
+            </div>
+            <div className="rounded-2xl overflow-hidden aspect-square bg-black flex items-center justify-center">
+              <img src={previewStockImage} alt="Article Stock" className="w-full h-full object-contain" />
             </div>
           </div>
         </div>

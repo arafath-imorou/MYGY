@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getCloudData, updateCloudData } from "@/lib/cloudDb";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, category, unit, quantity, minQuantity, type, reference, supplierInfo } = body;
+    const { name, category, unit, quantity, minQuantity, type, reference, supplierInfo, image } = body;
 
     if (!name || !category) {
       return NextResponse.json({ error: "Nom et categorie requis." }, { status: 400 });
@@ -33,6 +33,7 @@ export async function POST(req: Request) {
       quantity: Number(quantity || 0),
       minQuantity: Number(minQuantity || 0),
       supplierInfo: supplierInfo || "",
+      image: image || "",
       movements: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
