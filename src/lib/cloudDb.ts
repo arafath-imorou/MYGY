@@ -53,6 +53,9 @@ let memoryCache: CloudStoreData = {
   creationBadges: DEFAULT_CREATION_BADGES,
 };
 
+let lastFetchTime = 0;
+const CACHE_TTL_MS = 10000; // 10 secondes de cache mémoire pour éviter le spam Supabase
+
 function readFromFile(): CloudStoreData {
   try {
     if (fs.existsSync(DATA_FILE)) {
@@ -85,7 +88,12 @@ function writeToFile(data: CloudStoreData) {
   } catch (e) {}
 }
 
-export async function getCloudData(): Promise<CloudStoreData> {
+export async function getCloudData(forceRefresh = false): Promise<CloudStoreData> {
+  const now = Date.now();
+  if (!forceRefresh && (now - lastFetchTime) < CACHE_TTL_MS && memoryCache.customers && (memoryCache.customers.length > 0 || memoryCache.orders.length > 0)) {
+    return memoryCache;
+  }
+
   try {
     const { data, error } = await supabase
       .from("gy_cloud_store")
@@ -106,6 +114,7 @@ export async function getCloudData(): Promise<CloudStoreData> {
         creationCategories: data.data.creationCategories && data.data.creationCategories.length > 0 ? data.data.creationCategories : DEFAULT_CREATION_CATEGORIES,
         creationBadges: data.data.creationBadges && data.data.creationBadges.length > 0 ? data.data.creationBadges : DEFAULT_CREATION_BADGES,
       };
+      lastFetchTime = Date.now();
       writeToFile(memoryCache);
       return memoryCache;
     }
@@ -118,9 +127,10 @@ export async function getCloudData(): Promise<CloudStoreData> {
 export async function updateCloudData(
   updater: (data: CloudStoreData) => CloudStoreData
 ): Promise<CloudStoreData> {
-  const current = await getCloudData();
+  const current = await getCloudData(true);
   const updated = updater(current);
   memoryCache = updated;
+  lastFetchTime = Date.now();
   writeToFile(updated);
 
   try {

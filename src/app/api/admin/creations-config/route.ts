@@ -21,6 +21,10 @@ export async function GET() {
       success: true,
       categories,
       badges,
+    }, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Erreur serveur" }, { status: 500 });

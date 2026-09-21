@@ -92,19 +92,22 @@ const DEFAULT_CREATIONS = [
 ];
 
 export async function GET() {
+  const edgeHeaders = {
+    "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+  };
   try {
     const cloudData = await getCloudData();
     const serverCreations = (cloudData as any).creations;
     if (serverCreations && Array.isArray(serverCreations) && serverCreations.length > 0) {
-      return NextResponse.json(serverCreations);
+      return NextResponse.json(serverCreations, { headers: edgeHeaders });
     }
     await updateCloudData((store) => ({
       ...store,
       creations: DEFAULT_CREATIONS,
     } as any));
-    return NextResponse.json(DEFAULT_CREATIONS);
+    return NextResponse.json(DEFAULT_CREATIONS, { headers: edgeHeaders });
   } catch (error: any) {
-    return NextResponse.json(DEFAULT_CREATIONS);
+    return NextResponse.json(DEFAULT_CREATIONS, { headers: edgeHeaders });
   }
 }
 

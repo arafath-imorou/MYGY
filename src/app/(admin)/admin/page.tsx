@@ -1029,30 +1029,23 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const noCacheOpts: RequestInit = { cache: "no-store", headers: { "Cache-Control": "no-cache, no-store, must-revalidate" } };
-      const [dashRes, ordersRes, custRes, finRes, empRes, usersRes, stockRes, clientAccRes, creationsRes, configRes] = await Promise.all([
-        fetch("/api/admin/dashboard", noCacheOpts),
-        fetch("/api/admin/orders", noCacheOpts),
-        fetch("/api/admin/customers", noCacheOpts),
-        fetch("/api/admin/finances", noCacheOpts),
-        fetch("/api/admin/employees", noCacheOpts).catch(() => null),
-        fetch("/api/admin/users", noCacheOpts).catch(() => null),
-        fetch("/api/admin/stock", noCacheOpts).catch(() => null),
-        fetch("/api/admin/client-accounts", noCacheOpts).catch(() => null),
-        fetch("/api/admin/creations", noCacheOpts).catch(() => null),
-        fetch("/api/admin/creations-config", noCacheOpts).catch(() => null),
-      ]);
+      const res = await fetch("/api/admin/sync", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
+      });
+      if (!res.ok) throw new Error("Sync failed");
+      const syncData = await res.json();
 
-      const dashData = dashRes.ok ? await dashRes.json() : {};
-      const ordersData = ordersRes.ok ? await ordersRes.json() : [];
-      const custData = custRes.ok ? await custRes.json() : [];
-      const finData = finRes.ok ? await finRes.json() : {};
-      const empData = empRes && empRes.ok ? await empRes.json() : [];
-      const usersData = usersRes && usersRes.ok ? await usersRes.json() : [];
-      const stockData = stockRes && stockRes.ok ? await stockRes.json() : [];
-      const clientAccData = clientAccRes && clientAccRes.ok ? await clientAccRes.json() : [];
-      const creationsData = creationsRes && creationsRes.ok ? await creationsRes.json() : [];
-      const configData = configRes && configRes.ok ? await configRes.json() : null;
+      const dashData = syncData.dashboard || {};
+      const ordersData = syncData.orders || [];
+      const custData = syncData.customers || [];
+      const finData = syncData.finances || {};
+      const empData = syncData.employees || [];
+      const usersData = syncData.users || [];
+      const stockData = syncData.stock || [];
+      const clientAccData = syncData.clientAccounts || [];
+      const creationsData = syncData.creations || [];
+      const configData = syncData.config || null;
 
       if (Array.isArray(stockData)) setStockList(stockData);
       if (Array.isArray(clientAccData)) setClientAccountsList(clientAccData);
@@ -1210,14 +1203,6 @@ export default function AdminDashboard() {
         setPayOrderId(mergedOrders[0].id);
       }
       setStockItems(dashData.lowStockItems || []);
-
-      try {
-        const clientAccsRes = await fetch("/api/admin/client-accounts", { cache: "no-store" });
-        if (clientAccsRes.ok) {
-          const accs = await clientAccsRes.json();
-          setClientAccountsList(accs);
-        }
-      } catch (e) {}
     } catch (e) {
       console.error("fetchData error:", e);
     } finally {
@@ -1226,20 +1211,30 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    // Ne synchroniser que si l'utilisateur est authentifié
+    if (!isAuthenticated) return;
+
     fetchData();
 
-    // 1. Auto-sync interval every 8 seconds for all connected devices
-    const interval = setInterval(() => {
-      fetchData();
-    }, 8000);
-
-    // 2. Immediate sync when user refocuses tab/screen
+    // 1. Synchronisation au focus de la fenêtre avec debounce de 30 secondes
+    let lastFocusSync = Date.now();
     const handleFocus = () => {
-      fetchData();
+      const now = Date.now();
+      if (now - lastFocusSync >= 30000) {
+        lastFocusSync = now;
+        fetchData();
+      }
     };
     window.addEventListener("focus", handleFocus);
 
-    // 3. Supabase Realtime Channel for instant push updates
+    // 2. Intervalle d'arrière-plan doux (2 minutes) UNIQUEMENT si l'onglet est actif et visible
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchData();
+      }
+    }, 120000);
+
+    // 3. Supabase Realtime Channel pour rafraîchissement événementiel sans polling
     let channel: any;
     try {
       channel = supabase
@@ -1259,7 +1254,7 @@ export default function AdminDashboard() {
         supabase.removeChannel(channel);
       }
     };
-  }, []);
+  }, [isAuthenticated]);
 
   // Filtered orders for selected customer in payment wizard
   const customerOrders = orders.filter((o) => o.customerId === payCustomerId);
