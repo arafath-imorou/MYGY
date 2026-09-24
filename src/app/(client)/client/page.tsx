@@ -149,13 +149,16 @@ export default function ClientPortal() {
   const fetchClientOrders = async (customerId: string, clientUsername?: string, clientEmail?: string) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/orders", { cache: "no-store" });
-      const allOrders = res.ok ? await res.json() : [];
-      const myOrders = allOrders.filter((o: any) =>
-        (customerId && (o.customerId === customerId || o.customer?.id === customerId || o.customer?.code === customerId)) ||
-        (clientEmail && o.customer?.email?.toLowerCase() === clientEmail.toLowerCase())
-      );
-      setClientOrders(myOrders);
+      const targetParam = customerId || clientEmail || clientUsername;
+      if (targetParam) {
+        const res = await fetch(`/api/client/orders?customerId=${encodeURIComponent(targetParam)}`, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          setClientOrders(data.orders || []);
+          setLoading(false);
+          return;
+        }
+      }
     } catch (e) {}
     setLoading(false);
   };

@@ -41,7 +41,15 @@ export async function GET(req: Request) {
     const cloudCusts = cloudData.customers || [];
     const cloudOrders = cloudData.orders || [];
 
-    const customerObj = prismaCust || cloudCusts.find((c: any) => c.id === customerId || c.phone === customerId);
+    const customerObj =
+      prismaCust ||
+      cloudCusts.find(
+        (c: any) =>
+          c.id === customerId ||
+          c.code === customerId ||
+          c.phone === customerId ||
+          (c.email && c.email.toLowerCase() === customerId.toLowerCase())
+      );
 
     if (!customerObj) {
       return NextResponse.json({ error: "Client non trouvé" }, { status: 404 });
